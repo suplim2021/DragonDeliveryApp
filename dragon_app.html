@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dragon Delivery Tracking</title>
+    <style>
+        /* Basic Mobile First Styles - You'll expand this a lot */
+        body { font-family: Arial, sans-serif; margin: 0; padding: 10px; background-color: #f0f0f0; }
+        .container { background-color: white; padding: 15px; border-radius: 8px; margin-bottom:10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1, h2 { color: #333; }
+        button { background-color: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; margin-top: 5px; width:100%; }
+        button:hover { background-color: #0056b3; }
+        button.secondary { background-color: #6c757d; }
+        button.secondary:hover { background-color: #545b62; }
+        button:disabled { background-color: #ccc; }
+        input[type="text"], input[type="date"], input[type="number"], select {
+            width: calc(100% - 22px); padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;
+        }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .hidden { display: none !important; }
+        .user-info { text-align: right; margin-bottom:15px; font-size:0.9em; }
+        .page { padding-bottom: 60px; } /* For fixed bottom nav */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background-color: #333; display: flex; justify-content: space-around; padding: 5px 0; box-shadow: 0 -2px 5px rgba(0,0,0,0.2); }
+        .bottom-nav button { width: auto; background:none; color:white; padding: 10px 5px; font-size:0.8em; }
+        .bottom-nav button.active { color: #007bff; font-weight:bold; }
+
+        /* More specific styles for sections */
+        .order-item, .product-item-entry { border:1px solid #eee; padding:10px; margin-bottom:8px; border-radius:5px; }
+        .item-checklist { list-style-type: none; padding-left: 0; }
+        .item-checklist li { padding: 5px; border-bottom: 1px solid #eee; }
+        .item-checklist li:last-child { border-bottom: none; }
+        #qrScannerVideo { width: 100%; max-width:400px; border:1px solid grey; }
+        #photoPreview { max-width:100%; max-height:200px; margin-top:10px; border:1px solid #ddd; }
+
+    </style>
+    <!-- QR Scanner Library (Example: html5-qrcode) -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</head>
+<body>
+    <div id="appContainer">
+        <!-- Login Page (Initially Visible) -->
+        <div id="loginPage" class="container page">
+            <h2>Login</h2>
+            <label for="email">Email:</label>
+            <input type="email" id="email" placeholder="your@email.com">
+            <label for="password">Password:</label>
+            <input type="password" id="password" placeholder="รหัสผ่าน">
+            <button id="loginButton">เข้าสู่ระบบ</button>
+            <p id="loginError" class="hidden" style="color:red;"></p>
+        </div>
+
+        <!-- Main App Area (Hidden until login) -->
+        <div id="mainApp" class="hidden">
+            <div class="user-info">
+                Logged in as: <span id="userDisplayEmail"></span> (<span id="userDisplayRole"></span>)
+                <button id="logoutButton" style="width:auto; font-size:0.8em; padding:5px; margin-left:10px;">Logout</button>
+            </div>
+
+            <!-- Different Pages will be shown/hidden here based on role and action -->
+            <div id="dashboardPage" class="container page current-page">
+                <h2>Dashboard</h2>
+                <p>Welcome! Content based on role will appear here.</p>
+                <!-- Summary cards, lists of pending tasks -->
+            </div>
+
+            <!-- Admin: Create Order Page -->
+            <div id="adminCreateOrderPage" class="container page hidden">
+                <h2>สร้างออเดอร์ใหม่</h2>
+                <button id="startQRScanButton_AdminOrder">สแกน QR ใบปะหน้า</button>
+                <div id="qrScannerContainer_AdminOrder" class="hidden" style="margin-top:10px;">
+                    <div id="qrScanner_AdminOrder"></div>
+                    <p>Scanned QR Data: <span id="scannedQRData_AdminOrder">N/A</span></p>
+                </div>
+                <label for="adminPlatform">Platform:</label>
+                <input type="text" id="adminPlatform" placeholder="เช่น Shopee (จาก QR)">
+                <label for="adminPlatformOrderId">Platform Order ID:</label>
+                <input type="text" id="adminPlatformOrderId" placeholder="เช่น ORD123 (จาก QR)">
+                <label for="adminPackageCode">Package Code:</label>
+                <input type="text" id="adminPackageCode" placeholder="เช่น PKGXYZ (จาก QR)">
+                <label for="adminDueDate">Due Date:</label>
+                <input type="date" id="adminDueDate">
+                <button id="saveInitialOrderButton">บันทึกออเดอร์เบื้องต้น</button>
+            </div>
+
+            <!-- Admin: Add Items to Order Page -->
+            <div id="adminAddItemsPage" class="container page hidden">
+                <h2>เพิ่มรายการสินค้า (Order ID: <span id="currentOrderIdForItems"></span>)</h2>
+                <label for="productSearch">ค้นหาสินค้า:</label>
+                <input type="text" id="productSearch" placeholder="พิมพ์ชื่อสินค้า...">
+                <!-- Autocomplete results would appear here -->
+                <label for="quantity">จำนวน:</label>
+                <input type="number" id="quantity" value="1">
+                <label for="unit">หน่วย:</label>
+                <input type="text" id="unit" placeholder="เช่น ตัว, ชิ้น">
+                <button id="addItemToOrderButton">เพิ่มสินค้าในรายการ</button>
+                <h3>รายการสินค้าที่เพิ่มแล้ว:</h3>
+                <ul id="itemListCurrentOrder" class="item-checklist"></ul>
+                <button id="confirmAllItemsButton">ยืนยันรายการสินค้าทั้งหมด</button>
+            </div>
+            
+            <!-- Operator: Packing Page -->
+            <div id="operatorPackingPage" class="container page hidden">
+                <h2>แพ็กสินค้า (Order ID: <span id="currentOrderIdForPacking"></span>)</h2>
+                <p><strong>Platform:</strong> <span id="packOrderPlatform"></span></p>
+                <p><strong>Due Date:</strong> <span id="packOrderDueDate"></span></p>
+                <h3>Checklist รายการสินค้า:</h3>
+                <ul id="packOrderItemList" class="item-checklist"></ul>
+                <label for="packingPhoto">ถ่ายรูปสินค้าที่เตรียม:</label>
+                <input type="file" id="packingPhoto" accept="image/*" capture="environment">
+                <img id="packingPhotoPreview" src="#" alt="Preview" class="hidden" style="max-width:100%; margin-top:10px;">
+                <label for="operatorPackNotes">หมายเหตุ (ถ้ามี):</label>
+                <textarea id="operatorPackNotes" style="width:calc(100% - 22px); min-height:50px;"></textarea>
+                <button id="confirmPackingButton">ยืนยันการแพ็ก</button>
+                 <!-- Supervisor Check Display -->
+                <div id="supervisorPackCheckResult" class="hidden" style="margin-top:15px; padding:10px; border:1px solid #ccc;">
+                    <h4>ผลการตรวจสอบโดย Supervisor:</h4>
+                    <p>สถานะ: <span id="packCheckStatus"></span></p>
+                    <p>ผู้ตรวจ: <span id="packCheckSupervisor"></span></p>
+                    <p>หมายเหตุ: <span id="packCheckNotes"></span></p>
+                </div>
+            </div>
+            
+            <!-- ... More pages for Supervisor Check, Shipping Batch, etc. ... -->
+
+            <p id="appStatus" style="text-align:center; padding:10px;"></p>
+        </div>
+
+        <!-- Bottom Navigation (Role Dependent) -->
+        <div id="bottomNavContainer" class="bottom-nav hidden">
+            <!-- Buttons will be added here by JS based on role -->
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase SDK imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getDatabase, ref, set, get, update, serverTimestamp, push, child } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+        // import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAGWAYD5mvDsyyY4IovRjYUYPpj7WLUrFE",
+            authDomain: "dragondeliveryapp.firebaseapp.com",
+            projectId: "dragondeliveryapp",
+            storageBucket: "dragondeliveryapp.firebasestorage.app",
+            messagingSenderId: "912014929398",
+            appId: "1:912014929398:web:8488118a158c0d8d936bd7"          
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+        const storage = getStorage(app);
+        // const analytics = getAnalytics(app);
+
+        // --- Global State ---
+        let currentUser = null;
+        let currentUserRole = null;
+        let html5QrCodeScannerAdminOrder = null;
+        // ... add more for other scanners
+
+        // --- DOM Elements ---
+        const loginPage = document.getElementById('loginPage');
+        const mainApp = document.getElementById('mainApp');
+        const loginButton = document.getElementById('loginButton');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const loginError = document.getElementById('loginError');
+        const userDisplayEmail = document.getElementById('userDisplayEmail');
+        const userDisplayRole = document.getElementById('userDisplayRole');
+        const logoutButton = document.getElementById('logoutButton');
+        const appStatus = document.getElementById('appStatus');
+        const bottomNavContainer = document.getElementById('bottomNavContainer');
+
+        // Admin Create Order Page Elements
+        const adminCreateOrderPage = document.getElementById('adminCreateOrderPage');
+        const startQRScanButton_AdminOrder = document.getElementById('startQRScanButton_AdminOrder');
+        const qrScannerContainer_AdminOrder = document.getElementById('qrScannerContainer_AdminOrder');
+        const scannedQRData_AdminOrder = document.getElementById('scannedQRData_AdminOrder');
+        const adminPlatformInput = document.getElementById('adminPlatform');
+        const adminPlatformOrderIdInput = document.getElementById('adminPlatformOrderId');
+        const adminPackageCodeInput = document.getElementById('adminPackageCode');
+        const adminDueDateInput = document.getElementById('adminDueDate');
+        const saveInitialOrderButton = document.getElementById('saveInitialOrderButton');
+
+        // Admin Add Items Page Elements
+        const adminAddItemsPage = document.getElementById('adminAddItemsPage');
+        const currentOrderIdForItemsSpan = document.getElementById('currentOrderIdForItems');
+        const productSearchInput = document.getElementById('productSearch');
+        const quantityInput = document.getElementById('quantity');
+        const unitInput = document.getElementById('unit');
+        const addItemToOrderButton = document.getElementById('addItemToOrderButton');
+        const itemListCurrentOrderUL = document.getElementById('itemListCurrentOrder');
+        const confirmAllItemsButton = document.getElementById('confirmAllItemsButton');
+        
+        // Operator Packing Page Elements
+        const operatorPackingPage = document.getElementById('operatorPackingPage');
+        const currentOrderIdForPackingSpan = document.getElementById('currentOrderIdForPacking');
+        const packOrderPlatformSpan = document.getElementById('packOrderPlatform');
+        const packOrderDueDateSpan = document.getElementById('packOrderDueDate');
+        const packOrderItemListUL = document.getElementById('packOrderItemList');
+        const packingPhotoInput = document.getElementById('packingPhoto');
+        const packingPhotoPreviewImg = document.getElementById('packingPhotoPreview');
+        const operatorPackNotesTextarea = document.getElementById('operatorPackNotes');
+        const confirmPackingButton = document.getElementById('confirmPackingButton');
+        const supervisorPackCheckResultDiv = document.getElementById('supervisorPackCheckResult');
+        const packCheckStatusSpan = document.getElementById('packCheckStatus');
+        const packCheckSupervisorSpan = document.getElementById('packCheckSupervisor');
+        const packCheckNotesSpan = document.getElementById('packCheckNotes');
+
+
+        // --- Page Navigation ---
+        const allPages = document.querySelectorAll('.page');
+        function showPage(pageId) {
+            allPages.forEach(page => page.classList.add('hidden'));
+            allPages.forEach(page => page.classList.remove('current-page'));
+            const targetPage = document.getElementById(pageId);
+            if (targetPage) {
+                targetPage.classList.remove('hidden');
+                targetPage.classList.add('current-page');
+            }
+            updateBottomNavActiveState(pageId);
+        }
+
+        function updateBottomNavActiveState(currentPageId) {
+            const navButtons = bottomNavContainer.querySelectorAll('button');
+            navButtons.forEach(btn => {
+                if (btn.dataset.pageid === currentPageId) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        // --- Authentication ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                // Fetch user role from Firebase Realtime Database
+                const userRoleRef = ref(database, 'users/' + user.uid + '/role');
+                const snapshot = await get(userRoleRef);
+                if (snapshot.exists()) {
+                    currentUserRole = snapshot.val();
+                } else {
+                    currentUserRole = 'unknown'; // Or handle new user registration flow
+                    // For new users, you might want to assign a default role or have an admin assign one.
+                    // Example: await set(ref(database, 'users/' + user.uid), { email: user.email, role: 'operator', displayName: user.email.split('@')[0] });
+                    // currentUserRole = 'operator'; // after setting
+                }
+                userDisplayEmail.textContent = user.email;
+                userDisplayRole.textContent = currentUserRole;
+                loginPage.classList.add('hidden');
+                mainApp.classList.remove('hidden');
+                bottomNavContainer.classList.remove('hidden');
+                setupRoleBasedUI();
+                showPage('dashboardPage'); // Default page after login
+            } else {
+                currentUser = null;
+                currentUserRole = null;
+                loginPage.classList.remove('hidden');
+                mainApp.classList.add('hidden');
+                bottomNavContainer.classList.add('hidden');
+                bottomNavContainer.innerHTML = ''; // Clear nav
+            }
+        });
+
+        loginButton.addEventListener('click', () => {
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            signInWithEmailAndPassword(auth, email, password)
+                .catch((error) => {
+                    loginError.textContent = error.message;
+                    loginError.classList.remove('hidden');
+                });
+        });
+
+        logoutButton.addEventListener('click', () => {
+            signOut(auth);
+        });
+
+        // --- Role Based UI & Navigation ---
+        function setupRoleBasedUI() {
+            bottomNavContainer.innerHTML = ''; // Clear previous nav
+            let navHtml = '';
+
+            // Common Dashboard for all logged-in users (content inside will vary)
+            navHtml += `<button data-pageid="dashboardPage">Dashboard</button>`;
+
+            if (currentUserRole === 'administrator') {
+                navHtml += `<button data-pageid="adminCreateOrderPage">สร้างออเดอร์</button>`;
+                // Add more admin specific nav buttons if needed
+            }
+            if (currentUserRole === 'operator') {
+                // For operator, they'd likely see a list of orders to pack/ship first
+                // For now, a direct button to a simulated packing page
+                 navHtml += `<button onclick="navigateToOperatorScanToPack()">แพ็กของ</button>`;
+                // navHtml += `<button data-pageid="operatorPackingList">รายการแพ็ก</button>`; // A page listing orders to pack
+                // navHtml += `<button data-pageid="operatorShippingList">รายการส่ง</button>`;
+            }
+            if (currentUserRole === 'supervisor') {
+                // navHtml += `<button data-pageid="supervisorCheckListPage">รายการตรวจสอบ</button>`;
+            }
+            bottomNavContainer.innerHTML = navHtml;
+
+            // Add event listeners to new nav buttons
+            bottomNavContainer.querySelectorAll('button[data-pageid]').forEach(btn => {
+                btn.addEventListener('click', () => showPage(btn.dataset.pageid));
+            });
+        }
+        
+        // Quick nav for operator to simulate scanning and going to packing page
+        // In real app, operator would scan QR which then takes them to packing page for THAT order.
+        window.navigateToOperatorScanToPack = function() {
+            // This is a placeholder. Operator should scan an order QR, then load that order.
+            const mockOrderId = prompt("Operator: ป้อน Order ID ที่จะแพ็ก (เช่น PARSED_QR_ID_1):");
+            if (mockOrderId) loadOrderForPacking(mockOrderId.trim());
+        }
+
+
+        // --- QR Code Scanning (html5-qrcode) ---
+        function onScanSuccess_AdminOrder(decodedText, decodedResult) {
+            scannedQRData_AdminOrder.textContent = decodedText;
+            // Attempt to parse QR - This is highly dependent on YOUR QR format
+            // Example: PLATFORM_ORDERID_PACKAGECODE
+            const parts = decodedText.split('_');
+            if (parts.length >= 3) {
+                adminPlatformInput.value = parts[0];
+                adminPlatformOrderIdInput.value = parts[1];
+                adminPackageCodeInput.value = parts[2];
+            } else {
+                // Clear if format unknown or provide fields for manual entry
+                adminPlatformInput.value = '';
+                adminPlatformOrderIdInput.value = '';
+                adminPackageCodeInput.value = '';
+            }
+            if (html5QrCodeScannerAdminOrder) {
+                html5QrCodeScannerAdminOrder.stop().catch(err => console.warn("Error stopping scanner:", err));
+            }
+            qrScannerContainer_AdminOrder.classList.add('hidden');
+        }
+
+        function onScanFailure_AdminOrder(error) {
+            // console.warn(`QR error = ${error}`);
+        }
+
+        startQRScanButton_AdminOrder.addEventListener('click', () => {
+            qrScannerContainer_AdminOrder.classList.remove('hidden');
+            if (!html5QrCodeScannerAdminOrder) {
+                 html5QrCodeScannerAdminOrder = new Html5Qrcode("qrScanner_AdminOrder");
+            }
+            html5QrCodeScannerAdminOrder.start(
+                { facingMode: "environment" }, // prefer back camera
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                onScanSuccess_AdminOrder,
+                onScanFailure_AdminOrder
+            ).catch(err => {
+                console.error("Failed to start QR scanner:", err);
+                alert("ไม่สามารถเปิดกล้องสแกน QR ได้: " + err);
+                qrScannerContainer_AdminOrder.classList.add('hidden');
+            });
+        });
+
+
+        // --- Admin: Create Initial Order ---
+        saveInitialOrderButton.addEventListener('click', async () => {
+            if (currentUserRole !== 'administrator') {
+                appStatus.textContent = "ไม่มีสิทธิ์ดำเนินการ"; return;
+            }
+            const qrRaw = scannedQRData_AdminOrder.textContent;
+            const platform = adminPlatformInput.value.trim();
+            const platformOrderId = adminPlatformOrderIdInput.value.trim();
+            const packageCode = adminPackageCodeInput.value.trim();
+            const dueDate = adminDueDateInput.value;
+
+            if (!qrRaw || !platform || !platformOrderId || !packageCode) {
+                appStatus.textContent = "กรุณากรอกข้อมูลให้ครบถ้วน"; return;
+            }
+
+            // Generate a unique ID for the order based on QR or platform data
+            // This needs to be a robust way to ensure uniqueness if QR can be scanned multiple times.
+            // For simplicity, using a combination or allowing Firebase to push for a truly unique key
+            const orderKey = `${platform}_${platformOrderId}_${packageCode}`.replace(/[^a-zA-Z0-9_]/g, '-'); // Sanitize key
+
+            const orderData = {
+                qrRawData: qrRaw,
+                platform: platform,
+                platformOrderId: platformOrderId,
+                packageCode: packageCode,
+                status: "Pending Item Details",
+                dueDate: dueDate || null,
+                createdAt: serverTimestamp(),
+                createdBy_adminUid: currentUser.uid,
+                items: {} // Initialize items object
+            };
+
+            try {
+                await set(ref(database, 'orders/' + orderKey), orderData);
+                appStatus.textContent = `สร้างออเดอร์ ${orderKey} สำเร็จแล้ว! กรุณาเพิ่มรายการสินค้า`;
+                // Clear form and navigate to add items page for this order
+                adminPlatformInput.value = '';
+                adminPlatformOrderIdInput.value = '';
+                adminPackageCodeInput.value = '';
+                adminDueDateInput.value = '';
+                scannedQRData_AdminOrder.textContent = 'N/A';
+                loadOrderForAddingItems(orderKey); // Function to load this order into add items page
+
+            } catch (error) {
+                console.error("Error saving initial order: ", error);
+                appStatus.textContent = "เกิดข้อผิดพลาด: " + error.message;
+            }
+        });
+
+        let currentOrderKeyForItems = null;
+        function loadOrderForAddingItems(orderKey) {
+            currentOrderKeyForItems = orderKey;
+            currentOrderIdForItemsSpan.textContent = orderKey;
+            // Fetch existing items for this order and display them (if any)
+            itemListCurrentOrderUL.innerHTML = ''; // Clear previous items
+            const itemsRef = ref(database, `orders/${orderKey}/items`);
+            get(itemsRef).then(snapshot => {
+                if (snapshot.exists()) {
+                    const items = snapshot.val();
+                    for (const itemId in items) {
+                        renderItemInList(itemId, items[itemId]);
+                    }
+                }
+            });
+            showPage('adminAddItemsPage');
+        }
+        
+        function renderItemInList(itemId, itemData) {
+            const li = document.createElement('li');
+            li.textContent = `${itemData.productName} - ${itemData.quantity} ${itemData.unit}`;
+            // Add a delete button if needed
+            itemListCurrentOrderUL.appendChild(li);
+        }
+
+        addItemToOrderButton.addEventListener('click', async () => {
+            if (currentUserRole !== 'administrator' || !currentOrderKeyForItems) return;
+
+            const productName = productSearchInput.value.trim(); // In real app, this comes from autocomplete/selection
+            const quantity = parseInt(quantityInput.value);
+            const unit = unitInput.value.trim();
+
+            if (!productName || !quantity || !unit) {
+                appStatus.textContent = "กรุณากรอกข้อมูลสินค้าให้ครบ"; return;
+            }
+
+            const newItemRef = push(child(ref(database, 'orders/' + currentOrderKeyForItems), 'items'));
+            const itemData = {
+                productName: productName,
+                quantity: quantity,
+                unit: unit,
+                addedBy_adminUid: currentUser.uid,
+                addedAt: serverTimestamp()
+            };
+            try {
+                await set(newItemRef, itemData);
+                appStatus.textContent = "เพิ่มสินค้าแล้ว";
+                renderItemInList(newItemRef.key, itemData); // Add to UI list
+                productSearchInput.value = ''; quantityInput.value = '1'; unitInput.value = '';
+            } catch (error) {
+                console.error("Error adding item: ", error);
+                appStatus.textContent = "Error adding item: " + error.message;
+            }
+        });
+
+        confirmAllItemsButton.addEventListener('click', async () => {
+             if (currentUserRole !== 'administrator' || !currentOrderKeyForItems) return;
+             try {
+                await update(ref(database, 'orders/' + currentOrderKeyForItems), {
+                    status: "Ready to Pack",
+                    lastUpdatedAt: serverTimestamp()
+                });
+                appStatus.textContent = `ออเดอร์ ${currentOrderKeyForItems} พร้อมสำหรับการแพ็ก`;
+                showPage('dashboardPage'); // Or back to admin order list
+             } catch (error) {
+                console.error("Error confirming items: ", error);
+                appStatus.textContent = "Error confirming items: " + error.message;
+             }
+        });
+
+        // --- Operator: Packing ---
+        let currentOrderKeyForPacking = null;
+        let packingPhotoFile = null;
+
+        async function loadOrderForPacking(orderKey) {
+            const orderRef = ref(database, 'orders/' + orderKey);
+            try {
+                const snapshot = await get(orderRef);
+                if (snapshot.exists()) {
+                    const orderData = snapshot.val();
+                    if (orderData.status !== "Ready to Pack" && orderData.status !== "Pack Rejected") {
+                         alert(`ออเดอร์ ${orderKey} ไม่พร้อมสำหรับการแพ็ก (สถานะปัจจุบัน: ${orderData.status})`);
+                         showPage('dashboardPage'); // Or operator's order list
+                         return;
+                    }
+                    currentOrderKeyForPacking = orderKey;
+                    currentOrderIdForPackingSpan.textContent = orderKey;
+                    packOrderPlatformSpan.textContent = orderData.platform || 'N/A';
+                    packOrderDueDateSpan.textContent = orderData.dueDate || 'N/A';
+                    
+                    packOrderItemListUL.innerHTML = ''; // Clear previous
+                    if (orderData.items) {
+                        for (const itemId in orderData.items) {
+                            const item = orderData.items[itemId];
+                            const li = document.createElement('li');
+                            li.textContent = `${item.productName} - ${item.quantity} ${item.unit}`;
+                            packOrderItemListUL.appendChild(li);
+                        }
+                    }
+                    
+                    // Show supervisor check result if available
+                    if (orderData.supervisorPackCheck) {
+                        supervisorPackCheckResultDiv.classList.remove('hidden');
+                        packCheckStatusSpan.textContent = orderData.supervisorPackCheck.isApproved ? 'อนุมัติ' : 'ปฏิเสธ';
+                        // Fetch supervisor name if needed, for now use UID or a placeholder
+                        packCheckSupervisorSpan.textContent = orderData.supervisorPackCheck.checkedBy_supervisorUid.substring(0,8);
+                        packCheckNotesSpan.textContent = orderData.supervisorPackCheck.supervisorNotes || 'ไม่มี';
+                    } else {
+                        supervisorPackCheckResultDiv.classList.add('hidden');
+                    }
+
+                    packingPhotoInput.value = ''; // Reset file input
+                    packingPhotoPreviewImg.classList.add('hidden');
+                    packingPhotoPreviewImg.src = '#';
+                    operatorPackNotesTextarea.value = orderData.packingInfo?.operatorNotes || '';
+
+
+                    showPage('operatorPackingPage');
+                } else {
+                    alert(`ไม่พบออเดอร์ ID: ${orderKey}`);
+                }
+            } catch (error) {
+                console.error("Error loading order for packing: ", error);
+                alert("เกิดข้อผิดพลาดในการโหลดออเดอร์: " + error.message);
+            }
+        }
+        
+        packingPhotoInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                packingPhotoFile = file;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    packingPhotoPreviewImg.src = e.target.result;
+                    packingPhotoPreviewImg.classList.remove('hidden');
+                }
+                reader.readAsDataURL(file);
+            } else {
+                packingPhotoFile = null;
+                packingPhotoPreviewImg.classList.add('hidden');
+                packingPhotoPreviewImg.src = '#';
+            }
+        });
+
+        confirmPackingButton.addEventListener('click', async () => {
+            if (currentUserRole !== 'operator' || !currentOrderKeyForPacking) {
+                appStatus.textContent = "ไม่มีสิทธิ์หรือไม่ได้เลือกออเดอร์"; return;
+            }
+            if (!packingPhotoFile) {
+                appStatus.textContent = "กรุณาถ่ายรูปสินค้าก่อนยืนยัน"; return;
+            }
+
+            appStatus.textContent = "กำลังอัปโหลดรูปและบันทึกข้อมูล...";
+            confirmPackingButton.disabled = true;
+
+            try {
+                // 1. Upload photo to Firebase Storage
+                const photoFileName = `packing_${currentOrderKeyForPacking}_${Date.now()}_${packingPhotoFile.name}`;
+                const photoStorageRef = storageRef(storage, `packingPhotos/${currentOrderKeyForPacking}/${photoFileName}`);
+                const uploadResult = await uploadBytes(photoStorageRef, packingPhotoFile);
+                const photoDownloadURL = await getDownloadURL(uploadResult.ref);
+
+                // 2. Update order data in Realtime Database
+                const packingInfo = {
+                    packedBy_operatorUid: currentUser.uid,
+                    packedAt: serverTimestamp(),
+                    packingPhotoUrl: photoDownloadURL,
+                    operatorNotes: operatorPackNotesTextarea.value.trim()
+                };
+                
+                await update(ref(database, 'orders/' + currentOrderKeyForPacking), {
+                    packingInfo: packingInfo,
+                    status: "Pending Supervisor Pack Check", // Or "Packed" if no supervisor step
+                    lastUpdatedAt: serverTimestamp()
+                });
+
+                appStatus.textContent = "บันทึกการแพ็กและอัปโหลดรูปสำเร็จ!";
+                showPage('dashboardPage'); // Or operator's order list
+
+            } catch (error) {
+                console.error("Error confirming packing: ", error);
+                appStatus.textContent = "เกิดข้อผิดพลาด: " + error.message;
+            } finally {
+                confirmPackingButton.disabled = false;
+            }
+        });
+
+
+        // --- Initial Load ---
+        // Check auth state will handle initial page visibility
+
+        // IMPORTANT: This is a very basic structure.
+        // You'll need to add much more:
+        // - Proper UI for listing orders for each role.
+        // - UI for Supervisor to check.
+        // - UI for Shipping Batches.
+        // - More robust error handling and user feedback.
+        // - Product management for Admin (adding to /products).
+        // - Better QR parsing logic.
+        // - Security Rules for Firebase Database and Storage.
+        // - Autocomplete for product search.
+
+    </script>
+</body>
+</html>
