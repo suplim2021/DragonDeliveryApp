@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dragon Delivery Tracking</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Libraries -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div id="appContainer">
+        <!-- Login Page -->
+        <div id="loginPage" class="container page">
+            <h2>Login</h2>
+            <div class="form-group"><label for="email">Email:</label><input type="email" id="email" placeholder="your@email.com"></div>
+            <div class="form-group"><label for="password">Password:</label><input type="password" id="password" placeholder="รหัสผ่าน"></div>
+            <button id="loginButton" type="button">เข้าสู่ระบบ</button>
+            <p id="loginError" class="hidden" style="color:red; margin-top:10px; text-align:center;"></p>
+        </div>
+
+        <!-- Main App Area (Content will be dynamically shown) -->
+        <div id="mainApp" class="hidden">
+            <div class="user-info">Logged in as: <span id="userDisplayEmail"></span> (<span id="userDisplayRole"></span>)<button id="logoutButton" type="button">Logout</button></div>
+            
+            <!-- Pages will be injected or shown here -->
+            <div id="dashboardPage" class="container page current-page">
+                <!-- Content for Dashboard (HTML structure for cards, charts, table) -->
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;"><h2>Dashboard</h2><button id="refreshDashboardButton" type="button" class="secondary" style="width:auto; font-size:0.8em; padding:8px;">รีเฟรช</button></div>
+                <p id="currentDateDisplay" style="font-size:0.9em; color:#555; margin-bottom:20px;"></p>
+                <div id="summaryCardsContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;"></div>
+                <div id="chartsContainer" style="margin-bottom: 30px;">
+                    <h3>สถิติรายวัน</h3><div style="position:relative; height:280px; width:100%;"><canvas id="dailyStatsChart"></canvas></div>
+                    <h3 style="margin-top:30px;">สถิติตามแพลตฟอร์ม</h3><div style="position:relative; height:300px; max-width:350px; margin:auto;"><canvas id="platformStatsChart"></canvas></div>
+                </div>
+                <div id="ordersLogContainer">
+                    <h3>ประวัติพัสดุล่าสุด</h3>
+                    <div style="display:flex; gap:10px; margin-bottom:15px; align-items:center; flex-wrap:wrap;">
+                        <label for="logFilterStatus" style="margin-bottom:0; margin-right:5px;">สถานะ:</label>
+                        <select id="logFilterStatus" style="width:auto; padding:10px; margin-bottom:0; flex-grow:1; min-width:150px;">
+                            <option value="all">ทั้งหมด</option><option value="Pending Item Details">รอเพิ่มสินค้า</option><option value="Ready to Pack">รอแพ็ก</option>
+                            <option value="Pending Supervisor Pack Check">รอตรวจแพ็ก</option><option value="Ready for Shipment">รอส่ง</option><option value="Shipped">ส่งแล้ว</option>
+                        </select>
+                        <button id="applyLogFilterButton" type="button" class="secondary" style="width:auto; font-size:0.9em; padding:10px;">ค้นหา</button>
+                    </div>
+                    <div id="ordersTableContainer" style="max-height: 400px; overflow-y: auto;">
+                        <table><thead><tr><th>Order Key</th><th>Platform</th><th>Package Code</th><th>สถานะ</th><th>Due Date</th></tr></thead><tbody id="ordersTableBody"></tbody></table>
+                    </div>
+                    <p id="noOrdersMessage" class="hidden" style="text-align:center; padding:20px; color:#7f8c8d;">ไม่พบข้อมูลพัสดุ</p>
+                </div>
+            </div>
+
+            <div id="adminCreateOrderPage" class="container page hidden">
+                <!-- Content for Admin Create Order Page -->
+                <h2>สร้างออเดอร์ใหม่</h2>
+                <div class="form-group"><button id="startQRScanButton_AdminOrder" type="button">สแกน QR ใบปะหน้า (รหัสพัสดุ)</button>
+                    <div id="qrScannerContainer_AdminOrder" class="hidden" style="margin-top:10px;"><div id="qrScanner_AdminOrder" class="qr-scanner-area"></div><button id="stopQRScanButton_AdminOrder" type="button" class="secondary hidden" style="margin-top:5px;">หยุดสแกน</button></div>
+                    <p style="font-size:0.9em; margin-top:5px;">Scanned Package Code: <span id="scannedQRData_AdminOrder" style="font-weight:bold;">N/A</span></p>
+                </div>
+                <div class="form-group"><label for="adminPlatform">Platform:</label><input type="text" id="adminPlatform" placeholder="จะถูก Detect อัตโนมัติ" readonly></div>
+                <div class="form-group"><label for="adminPlatformOrderId">Platform Order ID (ถ้ามี):</label>
+                    <div class="input-group"><input type="text" id="adminPlatformOrderId" placeholder="กรอกเอง หรือ สแกน"><button id="scanPlatformOrderIdButton" type="button" class="secondary">สแกน ID</button></div>
+                    <div id="qrScannerContainer_PlatformOrderId" class="hidden" style="margin-top:5px;"><div id="qrScanner_PlatformOrderId" class="qr-scanner-area"></div><button id="stopScanPlatformOrderIdButton" type="button" class="secondary hidden" style="margin-top:5px;">หยุดสแกน Platform ID</button></div>
+                </div>
+                <div class="form-group"><label for="adminPackageCode">Package Code:</label><input type="text" id="adminPackageCode" placeholder="จะมาจาก QR ที่สแกน" readonly></div>
+                <div class="form-group"><label for="adminDueDate">Due Date:</label><input type="date" id="adminDueDate"></div>
+                <div class="form-group"><label for="adminNotes">หมายเหตุ (ถ้ามี):</label><textarea id="adminNotes" rows="3"></textarea></div>
+                <button id="saveInitialOrderButton" type="button">บันทึกออเดอร์เบื้องต้น</button>
+            </div>
+
+            <div id="adminAddItemsPage" class="container page hidden">
+                <!-- Content for Admin Add Items Page -->
+                 <h2>เพิ่มรายการสินค้า (Order ID: <span id="currentOrderIdForItems" style="font-weight:normal; font-size:0.9em;"></span>)</h2>
+                <div class="form-group"><label for="productSearch">ค้นหา/เพิ่มชื่อสินค้า:</label><input type="text" id="productSearch" placeholder="พิมพ์ชื่อสินค้า..."></div>
+                <div style="display:flex; gap:10px;">
+                    <div class="form-group" style="flex:2;"><label for="quantity">จำนวน:</label><input type="number" id="quantity" value="1" min="1"></div>
+                    <div class="form-group" style="flex:1;"><label for="unit">หน่วย:</label><input type="text" id="unit" placeholder="เช่น ตัว, ชิ้น"></div>
+                </div>
+                <button id="addItemToOrderButton" type="button" style="margin-bottom:20px;">เพิ่มสินค้าในรายการ</button>
+                <h3>รายการสินค้าที่เพิ่มแล้ว:</h3><ul id="itemListCurrentOrder" class="item-checklist"></ul>
+                <button id="confirmAllItemsButton" type="button">ยืนยันรายการสินค้าทั้งหมด</button>
+            </div>
+            
+            <div id="operatorPackingPage" class="container page hidden">
+                <!-- Content for Operator Packing Page -->
+                 <h2>แพ็กสินค้า (Order ID: <span id="currentOrderIdForPacking" style="font-weight:normal; font-size:0.9em;"></span>)</h2>
+                <p><strong>Platform:</strong> <span id="packOrderPlatform"></span></p><p><strong>Due Date:</strong> <span id="packOrderDueDate"></span></p>
+                <h3>Checklist รายการสินค้า:</h3><ul id="packOrderItemList" class="item-checklist"></ul>
+                <div class="form-group"><label for="packingPhoto">ถ่ายรูปสินค้าที่เตรียม:</label><input type="file" id="packingPhoto" accept="image/*" capture="environment"><img id="packingPhotoPreview" src="#" alt="Preview" class="hidden"></div>
+                <div class="form-group"><label for="operatorPackNotes">หมายเหตุ (ถ้ามี):</label><textarea id="operatorPackNotes" rows="3"></textarea></div>
+                <button id="confirmPackingButton" type="button">ยืนยันการแพ็ก</button>
+                <div id="supervisorPackCheckResult" class="hidden" style="margin-top:20px; padding:15px; border:1px solid #e0e0e0; border-radius:8px; background-color:#f9f9f9;">
+                    <h4 style="margin-top:0;">ผลการตรวจสอบโดย Supervisor:</h4>
+                    <p>สถานะ: <span id="packCheckStatus" style="font-weight:bold;"></span></p><p>ผู้ตรวจ: <span id="packCheckSupervisor"></span></p><p>หมายเหตุ: <span id="packCheckNotes"></span></p>
+                </div>
+            </div>
+            
+            <p id="appStatus" style="text-align:center; padding:10px; font-size:0.9em;"></p>
+        </div>
+
+        <div id="bottomNavContainer" class="bottom-nav hidden"></div>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+/* Basic Mobile First Styles */
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 10px; background-color: #f4f7f6; color: #333; }
+.container { background-color: white; padding: 20px; border-radius: 12px; margin-bottom:15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+h1, h2, h3 { color: #2c3e50; margin-top:0; }
+h2 { font-size: 1.5em; margin-bottom: 20px; }
+h3 { font-size: 1.2em; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 8px;}
+
+button { background-color: #3498db; color: white; padding: 12px 18px; border: none; border-radius: 8px; cursor: pointer; font-size: 1em; margin-top: 10px; width:100%; transition: background-color 0.2s ease-in-out; font-weight: 500;}
+button:hover { background-color: #2980b9; }
+button.secondary { background-color: #7f8c8d; }
+button.secondary:hover { background-color: #606f70; }
+button:disabled { background-color: #bdc3c7; cursor: not-allowed; }
+
+input[type="text"], input[type="email"], input[type="password"], input[type="date"], input[type="number"], select, textarea {
+    width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #dce4ec; border-radius: 8px; box-sizing: border-box; font-size: 1em;
+}
+input:focus, select:focus, textarea:focus { border-color: #3498db; outline: none; box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2); }
+label { display: block; margin-bottom: 8px; font-weight: 600; color: #555; font-size: 0.9em;}
+.hidden { display: none !important; }
+
+.user-info { text-align: right; margin-bottom:20px; font-size:0.9em; color: #555;}
+.user-info span { font-weight: bold; color: #2c3e50;}
+.user-info button { width:auto; font-size:0.8em; padding:6px 10px; margin-left:10px; background-color: #e74c3c;}
+.user-info button:hover { background-color: #c0392b;}
+
+.page { padding-bottom: 70px; /* For fixed bottom nav */ }
+.bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background-color: #2c3e50; display: flex; justify-content: space-around; padding: 8px 0; box-shadow: 0 -2px 8px rgba(0,0,0,0.1); z-index:1000; }
+.bottom-nav button { width: auto; background:none; color: #ecf0f1; padding: 10px 8px; font-size:0.85em; border:none; opacity: 0.8; }
+.bottom-nav button.active { color: #3498db; font-weight:bold; opacity: 1; }
+
+.item-checklist { list-style-type: none; padding-left: 0; }
+.item-checklist li { padding: 8px 0; border-bottom: 1px dashed #ecf0f1; font-size: 0.95em; display: flex; justify-content: space-between; align-items: center;}
+.item-checklist li:last-child { border-bottom: none; }
+
+.qr-scanner-area { width: 100%; max-width:350px; border:2px dashed #3498db; margin:10px auto; padding:5px; background-color: #f9f9f9; border-radius: 8px;}
+#photoPreview, #packingPhotoPreview { max-width:100%; max-height:250px; margin-top:10px; border:1px solid #dce4ec; display:block; border-radius: 8px; }
+
+.summary-card { background-color:#fff; border-radius:12px; padding:20px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); flex: 1; min-width: 160px; text-align:left; border-left: 5px solid #3498db; }
+.summary-card-icon { font-size: 1.8em; margin-bottom: 10px; color: #3498db; float:right; }
+.summary-card-value { margin:0 0 5px 0; font-size:2em; font-weight:bold; color: #2c3e50;}
+.summary-card-title { margin:0; color:#7f8c8d; font-size:0.95em;}
+.summary-card-subvalue { margin:8px 0 0 0; color:#27ae60; font-size:0.9em; }
+
+table { width:100%; border-collapse: separate; border-spacing: 0 5px; font-size:0.9em; }
+th, td { padding:10px 12px; border-bottom:1px solid #ecf0f1; text-align:left; }
+thead tr { background-color:#f8f9fa; font-weight:600; color: #555;}
+th { border-top:1px solid #ecf0f1;}
+tbody tr:hover { background-color: #f1f8ff; }
+#ordersTableContainer { border:none;}
+.form-group { margin-bottom: 20px; }
+.input-group { display: flex; align-items: center; margin-bottom: 15px; }
+.input-group input[type="text"] { flex-grow: 1; margin-bottom:0; border-top-right-radius:0; border-bottom-right-radius:0; }
+.input-group button { width:auto; padding: 12px; margin-left:-1px; border-top-left-radius:0; border-bottom-left-radius:0; font-size:0.9em;}
