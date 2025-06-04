@@ -20,6 +20,9 @@ export function detectPlatformFromPackageCode(packageCode) {
         // Example: J&T Express or Kerry (often used by Tiktok or other platforms)
         // You might want to differentiate further if needed
         return "Tiktok"; // Or "J&T", "Kerry"
+    } else if (/^\d{8,15}$/.test(code)) {
+        // Some Tiktok package codes are now digits only without any letters
+        return "Tiktok";
     }
     // Add more conditions for other platforms/couriers you use
     // --- End Example Platform Detection Logic ---

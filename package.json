@@ -1,0 +1,11 @@
+{
+  "name": "dragon-delivery-app",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "jest"
+  },
+  "devDependencies": {
+    "jest": "^29.6.1"
+  }
+}
