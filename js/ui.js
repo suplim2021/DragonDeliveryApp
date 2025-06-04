@@ -169,7 +169,7 @@ export function setupRoleBasedUI(currentUserRoleForNav) {
         if (currentUserRoleForNav === 'operator') {
             if (pageId === 'adminCreateOrderPage' || pageId === 'supervisorPackCheckListPage') btn.disabled = true;
         } else if (currentUserRoleForNav === 'supervisor') {
-            if (pageId === 'adminCreateOrderPage' || pageId === 'operatorTaskListPage' || pageId === 'operatorShippingBatchPage') btn.disabled = true;
+            if (pageId === 'adminCreateOrderPage' || pageId === 'operatorShippingBatchPage') btn.disabled = true;
         } else if (currentUserRoleForNav !== 'administrator') {
             // Unknown role: disable everything except dashboard
             if (pageId !== 'dashboardPage') btn.disabled = true;
