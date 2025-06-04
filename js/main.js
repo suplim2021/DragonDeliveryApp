@@ -6,7 +6,7 @@ import { initializeCoreDOMElements, showPage, setupRoleBasedUI } from './ui.js';
 // No need to import uiElements object from ui.js anymore if modules get their own elements
 
 import { initializeAdminOrderPageListeners } from './adminOrderPage.js';
-import { initializeAdminItemsPageListeners } from './adminItemsPage.js';
+import { initializeAdminItemsPageListeners, loadOrderForAddingItems } from './adminItemsPage.js';
 import { initializeOperatorPackingPageListeners, loadOrderForPacking as operatorLoadOrderForPacking } from './operatorPackingPage.js';
 import { initializeDashboardPageListeners, updateCurrentDateOnDashboard, loadDashboardData } from './dashboardPage.js';
 import { initializeSupervisorPackCheckListeners, loadOrdersForPackCheck } from './supervisorPackCheckPage.js';
@@ -73,10 +73,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Expose page-specific load/setup functions to be callable from ui.js's showPage via window object
     window.updateCurrentDateOnDashboardGlobal = updateCurrentDateOnDashboard;
     window.loadDashboardDataGlobal = loadDashboardData;
-    window.loadOrdersForPackCheckGlobal = loadOrdersForPackCheck; 
+    window.loadOrdersForPackCheckGlobal = loadOrdersForPackCheck;
     window.loadOperatorPendingTasksGlobal = loadOperatorPendingTasks;
     window.setupShippingBatchPageGlobal = setupShippingBatchPage;
     window.loadOrderForPacking = operatorLoadOrderForPacking;
+    window.loadOrderForAddingItems = loadOrderForAddingItems;
 });
 
 export { auth, database, storage };
