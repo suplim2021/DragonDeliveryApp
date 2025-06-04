@@ -26,7 +26,39 @@
             
             <!-- Dashboard Page -->
             <div id="dashboardPage" class="container page current-page">
-                <!-- ... (เนื้อหา Dashboard เหมือนเดิม) ... -->
+                <h2>Dashboard</h2>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <span id="currentDateDisplay" style="font-size:0.9em;"></span>
+                    <button id="refreshDashboardButton" type="button" class="secondary" style="width:auto; font-size:0.8em; padding:8px;">รีเฟรช</button>
+                </div>
+                <div id="summaryCardsContainer" style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;"></div>
+                <div id="chartsContainer" style="margin-bottom: 20px;">
+                    <h3>สถิติรายวัน</h3>
+                    <div style="height:250px;"><canvas id="dailyStatsChart"></canvas></div>
+                    <h3 style="margin-top:20px;">สถิติตามแพลตฟอร์ม</h3>
+                    <div style="height:280px; max-width:400px; margin:auto;"><canvas id="platformStatsChart"></canvas></div>
+                </div>
+                <div id="ordersLogContainer">
+                    <h3>ประวัติพัสดุล่าสุด</h3>
+                    <div style="display:flex; gap:10px; margin-bottom:10px; align-items:center;">
+                        <label for="logFilterStatus" style="margin-bottom:0;">สถานะ:</label>
+                        <select id="logFilterStatus" style="width:auto; padding:8px; margin-bottom:0;">
+                            <option value="all">ทั้งหมด</option>
+                            <option value="Pending Item Details">รอเพิ่มสินค้า</option>
+                            <option value="Ready to Pack">รอแพ็ก</option>
+                            <option value="Pending Supervisor Pack Check">รอตรวจแพ็ก</option>
+                            <option value="Ready for Shipment">รอส่ง</option>
+                            <option value="Shipped">ส่งแล้ว</option>
+                        </select>
+                        <button id="applyLogFilterButton" type="button" class="secondary" style="width:auto; font-size:0.8em; padding:8px;">ค้นหา</button>
+                    </div>
+                    <div id="ordersTableContainer" style="max-height: 400px; overflow-y: auto; border:1px solid #ccc;">
+                        <table><thead><tr style="background-color:#f0f0f0;">
+                            <th>Order Key</th><th>Platform</th><th>Package Code</th><th>สถานะ</th><th>Due Date</th>
+                        </tr></thead><tbody id="ordersTableBody"></tbody></table>
+                    </div>
+                    <p id="noOrdersMessage" class="hidden" style="text-align:center; padding:20px;">ไม่พบข้อมูลพัสดุ</p>
+                </div>
             </div>
 
             <!-- Admin: Create Order Page -->
