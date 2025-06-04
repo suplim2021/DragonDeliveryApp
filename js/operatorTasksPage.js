@@ -17,8 +17,8 @@ export function initializeOperatorTasksPageListeners() {
 
 export async function loadOperatorPendingTasks() {
     const currentUserRole = getCurrentUserRole();
-    // Allow admin to also view this page
-    if (currentUserRole !== 'operator' && currentUserRole !== 'administrator') {
+    // Allow admin and supervisor to also view this page
+    if (currentUserRole !== 'operator' && currentUserRole !== 'administrator' && currentUserRole !== 'supervisor') {
         showAppStatus("คุณไม่มีสิทธิ์เข้าถึงหน้านี้", "error", uiElements.appStatus);
         // Consider redirecting to dashboard or login if not authorized
         // showPage('dashboardPage'); 
