@@ -54,25 +54,7 @@ function startPackageCodeScan() {
     if (!html5QrCodeScannerPackageCode) {
         html5QrCodeScannerPackageCode = new Html5Qrcode(adminOrderQRDiv.id, false);
     }
-    Html5Qrcode.getCameras().then(cameras => {
-        if (cameras && cameras.length) {
-            const backCamera = cameras.find(c => c.label.toLowerCase().includes('back'));
-            const camId = (backCamera || cameras[0]).id;
-            html5QrCodeScannerPackageCode.start(
-                { deviceId: { exact: camId } },
-                { fps: 10, qrbox: { width: 250, height: 250 } },
-                onScanSuccess_PackageCode,
-                (errorMessage) => { console.warn("Package Code Scan failure:", errorMessage); }
-            ).catch(err => {
-                alert("ไม่สามารถเปิดกล้องสแกน QR ได้: " + (err?.message || err));
-                stopPackageCodeScan();
-            });
-        } else {
-            alert("ไม่พบกล้องบนอุปกรณ์");
-            stopPackageCodeScan();
-        }
-    }).catch(err => {
-        alert("ไม่สามารถเข้าถึงกล้อง: " + (err?.message || err));
+
         stopPackageCodeScan();
     });
 }
@@ -112,28 +94,7 @@ function startPlatformIdScan() {
     if (!html5QrCodeScannerPlatformOrderId) {
         html5QrCodeScannerPlatformOrderId = new Html5Qrcode(adminOrderPlatformIdQRDiv.id, false);
     }
-    Html5Qrcode.getCameras().then(cameras => {
-        if (cameras && cameras.length) {
-            const backCamera = cameras.find(c => c.label.toLowerCase().includes('back'));
-            const camId = (backCamera || cameras[0]).id;
-            html5QrCodeScannerPlatformOrderId.start(
-                { deviceId: { exact: camId } },
-                { fps: 10, qrbox: { width: 250, height: 150 } },
-                (decodedText, decodedResult) => {
-                    adminOrderPlatformOrderIdInput.value = decodedText.trim();
-                    stopPlatformIdScan();
-                },
-                (errorMessage) => { console.warn("Platform Order ID Scan failure:", errorMessage); }
-            ).catch(err => {
-                alert("ไม่สามารถเปิดกล้องสแกน Platform Order ID ได้: " + (err?.message || err));
-                stopPlatformIdScan();
-            });
-        } else {
-            alert("ไม่พบกล้องบนอุปกรณ์");
-            stopPlatformIdScan();
-        }
-    }).catch(err => {
-        alert("ไม่สามารถเข้าถึงกล้อง: " + (err?.message || err));
+
         stopPlatformIdScan();
     });
 }

@@ -131,7 +131,8 @@ function handlePackingPhotoSelect(event) {
 async function confirmPacking() {
     const currentUser = getCurrentUser(); const currentUserRole = getCurrentUserRole();
     if (!opPacking_appStatus) {console.error("App status element not found in confirmPacking"); return;}
-    if (currentUserRole !== 'operator' || !currentOrderKeyForPacking) { showAppStatus("ไม่มีสิทธิ์หรือไม่ได้เลือกออเดอร์", "error", opPacking_appStatus); return; }
+    if (!['operator','administrator','supervisor'].includes(currentUserRole) || !currentOrderKeyForPacking) {
+        showAppStatus("ไม่มีสิทธิ์หรือไม่ได้เลือกออเดอร์", "error", opPacking_appStatus); return; }
     if (!packingPhotoFile) { showAppStatus("กรุณาถ่ายรูปสินค้าก่อนยืนยัน", "error", opPacking_appStatus); return; }
 
     if(opPacking_confirmButton) opPacking_confirmButton.disabled = true;
