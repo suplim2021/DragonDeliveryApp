@@ -1,6 +1,9 @@
 // js/ui.js
 import { setDefaultDueDate as utilSetDefaultDueDate } from './utils.js';
 
+// Exported object for other modules to grab shared DOM elements
+export const uiElements = {}; // Holds references to commonly used elements
+
 // DOM Elements that are truly global or managed directly by ui.js functions
 let allPagesNodeList = null; // To store the NodeList of all page divs
 let bottomNavContainerDiv = null;
@@ -14,10 +17,49 @@ export function initializeCoreDOMElements() { // Renamed for clarity
     mainAppDiv = document.getElementById('mainApp');
     appStatusDiv = document.getElementById('appStatus');
     bottomNavContainerDiv = document.getElementById('bottomNavContainer');
-    allPagesNodeList = document.querySelectorAll('.page'); 
+    allPagesNodeList = document.querySelectorAll('.page');
+
+    // Populate shared uiElements object for other modules
+    uiElements.appStatus = appStatusDiv;
+    uiElements.bottomNavContainer = bottomNavContainerDiv;
+    uiElements.refreshOperatorTaskList = document.getElementById('refreshOperatorTaskList');
+    uiElements.operatorOrderListContainer = document.getElementById('operatorOrderListContainer');
+    uiElements.noOperatorTasksMessage = document.getElementById('noOperatorTasksMessage');
+
+    uiElements.createNewBatchButton = document.getElementById('createNewBatchButton');
+    uiElements.startScanForBatchButton = document.getElementById('startScanForBatchButton');
+    uiElements.stopScanForBatchButton = document.getElementById('stopScanForBatchButton');
+    uiElements.confirmBatchAndProceedButton = document.getElementById('confirmBatchAndProceedButton');
+    uiElements.courierSelect = document.getElementById('courierSelect');
+    uiElements.otherCourierInput = document.getElementById('otherCourierInput');
+    uiElements.currentBatchIdDisplay = document.getElementById('currentBatchIdDisplay');
+    uiElements.batchItemList = document.getElementById('batchItemList');
+    uiElements.batchItemCount = document.getElementById('batchItemCount');
+    uiElements.qrScanner_Batch_div = document.getElementById('qrScanner_Batch');
+    uiElements.qrScannerContainer_Batch = document.getElementById('qrScannerContainer_Batch');
+    uiElements.confirmShipBatchIdDisplay = document.getElementById('confirmShipBatchIdDisplay');
+    uiElements.confirmShipCourierDisplay = document.getElementById('confirmShipCourierDisplay');
+    uiElements.confirmShipItemCountDisplay = document.getElementById('confirmShipItemCountDisplay');
+    uiElements.shipmentGroupPhoto = document.getElementById('shipmentGroupPhoto');
+    uiElements.shipmentGroupPhotoPreview = document.getElementById('shipmentGroupPhotoPreview');
+    uiElements.getGpsButton = document.getElementById('getGpsButton');
+    uiElements.shipmentGpsLocationDisplay = document.getElementById('shipmentGpsLocationDisplay');
+    uiElements.finalizeShipmentButton = document.getElementById('finalizeShipmentButton');
+
+    uiElements.refreshSupervisorPackCheckList = document.getElementById('refreshSupervisorPackCheckList');
+    uiElements.packCheckListContainer = document.getElementById('packCheckListContainer');
+    uiElements.noPackCheckOrdersMessage = document.getElementById('noPackCheckOrdersMessage');
+    uiElements.approvePackButton = document.getElementById('approvePackButton');
+    uiElements.rejectPackButton = document.getElementById('rejectPackButton');
+    uiElements.checkOrderKeyDisplay = document.getElementById('checkOrderKeyDisplay');
+    uiElements.checkOrderPlatformDisplay = document.getElementById('checkOrderPlatformDisplay');
+    uiElements.checkOrderPackageCodeDisplay = document.getElementById('checkOrderPackageCodeDisplay');
+    uiElements.checkOrderItemListDisplay = document.getElementById('checkOrderItemListDisplay');
+    uiElements.checkOrderPackingPhotoDisplay = document.getElementById('checkOrderPackingPhotoDisplay');
+    uiElements.checkOrderOperatorNotesDisplay = document.getElementById('checkOrderOperatorNotesDisplay');
+    uiElements.supervisorPackCheckNotes = document.getElementById('supervisorPackCheckNotes');
 
     console.log("Core DOM elements for UI initialized (ui.js)");
-    // No need to populate a large global uiElements object here for other modules
 }
 
 export function showPage(pageId) {
@@ -112,26 +154,35 @@ export function updateBottomNavActiveState(currentPageId) {
 export function setupRoleBasedUI(currentUserRoleForNav) {
     if (!bottomNavContainerDiv) { console.error("Bottom Nav Container not found in setupRoleBasedUI."); return; }
     bottomNavContainerDiv.innerHTML = '';
-    let navHtml = `<button type="button" data-pageid="dashboardPage">Dashboard</button>`;
-    console.log("UI: Setting up nav for role:", currentUserRoleForNav);
+    let navHtml = '';
+    navHtml += `<button type="button" data-pageid="dashboardPage">Dashboard</button>`;
+    navHtml += `<button type="button" data-pageid="adminCreateOrderPage">สร้างออเดอร์</button>`;
+    navHtml += `<button type="button" data-pageid="operatorTaskListPage">รายการรอแพ็ก</button>`;
+    navHtml += `<button type="button" data-pageid="supervisorPackCheckListPage">รอตรวจแพ็ก</button>`;
+    navHtml += `<button type="button" data-pageid="operatorShippingBatchPage">เตรียมส่งของ</button>`;
 
-    if (currentUserRoleForNav === 'administrator') {
-        navHtml += `<button type="button" data-pageid="adminCreateOrderPage">สร้างออเดอร์</button>`;
-        navHtml += `<button type="button" data-pageid="operatorTaskListPage">รอแพ็ก (View)</button>`;
-        navHtml += `<button type="button" data-pageid="supervisorPackCheckListPage">รอตรวจแพ็ก (View)</button>`;
-        navHtml += `<button type="button" data-pageid="operatorShippingBatchPage">เตรียมส่ง (View)</button>`;
-    } else if (currentUserRoleForNav === 'operator') {
-        navHtml += `<button type="button" data-pageid="operatorTaskListPage">รายการรอแพ็ก</button>`;
-        navHtml += `<button type="button" data-pageid="operatorShippingBatchPage">เตรียมส่งของ</button>`;
-    } else if (currentUserRoleForNav === 'supervisor') {
-        navHtml += `<button type="button" data-pageid="supervisorPackCheckListPage">รอตรวจแพ็ก</button>`;
-    }
-    
     bottomNavContainerDiv.innerHTML = navHtml;
+
     bottomNavContainerDiv.querySelectorAll('button[data-pageid]').forEach(btn => {
+        const pageId = btn.dataset.pageid;
+        // Disable buttons based on role
+        if (currentUserRoleForNav === 'operator') {
+            if (pageId === 'adminCreateOrderPage' || pageId === 'supervisorPackCheckListPage') btn.disabled = true;
+        } else if (currentUserRoleForNav === 'supervisor') {
+            if (pageId === 'adminCreateOrderPage' || pageId === 'operatorTaskListPage' || pageId === 'operatorShippingBatchPage') btn.disabled = true;
+        } else if (currentUserRoleForNav !== 'administrator') {
+            // Unknown role: disable everything except dashboard
+            if (pageId !== 'dashboardPage') btn.disabled = true;
+        }
+
         btn.addEventListener('click', () => {
-             console.log("UI: Nav button clicked, attempting to show page:", btn.dataset.pageid);
-             showPage(btn.dataset.pageid);
+            if (!btn.disabled) {
+                console.log("UI: Nav button clicked, attempting to show page:", pageId);
+                showPage(pageId);
+            }
         });
     });
 }
+
+// Expose uiElements globally for modules that expect it without importing
+window.uiElements = uiElements;
