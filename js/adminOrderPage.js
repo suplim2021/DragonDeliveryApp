@@ -39,30 +39,88 @@ export function initializeAdminOrderPageListeners() {
         return;
     }
 
-    adminOrderStartQRButton.addEventListener('click', () => { /* ... (rest of the logic, using local vars like adminOrderQRDiv) ... */
-        if (!adminOrderQRDiv) { alert("QR Scanner element for Package Code not found!"); return; }
-        adminOrderQRContainer.classList.remove('hidden');
-        adminOrderStopQRButton.classList.remove('hidden');
-        adminOrderStartQRButton.disabled = true;
-        if (!html5QrCodeScannerPackageCode) html5QrCodeScannerPackageCode = new Html5Qrcode(adminOrderQRDiv.id, false);
-        html5QrCodeScannerPackageCode.start( { facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } },
-            onScanSuccess_PackageCode, (errorMessage) => { /* console.warn("Package Code Scan failure:", errorMessage); */ }
-        ).catch(err => { /* ... (error handling using local vars) ... */ });
-    });
-    adminOrderStopQRButton.addEventListener('click', () => { /* ... (using local vars) ... */ });
-    adminOrderScanPlatformIdButton.addEventListener('click', () => { /* ... (using local vars) ... */ });
-    adminOrderStopPlatformIdQRButton.addEventListener('click', () => { /* ... (using local vars) ... */ });
+    adminOrderStartQRButton.addEventListener('click', startPackageCodeScan);
+    adminOrderStopQRButton.addEventListener('click', stopPackageCodeScan);
+    adminOrderScanPlatformIdButton.addEventListener('click', startPlatformIdScan);
+    adminOrderStopPlatformIdQRButton.addEventListener('click', stopPlatformIdScan);
     adminOrderSaveButton.addEventListener('click', saveInitialOrder);
+}
+
+function startPackageCodeScan() {
+    if (!adminOrderQRDiv) { alert("QR Scanner element for Package Code not found!"); return; }
+    adminOrderQRContainer.classList.remove('hidden');
+    adminOrderStopQRButton.classList.remove('hidden');
+    adminOrderStartQRButton.disabled = true;
+    if (!html5QrCodeScannerPackageCode) {
+        html5QrCodeScannerPackageCode = new Html5Qrcode(adminOrderQRDiv.id, false);
+    }
+    html5QrCodeScannerPackageCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        onScanSuccess_PackageCode,
+        (errorMessage) => { console.warn("Package Code Scan failure:", errorMessage); }
+    ).catch(err => {
+        alert("ไม่สามารถเปิดกล้องสแกน QR ได้: " + err.message);
+        stopPackageCodeScan();
+    });
+}
+
+function stopPackageCodeScan() {
+    if (html5QrCodeScannerPackageCode) {
+        html5QrCodeScannerPackageCode.stop().catch(e => console.warn("Error stopping main scanner:", e));
+    }
+    adminOrderQRContainer.classList.add('hidden');
+    adminOrderStopQRButton.classList.add('hidden');
+    adminOrderStartQRButton.disabled = false;
 }
 
 function onScanSuccess_PackageCode(decodedText, decodedResult) {
     const packageCode = decodedText.trim();
     if (adminOrderScannedQRData) adminOrderScannedQRData.textContent = packageCode;
-    if (adminOrderPackageCodeInput) { /* ... (using local vars) ... */ }
+    if (adminOrderPackageCodeInput) {
+        adminOrderPackageCodeInput.value = packageCode;
+        adminOrderPackageCodeInput.readOnly = true;
+    }
     const detectedPlatform = detectPlatformFromPackageCode(packageCode);
-    if (adminOrderPlatformInput) { /* ... (using local vars) ... */ }
-    if (adminOrderPlatformOrderIdInput && !adminOrderPlatformOrderIdInput.value.trim()) adminOrderPlatformOrderIdInput.focus();
-    if (html5QrCodeScannerPackageCode) { /* ... (using local vars) ... */ }
+    if (adminOrderPlatformInput) {
+        adminOrderPlatformInput.value = detectedPlatform;
+        adminOrderPlatformInput.readOnly = true;
+    }
+    if (adminOrderPlatformOrderIdInput && !adminOrderPlatformOrderIdInput.value.trim()) {
+        adminOrderPlatformOrderIdInput.focus();
+    }
+    stopPackageCodeScan();
+}
+
+function startPlatformIdScan() {
+    if (!adminOrderPlatformIdQRDiv) { alert("QR Scanner element for Platform Order ID not found!"); return; }
+    adminOrderPlatformIdQRContainer.classList.remove('hidden');
+    adminOrderStopPlatformIdQRButton.classList.remove('hidden');
+    adminOrderScanPlatformIdButton.disabled = true;
+    if (!html5QrCodeScannerPlatformOrderId) {
+        html5QrCodeScannerPlatformOrderId = new Html5Qrcode(adminOrderPlatformIdQRDiv.id, false);
+    }
+    html5QrCodeScannerPlatformOrderId.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 150 } },
+        (decodedText, decodedResult) => {
+            adminOrderPlatformOrderIdInput.value = decodedText.trim();
+            stopPlatformIdScan();
+        },
+        (errorMessage) => { console.warn("Platform Order ID Scan failure:", errorMessage); }
+    ).catch(err => {
+        alert("ไม่สามารถเปิดกล้องสแกน Platform Order ID ได้: " + err.message);
+        stopPlatformIdScan();
+    });
+}
+
+function stopPlatformIdScan() {
+    if (html5QrCodeScannerPlatformOrderId) {
+        html5QrCodeScannerPlatformOrderId.stop().catch(e => console.warn("Error stopping Platform ID scanner:", e));
+    }
+    adminOrderPlatformIdQRContainer.classList.add('hidden');
+    adminOrderStopPlatformIdQRButton.classList.add('hidden');
+    adminOrderScanPlatformIdButton.disabled = false;
 }
 
 async function saveInitialOrder() {
