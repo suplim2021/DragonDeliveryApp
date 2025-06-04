@@ -1,49 +1,82 @@
 // js/main.js
-import { auth, database, storage } from './config.js'; // Import initialized Firebase services
+import { auth, database, storage } from './config.js';
 import { initializeAuthEventListeners, onAuthStateChangeHandler } from './auth.js';
-import { initializeDOMElements, addEventListeners as addMainEventListeners, showPage } from './ui.js';
+// initializeCoreDOMElements is from ui.js, showPage and setupRoleBasedUI are also from ui.js
+import { initializeCoreDOMElements, showPage, setupRoleBasedUI } from './ui.js'; 
+// No need to import uiElements object from ui.js anymore if modules get their own elements
+
 import { initializeAdminOrderPageListeners } from './adminOrderPage.js';
 import { initializeAdminItemsPageListeners } from './adminItemsPage.js';
-import { initializeOperatorPackingPageListeners } from './operatorPackingPage.js';
-import { initializeDashboardPageListeners } from './dashboardPage.js';
+import { initializeOperatorPackingPageListeners, loadOrderForPacking as operatorLoadOrderForPacking } from './operatorPackingPage.js';
+import { initializeDashboardPageListeners, updateCurrentDateOnDashboard, loadDashboardData } from './dashboardPage.js';
+import { initializeSupervisorPackCheckListeners, loadOrdersForPackCheck } from './supervisorPackCheckPage.js';
+import { initializeOperatorTasksPageListeners, loadOperatorPendingTasks } from './operatorTasksPage.js';
+import { initializeOperatorShippingPageListeners, setupShippingBatchPage } from './operatorShippingPage.js'; 
 
-// Global state variables that might be shared or accessed by multiple modules
-// Or they can be managed within their respective modules and exposed via functions if needed
-let currentUser = null;
-let currentUserRole = null;
+window.currentUserFromAuth = null; 
+window.currentUserRoleFromAuth = null;
 
-// Function to update global currentUser and currentUserRole
-// This can be called from auth.js after successful login and role fetch
-function setCurrentUser(user, role) {
-    currentUser = user;
-    currentUserRole = role;
-    console.log("Current user set in main.js:", currentUser, "Role:", currentUserRole);
+function setCurrentUserAndUpdateUI(user, role) {
+    window.currentUserFromAuth = user;
+    window.currentUserRoleFromAuth = role;
+    console.log("User state updated in main.js: User:", user ? user.email : null, "Role:", role);
+    
+    // Get global UI elements directly here if needed, or assume ui.js handles its own global elements
+    const userDisplayEmailEl = document.getElementById('userDisplayEmail');
+    const userDisplayRoleEl = document.getElementById('userDisplayRole');
+    const loginPageEl = document.getElementById('loginPage');
+    const mainAppEl = document.getElementById('mainApp');
+    const bottomNavContainerEl = document.getElementById('bottomNavContainer');
+
+    if (userDisplayEmailEl && userDisplayRoleEl && loginPageEl && mainAppEl && bottomNavContainerEl) {
+        if (user) { 
+            userDisplayEmailEl.textContent = user.email;
+            userDisplayRoleEl.textContent = role || 'N/A';
+            loginPageEl.classList.add('hidden');
+            mainAppEl.classList.remove('hidden');
+            bottomNavContainerEl.classList.remove('hidden');
+            setupRoleBasedUI(role); // This function is imported from ui.js and uses its own DOM knowledge
+            showPage('dashboardPage'); // This function is imported from ui.js
+        } else { 
+            userDisplayEmailEl.textContent = '';
+            userDisplayRoleEl.textContent = '';
+            mainAppEl.classList.add('hidden');
+            bottomNavContainerEl.classList.add('hidden');
+            if(bottomNavContainerEl) bottomNavContainerEl.innerHTML = ''; // Check if exists
+            loginPageEl.classList.remove('hidden');
+            console.log("UI reset for login page (main.js).");
+        }
+    } else {
+        console.error("Core UI elements for login/logout state missing in setCurrentUserAndUpdateUI. Check IDs.");
+    }
 }
 
-// Pass setCurrentUser function to auth module if needed, or auth module can directly update UI elements related to user info
-// For simplicity, auth.js will handle UI updates for user info (email, role display)
-
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("DOM fully loaded and parsed");
-    initializeDOMElements(); // Initialize all DOM element variables from ui.js
+    console.log("DOM fully loaded and parsed (main.js)");
+    initializeCoreDOMElements(); // Initialize core UI elements needed by ui.js itself
     
-    // Initialize authentication state listener (this is crucial)
-    onAuthStateChangeHandler(setCurrentUser); // Pass the callback to update user state
-
-    // Add global event listeners (like login, logout which are always present)
-    initializeAuthEventListeners(); // Sets up login, logout button listeners
-
-    // Add event listeners specific to different pages/modules
-    // These functions will be defined in their respective JS files
+    onAuthStateChangeHandler(setCurrentUserAndUpdateUI);
+    
+    // Initialize event listeners for all components/pages
+    // These modules will now query their own DOM elements internally
+    initializeAuthEventListeners(); 
     initializeAdminOrderPageListeners();
     initializeAdminItemsPageListeners();
     initializeOperatorPackingPageListeners();
     initializeDashboardPageListeners();
+    initializeSupervisorPackCheckListeners();
+    initializeOperatorTasksPageListeners();
+    initializeOperatorShippingPageListeners();
+    
+    console.log("Initial event listeners set up (main.js)");
 
-    // Note: Initial page to show (e.g., 'dashboardPage' or 'loginPage')
-    // will be handled by onAuthStateChangeHandler based on login status.
+    // Expose page-specific load/setup functions to be callable from ui.js's showPage via window object
+    window.updateCurrentDateOnDashboardGlobal = updateCurrentDateOnDashboard;
+    window.loadDashboardDataGlobal = loadDashboardData;
+    window.loadOrdersForPackCheckGlobal = loadOrdersForPackCheck; 
+    window.loadOperatorPendingTasksGlobal = loadOperatorPendingTasks;
+    window.setupShippingBatchPageGlobal = setupShippingBatchPage;
+    window.loadOrderForPacking = operatorLoadOrderForPacking;
 });
 
-// Export global state or functions if needed by other modules directly,
-// though it's often better to pass them as parameters or use callbacks.
-export { currentUser, currentUserRole, setCurrentUser, auth, database, storage };
+export { auth, database, storage };

@@ -1,5 +1,4 @@
 // js/utils.js
-
 /**
  * Detects the platform based on the package code.
  * IMPORTANT: This logic needs to be customized based on actual package code formats.

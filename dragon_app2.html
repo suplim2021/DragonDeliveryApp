@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dragon Delivery Tracking</title>
+    <style>
+        /* ใส่ CSS ทั้งหมดของคุณที่นี่ (จากไฟล์ style.css เดิม) */
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 10px; background-color: #f4f7f6; color: #333; }
+        .container { background-color: white; padding: 20px; border-radius: 12px; margin-bottom:15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        h1, h2, h3 { color: #2c3e50; margin-top:0; }
+        h2 { font-size: 1.5em; margin-bottom: 20px; }
+        h3 { font-size: 1.2em; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 8px;}
+        button { background-color: #3498db; color: white; padding: 12px 18px; border: none; border-radius: 8px; cursor: pointer; font-size: 1em; margin-top: 10px; width:100%; transition: background-color 0.2s ease-in-out; font-weight: 500;}
+        button:hover { background-color: #2980b9; }
+        button.secondary { background-color: #7f8c8d; }
+        button.secondary:hover { background-color: #606f70; }
+        button:disabled { background-color: #bdc3c7; cursor: not-allowed; }
+        input[type="text"], input[type="email"], input[type="password"], input[type="date"], input[type="number"], select, textarea {
+            width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #dce4ec; border-radius: 8px; box-sizing: border-box; font-size: 1em;
+        }
+        input:focus, select:focus, textarea:focus { border-color: #3498db; outline: none; box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2); }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #555; font-size: 0.9em;}
+        .hidden { display: none !important; }
+        .user-info { text-align: right; margin-bottom:20px; font-size:0.9em; color: #555;}
+        .user-info span { font-weight: bold; color: #2c3e50;}
+        .user-info button { width:auto; font-size:0.8em; padding:6px 10px; margin-left:10px; background-color: #e74c3c;}
+        .user-info button:hover { background-color: #c0392b;}
+        .page { padding-bottom: 70px; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background-color: #2c3e50; display: flex; justify-content: space-around; padding: 8px 0; box-shadow: 0 -2px 8px rgba(0,0,0,0.1); z-index:1000; }
+        .bottom-nav button { width: auto; background:none; color: #ecf0f1; padding: 10px 8px; font-size:0.85em; border:none; opacity: 0.8; }
+        .bottom-nav button.active { color: #3498db; font-weight:bold; opacity: 1; }
+        .item-checklist { list-style-type: none; padding-left: 0; }
+        .item-checklist li { padding: 8px 0; border-bottom: 1px dashed #ecf0f1; font-size: 0.95em; display: flex; justify-content: space-between; align-items: center;}
+        .item-checklist li:last-child { border-bottom: none; }
+        .qr-scanner-area { width: 100%; max-width:350px; border:2px dashed #3498db; margin:10px auto; padding:5px; background-color: #f9f9f9; border-radius: 8px;}
+        #photoPreview, #packingPhotoPreview, #shipmentGroupPhotoPreview { max-width:100%; max-height:250px; margin-top:10px; border:1px solid #dce4ec; display:block; border-radius: 8px; }
+        .summary-card { background-color:#fff; border-radius:12px; padding:20px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); flex: 1; min-width: 160px; text-align:left; border-left: 5px solid #3498db; }
+        .summary-card-icon { font-size: 1.8em; margin-bottom: 10px; color: #3498db; float:right; }
+        .summary-card-value { margin:0 0 5px 0; font-size:2em; font-weight:bold; color: #2c3e50;}
+        .summary-card-title { margin:0; color:#7f8c8d; font-size:0.95em;}
+        .summary-card-subvalue { margin:8px 0 0 0; color:#27ae60; font-size:0.9em; }
+        table { width:100%; border-collapse: separate; border-spacing: 0 5px; font-size:0.9em; }
+        th, td { padding:10px 12px; border-bottom:1px solid #ecf0f1; text-align:left; }
+        thead tr { background-color:#f8f9fa; font-weight:600; color: #555;}
+        th { border-top:1px solid #ecf0f1;}
+        tbody tr:hover { background-color: #f1f8ff; }
+        #ordersTableContainer { border:none;}
+        .form-group { margin-bottom: 20px; }
+        .input-group { display: flex; align-items: center; margin-bottom: 15px; }
+        .input-group input[type="text"] { flex-grow: 1; margin-bottom:0; border-top-right-radius:0; border-bottom-right-radius:0; }
+        .input-group button { width:auto; padding: 12px; margin-left:-1px; border-top-left-radius:0; border-bottom-left-radius:0; font-size:0.9em;}
+        .app-status-message.success { color: green; background-color: #e6ffed; border: 1px solid #b7ebc2; padding: 8px; border-radius: 4px; margin-top: 10px; text-align: center;}
+        .app-status-message.error { color: red; background-color: #ffe6e6; border: 1px solid #ffb7b7; padding: 8px; border-radius: 4px; margin-top: 10px; text-align: center;}
+        .app-status-message.info { color: blue; background-color: #e6f7ff; border: 1px solid #b7dfff; padding: 8px; border-radius: 4px; margin-top: 10px; text-align: center;}
+    </style>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div id="appContainer">
+        <!-- Login Page -->
+        <div id="loginPage" class="container page">
+            <!-- ... (HTML ของหน้า Login เหมือนเดิม) ... -->
+        </div>
+
+        <!-- Main App Area -->
+        <div id="mainApp" class="hidden">
+            <div class="user-info">Logged in as: <span id="userDisplayEmail"></span> (<span id="userDisplayRole"></span>)<button id="logoutButton" type="button">Logout</button></div>
+            
+            <!-- Dashboard Page -->
+            <div id="dashboardPage" class="container page current-page">
+                <!-- ... (HTML ของหน้า Dashboard เหมือนเดิม) ... -->
+            </div>
+
+            <!-- Admin: Create Order Page -->
+            <div id="adminCreateOrderPage" class="container page hidden">
+                <!-- ... (HTML ของหน้า Admin Create Order เหมือนเดิม) ... -->
+            </div>
+
+            <!-- Admin: Add Items Page -->
+            <div id="adminAddItemsPage" class="container page hidden">
+                <!-- ... (HTML ของหน้า Admin Add Items เหมือนเดิม) ... -->
+            </div>
+            
+            <!-- Operator: Packing Page -->
+            <div id="operatorPackingPage" class="container page hidden">
+                <!-- ... (HTML ของหน้า Operator Packing เหมือนเดิม) ... -->
+            </div>
+
+            <!-- Operator: Task List Page -->
+            <div id="operatorTaskListPage" class="container page hidden">
+                <!-- ... (HTML ของหน้า Operator Task List เหมือนเดิม) ... -->
+            </div>
+
+            <!-- Operator: Shipping Batch Page -->
+            <div id="operatorShippingBatchPage" class="container page hidden">
+                <!-- ... (HTML ของหน้า Operator Shipping Batch เหมือนเดิม) ... -->
+            </div>
+
+            <!-- Operator: Confirm Shipment Page -->
+            <div id="operatorConfirmShipmentPage" class="container page hidden">
+                <!-- ... (HTML ของหน้า Operator Confirm Shipment เหมือนเดิม) ... -->
+            </div>
+
+            <!-- Supervisor: Pack Check List Page -->
+            <div id="supervisorPackCheckListPage" class="container page hidden">
+                <!-- ... (HTML ของหน้า Supervisor Pack Check List เหมือนเดิม) ... -->
+            </div>
+
+            <!-- Supervisor: Individual Pack Check Page -->
+            <div id="supervisorIndividualPackCheckPage" class="container page hidden">
+                 <h2>ตรวจสอบการแพ็ก Order: <span id="checkOrderKeyDisplay"></span></h2>
+                 <div>
+                     <p><strong>Platform:</strong> <span id="checkOrderPlatformDisplay"></span></p>
+                     <p><strong>Package Code:</strong> <span id="checkOrderPackageCodeDisplay"></span></p>
+                     <h3>รายการสินค้าที่ควรมี:</h3>
+                     <ul id="checkOrderItemListDisplay" class="item-checklist"></ul>
+                 </div>
+                 <div style="margin-top:20px;">
+                     <h3>รูปภาพจาก Operator:</h3>
+                     <img id="checkOrderPackingPhotoDisplay" src="#" alt="รูปภาพการแพ็ก" style="max-width:100%; border:1px solid #ccc; border-radius:8px;">
+                     <p><strong>หมายเหตุจาก Operator:</strong> <span id="checkOrderOperatorNotesDisplay"></span></p>
+                 </div>
+                 <div style="margin-top:20px;">
+                     <h3>การดำเนินการตรวจสอบ:</h3>
+                     <div class="form-group">
+                         <label for="supervisorPackCheckNotes">หมายเหตุ Supervisor:</label>
+                         <textarea id="supervisorPackCheckNotes" rows="3"></textarea>
+                     </div>
+                     <div style="display:flex; gap:10px;">
+                         <button id="approvePackButton" type="button" style="background-color:#2ecc71;">อนุมัติการแพ็ก</button>
+                         <button id="rejectPackButton" type="button" style="background-color:#e74c3c;">ปฏิเสธการแพ็ก</button>
+                     </div>
+                 </div>
+            </div>
+            
+            <p id="appStatus" style="text-align:center; padding:10px; font-size:0.9em;"></p>
+        </div>
+
+        <div id="bottomNavContainer" class="bottom-nav hidden"></div>
+    </div>
+
+    <script type="module">
+        // ----- Start of Firebase SDK Imports (จาก config.js เดิม) -----
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getDatabase, ref, set, get, update, serverTimestamp, push, child, query, orderByChild, equalTo, limitToLast } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+        import { getStorage, ref as storageRefFirebase, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+        // ----- End of Firebase SDK Imports -----
+
+        // !!!!!!!!!! ใส่ FIREBASE CONFIG ของคุณจริงๆ ตรงนี้ !!!!!!!!!!
+        const firebaseConfig = {
+            apiKey: "AIzaSyAGWAYD5mvDsyyY4IovRjYUYPpj7WLUrFE",
+            authDomain: "dragondeliveryapp.firebaseapp.com",
+            databaseURL: "https://dragondeliveryapp-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "dragondeliveryapp",
+            storageBucket: "dragondeliveryapp.firebasestorage.app",
+            messagingSenderId: "912014929398",
+            appId: "1:912014929398:web:8488118a158c0d8d936bd7"
+
+        };
+        // !!!!!!!!!! สิ้นสุด FIREBASE CONFIG !!!!!!!!!!
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+        const storage = getStorage(app);
+
+        // ----- Start of Global Variables (จาก main.js และ module อื่นๆ) -----
+        let currentUser = null;
+        let currentUserRole = null;
+        // Scanners
+        let html5QrCodeScannerAdminOrder = null;
+        let html5QrCodeScannerPlatformOrderId = null;
+        let html5QrScannerForBatch = null;
+        // Chart Instances
+        let dailyChartInstance = null;
+        let platformChartInstance = null;
+        // Current Order/Batch context
+        let currentOrderKeyForItems = null;
+        let currentOrderKeyForPacking = null;
+        let packingPhotoFile = null;
+        let currentActiveBatchId = null;
+        let itemsInCurrentBatch = {};
+        let shipmentGroupPhotoFile = null;
+        let currentOrderKeyForSupervisorCheck = null;
+        // ----- End of Global Variables -----
+
+        // ----- Start of DOM Element Variables (จะถูก Get ใน initializeCoreDOMElements และ InitializeListeners ของแต่ละส่วน) -----
+        // (ui.js เดิม)
+        let allPagesNodeList, bottomNavContainerDiv, appStatusDiv, loginPageDiv, mainAppDiv,
+            userDisplayEmailDiv, userDisplayRoleDiv, logoutButtonEl, loginButtonEl, emailInputEl, passwordInputEl, loginErrorEl;
+        // (dashboardPage.js เดิม)
+        let el_currentDateDisplay, el_refreshDashboardButton, el_summaryCardsContainer, 
+            el_dailyStatsCanvas, el_platformStatsCanvas, el_logFilterSelect, 
+            el_applyLogFilterButton, el_ordersTableBody, el_noOrdersMessage;
+        // (adminOrderPage.js เดิม)
+        let el_adminCreateOrderPage, el_startQRScanButton_AdminOrder, el_qrScannerContainer_AdminOrder,
+            el_qrScanner_AdminOrder_div, el_stopQRScanButton_AdminOrder, el_scannedQRData_AdminOrder,
+            el_adminPlatformInput, el_adminPlatformOrderIdInput, el_scanPlatformOrderIdButton,
+            el_qrScannerContainer_PlatformOrderId, el_qrScanner_PlatformOrderId_div, el_stopScanPlatformOrderIdButton,
+            el_adminPackageCodeInput, el_adminDueDateInput, el_adminNotesInput, el_saveInitialOrderButton;
+        // (adminItemsPage.js เดิม)
+        let el_adminAddItemsPage, el_currentOrderIdForItemsSpan, el_productSearchInput,
+            el_quantityInput, el_unitInput, el_addItemToOrderButton,
+            el_itemListCurrentOrderUL, el_confirmAllItemsButton;
+        // (operatorPackingPage.js เดิม)
+        let el_operatorPackingPage, el_currentOrderIdForPackingSpan, el_packOrderPlatformSpan, el_packOrderDueDateSpan,
+            el_packOrderItemListUL, el_packingPhotoInput, el_packingPhotoPreviewImg,
+            el_operatorPackNotesTextarea, el_confirmPackingButton, el_supervisorPackCheckResultDiv,
+            el_packCheckStatusSpan, el_packCheckSupervisorSpan, el_packCheckNotesSpan;
+        // (operatorTasksPage.js เดิม)
+        let el_operatorTaskListPage, el_refreshOperatorTaskList, el_operatorOrderListContainer, el_noOperatorTasksMessage;
+        // (operatorShippingPage.js เดิม)
+        let el_operatorShippingBatchPage, el_courierSelect, el_otherCourierInput, el_createNewBatchButton,
+            el_currentBatchIdDisplay, el_startScanForBatchButton, el_qrScannerContainer_Batch,
+            el_qrScanner_Batch_div, el_stopScanForBatchButton, el_batchItemCount, el_batchItemList,
+            el_confirmBatchAndProceedButton, el_operatorConfirmShipmentPage, el_confirmShipBatchIdDisplay,
+            el_confirmShipCourierDisplay, el_confirmShipItemCountDisplay, el_shipmentGroupPhoto,
+            el_shipmentGroupPhotoPreview, el_shipmentGpsLocationDisplay, el_getGpsButton, el_finalizeShipmentButton;
+        // (supervisorPackCheckPage.js เดิม)
+        let el_supervisorPackCheckListPage, el_refreshSupervisorPackCheckList, el_packCheckListContainer, el_noPackCheckOrdersMessage,
+            el_supervisorIndividualPackCheckPage, el_checkOrderKeyDisplay, el_checkOrderPlatformDisplay,
+            el_checkOrderPackageCodeDisplay, el_checkOrderItemListDisplay, el_checkOrderPackingPhotoDisplay,
+            el_checkOrderOperatorNotesDisplay, el_supervisorPackCheckNotesInput, el_approvePackButton, el_rejectPackButton;
+        // ----- End of DOM Element Variables -----
+
+        // ----- Start of UTILS (จาก utils.js เดิม) -----
+        function detectPlatformFromPackageCode(packageCode) { /* ... โค้ด detectPlatformFromPackageCode ... */ }
+        function setDefaultDueDate(adminDueDateInputElement) { /* ... โค้ด setDefaultDueDate ... */ }
+        function showAppStatus(message, type = 'info', appStatusElement) { /* ... โค้ด showAppStatus ... */ }
+        // ----- End of UTILS -----
+
+        // ----- Start of UI (จาก ui.js เดิม) -----
+        function initializeCoreDOMElements() { /* ... โค้ด initializeCoreDOMElements ที่ Get Element ใส่ตัวแปรข้างบน ... */ }
+        function showPage(pageId) { /* ... โค้ด showPage ที่ใช้ตัวแปรข้างบน และเรียก window.ชื่อฟังก์ชันGlobal ... */ }
+        function updateBottomNavActiveState(currentPageId) { /* ... โค้ด updateBottomNavActiveState ... */ }
+        function setupRoleBasedUI(currentUserRoleForNav) { /* ... โค้ด setupRoleBasedUI ... */ }
+        // ----- End of UI -----
+
+        // ----- Start of AUTH (จาก auth.js เดิม) -----
+        function initializeAuthEventListeners() { /* ... โค้ด initializeAuthEventListeners ที่ใช้ตัวแปร DOM ข้างบน ... */ }
+        function onAuthStateChangeHandler(mainUserUpdateCb) { /* ... โค้ด onAuthStateChangeHandler ... */ }
+        function getCurrentUserRole() { return currentUserRole; } // แก้ให้ใช้ currentUserRole จาก Global Scope ของ Script นี้
+        function getCurrentUser() { return currentUser; } // แก้ให้ใช้ currentUser จาก Global Scope ของ Script นี้
+        // ----- End of AUTH -----
+
+        // ----- Start of AdminOrderPage (จาก adminOrderPage.js เดิม) -----
+        function initializeAdminOrderPageListeners() { /* ... โค้ด initializeAdminOrderPageListeners ... */ }
+        function onScanSuccess_PackageCode(decodedText, decodedResult) { /* ... โค้ด onScanSuccess_PackageCode ... */ }
+        async function saveInitialOrder() { /* ... โค้ด saveInitialOrder ... */ }
+        // ----- End of AdminOrderPage -----
+
+        // ----- Start of AdminItemsPage (จาก adminItemsPage.js เดิม) -----
+        function initializeAdminItemsPageListeners() { /* ... โค้ด initializeAdminItemsPageListeners ... */ }
+        function loadOrderForAddingItems(orderKey) { /* ... โค้ด loadOrderForAddingItems ... */ }
+        function renderItemInList(itemId, itemData) { /* ... โค้ด renderItemInList ... */ }
+        async function addItemToOrder() { /* ... โค้ด addItemToOrder ... */ }
+        async function confirmAllItems() { /* ... โค้ด confirmAllItems ... */ }
+        window.deleteItemFromList = async function(orderKey, itemId) { /* ... โค้ด deleteItemFromList ... */ };
+        // ----- End of AdminItemsPage -----
+
+        // ----- Start of OperatorPackingPage (จาก operatorPackingPage.js เดิม) -----
+        function initializeOperatorPackingPageListeners() { /* ... โค้ด initializeOperatorPackingPageListeners ... */ }
+        async function loadOrderForPacking(orderKey) { /* ... โค้ด loadOrderForPacking ... */ }
+        function handlePackingPhotoSelect(event) { /* ... โค้ด handlePackingPhotoSelect ... */ }
+        async function confirmPacking() { /* ... โค้ด confirmPacking ... */ }
+        // ----- End of OperatorPackingPage -----
+
+        // ----- Start of OperatorTasksPage (จาก operatorTasksPage.js เดิม) -----
+        function initializeOperatorTasksPageListeners() { /* ... โค้d initializeOperatorTasksPageListeners ... */ }
+        async function loadOperatorPendingTasks() { /* ... โค้ด loadOperatorPendingTasks ... */ }
+        // ----- End of OperatorTasksPage -----
+
+        // ----- Start of OperatorShippingPage (จาก operatorShippingPage.js เดิม) -----
+        function initializeOperatorShippingPageListeners() { /* ... โค้ด initializeOperatorShippingPageListeners ... */ }
+        function setupShippingBatchPage() { /* ... โค้ด setupShippingBatchPage ... */ }
+        async function createOrSelectBatch() { /* ... โค้ด createOrSelectBatch ... */ }
+        function startScanForBatch() { /* ... โค้ด startScanForBatch ... */ }
+        function stopScanForBatch() { /* ... โค้ด stopScanForBatch ... */ }
+        function renderBatchItems() { /* ... โค้ด renderBatchItems ... */ }
+        function confirmBatchAndMoveToPhoto() { /* ... โค้ด confirmBatchAndMoveToPhoto ... */ }
+        function handleShipmentGroupPhotoSelect(event) { /* ... โค้ด handleShipmentGroupPhotoSelect ... */ }
+        function getGpsLocation() { /* ... โค้ด getGpsLocation ... */ }
+        async function finalizeShipment() { /* ... โค้ด finalizeShipment ... */ }
+        // ----- End of OperatorShippingPage -----
+
+        // ----- Start of SupervisorPackCheckPage (จาก supervisorPackCheckPage.js เดิม) -----
+        function initializeSupervisorPackCheckListeners() { /* ... โค้ด initializeSupervisorPackCheckListeners ... */ }
+        async function loadOrdersForPackCheck() { /* ... โค้ด loadOrdersForPackCheck ... */ }
+        async function loadIndividualOrderForSupervisorCheck(orderKey) { /* ... โค้ด loadIndividualOrderForSupervisorCheck ... */ }
+        async function handleSupervisorPackAction(isApproved) { /* ... โค้ด handleSupervisorPackAction ... */ }
+        // ----- End of SupervisorPackCheckPage -----
+
+        // ----- Start of DashboardPage (จาก dashboardPage.js เดิม) -----
+        function initializeDashboardPageListeners() { /* ... โค้ด initializeDashboardPageListeners ... */ }
+        function updateCurrentDateOnDashboard() { /* ... โค้ด updateCurrentDateOnDashboard ... */ }
+        async function loadDashboardData(filterStatus = 'all') { /* ... โค้ด loadDashboardData ... */ }
+        function updateSummaryCards(orders) { /* ... โค้ด updateSummaryCards ... */ }
+        function createSummaryCard(title, value, subValue, icon) { /* ... โค้ด createSummaryCard ... */ }
+        function updateOrdersLogTable(orders, filterStatus = 'all') { /* ... โค้ด updateOrdersLogTable ... */ }
+        function renderCharts(orders) { /* ... โค้ด renderCharts ... */ }
+        // ----- End of DashboardPage -----
+
+
+        // ----- Start of Main Logic (จาก main.js เดิม) -----
+        function setCurrentUserAndUpdateUI(user, role) { // main.js เดิมใช้ตัวแปร currentUser, currentUserRole จาก Global Scope ของ Script นี้
+            currentUser = user; 
+            currentUserRole = role;
+            console.log("User state updated: User:", user ? user.email : null, "Role:", role);
+            if (userDisplayEmailDiv && userDisplayRoleDiv && loginPageDiv && mainAppDiv && bottomNavContainerDiv) {
+                if (user) { 
+                    userDisplayEmailDiv.textContent = user.email;
+                    userDisplayRoleDiv.textContent = role || 'N/A';
+                    loginPageDiv.classList.add('hidden');
+                    mainAppDiv.classList.remove('hidden');
+                    bottomNavContainerDiv.classList.remove('hidden');
+                    setupRoleBasedUI(role); 
+                    showPage('dashboardPage'); 
+                } else { 
+                    userDisplayEmailDiv.textContent = '';
+                    userDisplayRoleDiv.textContent = '';
+                    mainAppDiv.classList.add('hidden');
+                    bottomNavContainerDiv.classList.add('hidden');
+                    if(bottomNavContainerDiv) bottomNavContainerDiv.innerHTML = '';
+                    loginPageDiv.classList.remove('hidden');
+                    console.log("UI reset for login page.");
+                }
+            } else { console.error("Core UI elements missing in setCurrentUserAndUpdateUI."); }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("DOM fully loaded and parsed");
+            initializeCoreDOMElements(); // Get global DOM elements first
+            
+            // Then initialize listeners for all parts of the app
+            // These functions will now get their specific DOM elements internally
+            initializeAuthEventListeners(); 
+            initializeAdminOrderPageListeners();
+            initializeAdminItemsPageListeners();
+            initializeOperatorPackingPageListeners();
+            initializeDashboardPageListeners();
+            initializeSupervisorPackCheckListeners();
+            initializeOperatorTasksPageListeners();
+            initializeOperatorShippingPageListeners();
+            
+            onAuthStateChangeHandler(setCurrentUserAndUpdateUI); // Setup auth state listener AFTER other initializers if they depend on UI elements for setup
+            
+            console.log("Initial event listeners set up");
+
+            // Expose page-specific load/setup functions to be callable from ui.js's showPage via window object
+            window.updateCurrentDateOnDashboardGlobal = updateCurrentDateOnDashboard;
+            window.loadDashboardDataGlobal = loadDashboardData;
+            window.loadOrdersForPackCheckGlobal = loadOrdersForPackCheck; 
+            window.loadOperatorPendingTasksGlobal = loadOperatorPendingTasks;
+            window.setupShippingBatchPageGlobal = setupShippingBatchPage;
+            window.loadOrderForPacking = loadOrderForPacking; // OperatorPackingPage's function
+        });
+        // ----- End of Main Logic -----
+
+    </script>
+</body>
+</html>
