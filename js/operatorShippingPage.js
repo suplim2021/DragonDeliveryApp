@@ -107,9 +107,13 @@ function startScanForBatch() {
     if (!html5QrScannerForBatch) {
         html5QrScannerForBatch = new Html5Qrcode(uiElements.qrScanner_Batch_div.id, false);
     }
-    html5QrScannerForBatch.start(
-        { facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } },
-        async (decodedText, decodedResult) => { // onScanSuccess
+    Html5Qrcode.getCameras().then(cameras => {
+        if (cameras && cameras.length) {
+            const backCamera = cameras.find(c => c.label.toLowerCase().includes('back'));
+            const camId = (backCamera || cameras[0]).id;
+            html5QrScannerForBatch.start(
+                { deviceId: { exact: camId } }, { fps: 10, qrbox: { width: 250, height: 250 } },
+                async (decodedText, decodedResult) => { // onScanSuccess
             const packageCodeScanned = decodedText.trim();
             console.log(`Scanned for batch: ${packageCodeScanned}`);
             // Find the order with this packageCode that is "Ready for Shipment" or similar
@@ -147,9 +151,21 @@ function startScanForBatch() {
             }
             // Scanner does not stop automatically here, user can scan multiple items
         },
-        (errorMessage) => { /* console.warn("Batch Scan failure:", errorMessage); */ }
-    ).catch(err => {
-        alert("ไม่สามารถเปิดกล้องสแกน QR สำหรับ Batch ได้: " + err.message);
+                (errorMessage) => { /* console.warn("Batch Scan failure:", errorMessage); */ }
+            ).catch(err => {
+                alert("ไม่สามารถเปิดกล้องสแกน QR สำหรับ Batch ได้: " + (err?.message || err));
+                uiElements.qrScannerContainer_Batch.classList.add('hidden');
+                uiElements.stopScanForBatchButton.classList.add('hidden');
+                uiElements.startScanForBatchButton.disabled = false;
+            });
+        } else {
+            alert("ไม่พบกล้องบนอุปกรณ์");
+            uiElements.qrScannerContainer_Batch.classList.add('hidden');
+            uiElements.stopScanForBatchButton.classList.add('hidden');
+            uiElements.startScanForBatchButton.disabled = false;
+        }
+    }).catch(err => {
+        alert("ไม่สามารถเข้าถึงกล้อง: " + (err?.message || err));
         uiElements.qrScannerContainer_Batch.classList.add('hidden');
         uiElements.stopScanForBatchButton.classList.add('hidden');
         uiElements.startScanForBatchButton.disabled = false;

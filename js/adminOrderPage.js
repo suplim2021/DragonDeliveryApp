@@ -54,13 +54,7 @@ function startPackageCodeScan() {
     if (!html5QrCodeScannerPackageCode) {
         html5QrCodeScannerPackageCode = new Html5Qrcode(adminOrderQRDiv.id, false);
     }
-    html5QrCodeScannerPackageCode.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        onScanSuccess_PackageCode,
-        (errorMessage) => { console.warn("Package Code Scan failure:", errorMessage); }
-    ).catch(err => {
-        alert("ไม่สามารถเปิดกล้องสแกน QR ได้: " + err.message);
+
         stopPackageCodeScan();
     });
 }
@@ -100,16 +94,7 @@ function startPlatformIdScan() {
     if (!html5QrCodeScannerPlatformOrderId) {
         html5QrCodeScannerPlatformOrderId = new Html5Qrcode(adminOrderPlatformIdQRDiv.id, false);
     }
-    html5QrCodeScannerPlatformOrderId.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 150 } },
-        (decodedText, decodedResult) => {
-            adminOrderPlatformOrderIdInput.value = decodedText.trim();
-            stopPlatformIdScan();
-        },
-        (errorMessage) => { console.warn("Platform Order ID Scan failure:", errorMessage); }
-    ).catch(err => {
-        alert("ไม่สามารถเปิดกล้องสแกน Platform Order ID ได้: " + err.message);
+
         stopPlatformIdScan();
     });
 }
