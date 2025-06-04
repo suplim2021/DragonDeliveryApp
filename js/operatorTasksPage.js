@@ -1,14 +1,25 @@
 // js/operatorTasksPage.js
-import { showPage } from './ui.js'; // uiElements for DOM, showPage for navigation
-import { database } from './config.js';        // Firebase database service
+import { database } from './config.js'; // Firebase database service
 import { ref, query, orderByChild, equalTo, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { showAppStatus } from './utils.js';
 import { getCurrentUserRole } from './auth.js';
 
+// Local references to DOM elements for this page
+let refreshOperatorTaskList;
+let operatorOrderListContainer;
+let noOperatorTasksMessage;
+let appStatus;
+
 
 export function initializeOperatorTasksPageListeners() {
-    if (uiElements.refreshOperatorTaskList) {
-        uiElements.refreshOperatorTaskList.addEventListener('click', loadOperatorPendingTasks);
+    // Query DOM elements when initializing this page
+    refreshOperatorTaskList = document.getElementById('refreshOperatorTaskList');
+    operatorOrderListContainer = document.getElementById('operatorOrderListContainer');
+    noOperatorTasksMessage = document.getElementById('noOperatorTasksMessage');
+    appStatus = document.getElementById('appStatus');
+
+    if (refreshOperatorTaskList) {
+        refreshOperatorTaskList.addEventListener('click', loadOperatorPendingTasks);
     } else {
         console.warn("Refresh button for Operator Task List not found.");
     }
@@ -19,20 +30,19 @@ export async function loadOperatorPendingTasks() {
     const currentUserRole = getCurrentUserRole();
     // Allow admin to also view this page
     if (currentUserRole !== 'operator' && currentUserRole !== 'administrator') {
-        showAppStatus("คุณไม่มีสิทธิ์เข้าถึงหน้านี้", "error", uiElements.appStatus);
+        showAppStatus("คุณไม่มีสิทธิ์เข้าถึงหน้านี้", "error", appStatus);
         // Consider redirecting to dashboard or login if not authorized
-        // showPage('dashboardPage'); 
         return;
     }
 
-    if (!uiElements.operatorOrderListContainer || !uiElements.noOperatorTasksMessage || !uiElements.appStatus) {
+    if (!operatorOrderListContainer || !noOperatorTasksMessage || !appStatus) {
         console.error("Required DOM elements for operator task list are missing.");
         return;
     }
 
-    showAppStatus("กำลังโหลดรายการออเดอร์ที่รอแพ็ก...", "info", uiElements.appStatus);
-    uiElements.operatorOrderListContainer.innerHTML = '<p style="text-align:center; padding:15px;">กำลังโหลด...</p>';
-    uiElements.noOperatorTasksMessage.classList.add('hidden');
+    showAppStatus("กำลังโหลดรายการออเดอร์ที่รอแพ็ก...", "info", appStatus);
+    operatorOrderListContainer.innerHTML = '<p style="text-align:center; padding:15px;">กำลังโหลด...</p>';
+    noOperatorTasksMessage.classList.add('hidden');
 
     try {
         const ordersRef = ref(database, 'orders');
@@ -40,7 +50,7 @@ export async function loadOperatorPendingTasks() {
         const dataQuery = query(ordersRef, orderByChild('status'), equalTo('Ready to Pack'));
         const snapshot = await get(dataQuery);
 
-        uiElements.operatorOrderListContainer.innerHTML = ''; // Clear loading message
+        operatorOrderListContainer.innerHTML = ''; // Clear loading message
 
         if (snapshot.exists()) {
             let tasksFound = 0;
@@ -63,18 +73,18 @@ export async function loadOperatorPendingTasks() {
                     <p style="font-size:0.9em; margin:3px 0;"><strong>Due Date:</strong> ${orderData.dueDate ? new Date(orderData.dueDate).toLocaleDateString('th-TH') : 'N/A'}</p>
                     <button type="button" class="start-packing-btn" data-orderkey="${orderKey}" style="width:auto; padding:8px 15px; margin-top:10px; font-size:0.9em;">เริ่มแพ็กรายการนี้</button>
                 `;
-                uiElements.operatorOrderListContainer.appendChild(orderItemDiv);
+                operatorOrderListContainer.appendChild(orderItemDiv);
             });
 
             if (tasksFound === 0) {
-                uiElements.noOperatorTasksMessage.classList.remove('hidden');
-                 showAppStatus("ไม่พบออเดอร์ที่รอแพ็กในขณะนี้", "info", uiElements.appStatus);
+                noOperatorTasksMessage.classList.remove('hidden');
+                 showAppStatus("ไม่พบออเดอร์ที่รอแพ็กในขณะนี้", "info", appStatus);
             } else {
-                 showAppStatus(`พบ ${tasksFound} ออเดอร์รอแพ็ก`, "success", uiElements.appStatus);
+                 showAppStatus(`พบ ${tasksFound} ออเดอร์รอแพ็ก`, "success", appStatus);
             }
 
             // Add event listeners to the "เริ่มแพ็กรายการนี้" buttons
-            uiElements.operatorOrderListContainer.querySelectorAll('.start-packing-btn').forEach(button => {
+            operatorOrderListContainer.querySelectorAll('.start-packing-btn').forEach(button => {
                 button.addEventListener('click', (e) => {
                     const orderKeyToPack = e.target.dataset.orderkey;
                     console.log(`Operator wants to pack order: ${orderKeyToPack}`);
@@ -90,12 +100,12 @@ export async function loadOperatorPendingTasks() {
             });
 
         } else {
-            uiElements.noOperatorTasksMessage.classList.remove('hidden');
-            showAppStatus("ไม่พบออเดอร์ที่รอแพ็กในขณะนี้", "info", uiElements.appStatus);
+            noOperatorTasksMessage.classList.remove('hidden');
+            showAppStatus("ไม่พบออเดอร์ที่รอแพ็กในขณะนี้", "info", appStatus);
         }
     } catch (error) {
         console.error("Error loading operator pending tasks:", error);
-        uiElements.operatorOrderListContainer.innerHTML = '<p style="color:red; text-align:center;">เกิดข้อผิดพลาดในการโหลดรายการ</p>';
-        showAppStatus("เกิดข้อผิดพลาดในการโหลดรายการ: " + error.message, "error", uiElements.appStatus);
+        operatorOrderListContainer.innerHTML = '<p style="color:red; text-align:center;">เกิดข้อผิดพลาดในการโหลดรายการ</p>';
+        showAppStatus("เกิดข้อผิดพลาดในการโหลดรายการ: " + error.message, "error", appStatus);
     }
 }
