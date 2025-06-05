@@ -1,17 +1,18 @@
 // js/adminItemsPage.js
-import { database, auth } from './config.js';
-import { ref, set, get, update, push, child, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-// import { uiElements, showPage } from './ui.js'; // <<<--- ลบออก
+import { database } from './config.js';
+import { ref, set, get, update, push, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { showAppStatus } from './utils.js';
-import { getCurrentUser, getCurrentUserRole } from './auth.js';
-// Import showPage from ui.js if needed for navigation, or let main.js handle it
+import { getCurrentUserRole, getCurrentUser } from './auth.js';
 import { showPage } from './ui.js';
 
-
-// DOM Elements specific to this page
-let adminItemsAppStatus, adminItemsCurrentOrderIdSpan, adminItemsProductSearchInput,
-    adminItemsQuantityInput, adminItemsUnitInput, adminItemsItemListUL,
-    adminItemsAddItemButton, adminItemsConfirmButton;
+let adminItemsAppStatus,
+    adminItemsCurrentOrderIdSpan,
+    adminItemsProductSearchInput,
+    adminItemsQuantityInput,
+    adminItemsUnitInput,
+    adminItemsItemListUL,
+    adminItemsAddItemButton,
+    adminItemsConfirmButton;
 
 let currentOrderKeyForItems = null;
 
@@ -25,34 +26,112 @@ export function initializeAdminItemsPageListeners() {
     adminItemsAddItemButton = document.getElementById('addItemToOrderButton');
     adminItemsConfirmButton = document.getElementById('confirmAllItemsButton');
 
-    if (!adminItemsAddItemButton || !adminItemsConfirmButton) {
-        console.warn("Admin Items Page core elements not found.");
-        return;
-    }
-    adminItemsAddItemButton.addEventListener('click', addItemToOrder);
-    adminItemsConfirmButton.addEventListener('click', confirmAllItems);
+    if (adminItemsAddItemButton) adminItemsAddItemButton.addEventListener('click', addItemToOrder);
+    if (adminItemsConfirmButton) adminItemsConfirmButton.addEventListener('click', confirmAllItems);
 
-    window.deleteItemFromList = async function(orderKey, itemId) { /* ... (logic using local vars like adminItemsAppStatus and calling loadOrderForAddingItems) ... */ };
+    window.deleteItemFromList = async function(orderKey, itemId) {
+        if (!confirm('ต้องการลบรายการนี้หรือไม่?')) return;
+        try {
+            await remove(ref(database, `orders/${orderKey}/items/${itemId}`));
+            showAppStatus('ลบรายการแล้ว', 'success', adminItemsAppStatus);
+            loadOrderForAddingItems(orderKey);
+        } catch (err) {
+            console.error('delete item error', err);
+            showAppStatus('เกิดข้อผิดพลาด: ' + err.message, 'error', adminItemsAppStatus);
+        }
+    };
 }
 
-export function loadOrderForAddingItems(orderKey) {
-    if (!orderKey) { /* ... */ showPage('dashboardPage'); return; }
+export async function loadOrderForAddingItems(orderKey) {
+    const role = getCurrentUserRole();
+    if (!['administrator','supervisor'].includes(role)) {
+        showAppStatus('คุณไม่มีสิทธิ์', 'error', adminItemsAppStatus);
+        return;
+    }
+    if (!orderKey) {
+        showPage('dashboardPage');
+        return;
+    }
     currentOrderKeyForItems = orderKey;
     if (adminItemsCurrentOrderIdSpan) adminItemsCurrentOrderIdSpan.textContent = orderKey;
+    if (adminItemsProductSearchInput) adminItemsProductSearchInput.value = '';
+    if (adminItemsQuantityInput) adminItemsQuantityInput.value = '1';
+    if (adminItemsUnitInput) adminItemsUnitInput.value = '';
     if (adminItemsItemListUL) adminItemsItemListUL.innerHTML = '';
-    // ... (rest of logic using local vars like adminItemsProductSearchInput) ...
-    // ...
-    showPage('adminAddItemsPage'); // This showPage is imported from ui.js
+
+    try {
+        const snap = await get(ref(database, 'orders/' + orderKey));
+        if (snap.exists()) {
+            const data = snap.val();
+            if (data.items) {
+                Object.keys(data.items).forEach(id => {
+                    renderItemInList(id, data.items[id]);
+                });
+            }
+            showAppStatus('โหลดข้อมูลออเดอร์แล้ว', 'success', adminItemsAppStatus);
+        } else {
+            showAppStatus('ไม่พบออเดอร์', 'error', adminItemsAppStatus);
+            showPage('dashboardPage');
+            return;
+        }
+    } catch(err) {
+        console.error('loadOrderForAddingItems error', err);
+        showAppStatus('เกิดข้อผิดพลาด', 'error', adminItemsAppStatus);
+    }
+    showPage('adminAddItemsPage');
 }
 
 function renderItemInList(itemId, itemData) {
     if (!adminItemsItemListUL) return;
-    // ... (rest of logic using local vars) ...
+    const li = document.createElement('li');
+    li.textContent = `${itemData.productName} - ${itemData.quantity} ${itemData.unit}`;
+    const btn = document.createElement('button');
+    btn.textContent = 'ลบ';
+    btn.style.marginLeft = '10px';
+    btn.addEventListener('click', () => window.deleteItemFromList(currentOrderKeyForItems, itemId));
+    li.appendChild(btn);
+    adminItemsItemListUL.appendChild(li);
 }
+
 async function addItemToOrder() {
-    // ... (logic using local vars like adminItemsProductSearchInput, adminItemsQuantityInput) ...
+    const name = adminItemsProductSearchInput ? adminItemsProductSearchInput.value.trim() : '';
+    const qty = parseInt(adminItemsQuantityInput ? adminItemsQuantityInput.value : '1', 10) || 1;
+    const unit = adminItemsUnitInput ? adminItemsUnitInput.value.trim() : '';
+    if (!name || !currentOrderKeyForItems) {
+        showAppStatus('กรุณาระบุชื่อสินค้า', 'error', adminItemsAppStatus);
+        return;
+    }
+    try {
+        const newRef = push(ref(database, `orders/${currentOrderKeyForItems}/items`));
+        await set(newRef, { productName: name, quantity: qty, unit });
+        renderItemInList(newRef.key, { productName: name, quantity: qty, unit });
+        if (adminItemsProductSearchInput) adminItemsProductSearchInput.value = '';
+        if (adminItemsQuantityInput) adminItemsQuantityInput.value = '1';
+        if (adminItemsUnitInput) adminItemsUnitInput.value = '';
+        showAppStatus('เพิ่มสินค้าแล้ว', 'success', adminItemsAppStatus);
+    } catch (err) {
+        console.error('addItemToOrder error', err);
+        showAppStatus('เกิดข้อผิดพลาด: ' + err.message, 'error', adminItemsAppStatus);
+    }
 }
+
 async function confirmAllItems() {
-    // ... (logic using local vars like adminItemsItemListUL and calling showPage('dashboardPage')) ...
+    const user = getCurrentUser();
+    const role = getCurrentUserRole();
+    if (!user || !['administrator','supervisor'].includes(role) || !currentOrderKeyForItems) {
+        showAppStatus('คุณไม่มีสิทธิ์', 'error', adminItemsAppStatus);
+        return;
+    }
+    try {
+        await update(ref(database, 'orders/' + currentOrderKeyForItems), {
+            status: 'Ready to Pack',
+            lastUpdatedAt: serverTimestamp()
+        });
+        showAppStatus('ยืนยันรายการสินค้าแล้ว', 'success', adminItemsAppStatus);
+        currentOrderKeyForItems = null;
+        showPage('dashboardPage');
+    } catch(err) {
+        console.error('confirmAllItems error', err);
+        showAppStatus('เกิดข้อผิดพลาด: ' + err.message, 'error', adminItemsAppStatus);
+    }
 }
-// (โค้ดส่วนที่เหลือของ adminItemsPage.js ที่คุณมี ก็ปรับให้ใช้ Local Variables ที่ Get มาใน initializeAdminItemsPageListeners)
