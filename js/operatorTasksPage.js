@@ -1,5 +1,5 @@
 // js/operatorTasksPage.js
-import { showPage } from './ui.js'; // uiElements for DOM, showPage for navigation
+import { showPage, uiElements } from './ui.js'; // uiElements for DOM, showPage for navigation
 import { database } from './config.js';        // Firebase database service
 import { ref, query, orderByChild, equalTo, get, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { showAppStatus } from './utils.js';
