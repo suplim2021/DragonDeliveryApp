@@ -118,6 +118,7 @@ function updateOrdersLogTable(orders, filterStatus = 'all') {
     const role = getCurrentUserRole();
     filtered.forEach(o => {
         const r = el_ordersTableBody.insertRow();
+        r.dataset.orderkey = o.key;
         r.insertCell().textContent = o.key && o.key.length > 20 ? o.key.substring(0,17)+'...' : (o.key || 'N/A');
         r.insertCell().textContent = o.platformOrderId || '-';
         r.insertCell().textContent = o.platform || 'N/A';
@@ -148,28 +149,79 @@ async function handleEditOrder(orderKey) {
         alert('คุณไม่มีสิทธิ์แก้ไข');
         return;
     }
-    try {
-        const snap = await get(ref(database, 'orders/' + orderKey));
-        if (!snap.exists()) { alert('ไม่พบข้อมูลออเดอร์'); return; }
-        const data = snap.val();
-        const newStatus = prompt('ปรับสถานะ', data.status || '');
-        if (newStatus === null) return;
-        const currentDue = data.dueDate ? new Date(data.dueDate).toISOString().slice(0,10) : '';
-        const newDue = prompt('Due Date (YYYY-MM-DD)', currentDue);
-        if (newDue === null) return;
-        const updates = { status: newStatus.trim(), lastUpdatedAt: serverTimestamp() };
-        if (newDue) updates.dueDate = new Date(newDue).toISOString();
-        await update(ref(database, 'orders/' + orderKey), updates);
-        if (el_logFilterSelect) {
-            loadDashboardData(el_logFilterSelect.value);
-        } else {
-            loadDashboardData('all');
+    const row = el_ordersTableBody ? el_ordersTableBody.querySelector(`tr[data-orderkey="${orderKey}"]`) : null;
+    if (!row) return;
+    if (row.dataset.editing === 'true') return;
+    row.dataset.editing = 'true';
+
+    const cells = row.querySelectorAll('td');
+    const platformOrderCell = cells[1];
+    const packageCodeCell = cells[3];
+    const statusCell = cells[4];
+    const actionsCell = cells[6];
+
+    const platformOrderInput = document.createElement('input');
+    platformOrderInput.type = 'text';
+    platformOrderInput.value = platformOrderCell.textContent.trim();
+
+    const packageCodeInput = document.createElement('input');
+    packageCodeInput.type = 'text';
+    packageCodeInput.value = packageCodeCell.textContent.trim();
+
+    const statusSelect = document.createElement('select');
+    const statusOptions = {
+        'Ready to Pack': 'รอแพ็ก',
+        'Pending Supervisor Pack Check': 'รอตรวจแพ็ค',
+        'Ready for Shipment': 'รอส่ง',
+        'Shipped': 'ส่งแล้ว'
+    };
+    Object.entries(statusOptions).forEach(([val, text]) => {
+        const opt = document.createElement('option');
+        opt.value = val;
+        opt.textContent = text;
+        statusSelect.appendChild(opt);
+    });
+    statusSelect.value = statusCell.textContent.trim();
+
+    platformOrderCell.innerHTML = '';
+    packageCodeCell.innerHTML = '';
+    statusCell.innerHTML = '';
+    platformOrderCell.appendChild(platformOrderInput);
+    packageCodeCell.appendChild(packageCodeInput);
+    statusCell.appendChild(statusSelect);
+
+    const saveBtn = document.createElement('button');
+    saveBtn.textContent = 'บันทึก';
+    saveBtn.className = 'save-order-btn';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'ยกเลิก';
+    cancelBtn.className = 'cancel-edit-btn';
+
+    actionsCell.innerHTML = '';
+    actionsCell.appendChild(saveBtn);
+    actionsCell.appendChild(cancelBtn);
+
+    saveBtn.addEventListener('click', async () => {
+        try {
+            const updates = {
+                platformOrderId: platformOrderInput.value.trim(),
+                packageCode: packageCodeInput.value.trim(),
+                status: statusSelect.value,
+                lastUpdatedAt: serverTimestamp()
+            };
+            await update(ref(database, 'orders/' + orderKey), updates);
+            loadDashboardData(el_logFilterSelect ? el_logFilterSelect.value : 'all');
+            showAppStatus('อัปเดตข้อมูลแล้ว', 'success', el_appStatus);
+        } catch (err) {
+            console.error('edit order error', err);
+            showAppStatus('เกิดข้อผิดพลาด: ' + err.message, 'error', el_appStatus);
         }
-        showAppStatus('อัปเดตข้อมูลแล้ว', 'success', el_appStatus);
-    } catch (err) {
-        console.error('edit order error', err);
-        showAppStatus('เกิดข้อผิดพลาด: ' + err.message, 'error', el_appStatus);
-    }
+    });
+
+    cancelBtn.addEventListener('click', () => {
+        loadDashboardData(el_logFilterSelect ? el_logFilterSelect.value : 'all');
+    });
 }
 
 function renderCharts(orders) {
