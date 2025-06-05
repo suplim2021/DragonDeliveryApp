@@ -54,3 +54,7 @@ tbody tr:hover { background-color: #f1f8ff; }
 .input-group input[type="text"] { flex-grow: 1; margin-bottom:0; border-top-right-radius:0; border-bottom-right-radius:0; }
 .input-group button { width:auto; padding: 12px; margin-left:-1px; border-top-left-radius:0; border-bottom-left-radius:0; font-size:0.9em;}.delete-order-btn{background-color:#e74c3c;padding:6px 10px;border:none;border-radius:6px;font-size:0.8em;width:auto;color:#fff;margin-left:5px;}
 .delete-order-btn:hover{background-color:#c0392b;}
+.save-order-btn{background-color:#2ecc71;padding:6px 10px;border:none;border-radius:6px;font-size:0.8em;width:auto;color:#fff;}
+.save-order-btn:hover{background-color:#27ae60;}
+.cancel-edit-btn{background-color:#7f8c8d;padding:6px 10px;border:none;border-radius:6px;font-size:0.8em;width:auto;color:#fff;margin-left:5px;}
+.cancel-edit-btn:hover{background-color:#606f70;}
