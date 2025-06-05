@@ -1,7 +1,7 @@
 // js/operatorTasksPage.js
 import { showPage } from './ui.js'; // uiElements for DOM, showPage for navigation
 import { database } from './config.js';        // Firebase database service
-import { ref, query, orderByChild, equalTo, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { ref, query, orderByChild, equalTo, get, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { showAppStatus } from './utils.js';
 import { getCurrentUserRole } from './auth.js';
 
@@ -56,8 +56,11 @@ export async function loadOperatorPendingTasks() {
                 orderItemDiv.style.border = '1px solid #eee';
                 orderItemDiv.style.borderRadius = '8px';
 
-                const editBtnHtml = (currentUserRole === 'administrator' || currentUserRole === 'supervisor') ?
+                const canManage = currentUserRole === 'administrator' || currentUserRole === 'supervisor';
+                const editBtnHtml = canManage ?
                     `<button type="button" class="edit-items-btn" data-orderkey="${orderKey}" style="width:auto; padding:8px 15px; margin-top:10px; margin-left:5px; font-size:0.9em; background-color:#f39c12;">แก้ไขรายการ</button>` : '';
+                const deleteBtnHtml = canManage ?
+                    `<button type="button" class="delete-order-btn" data-orderkey="${orderKey}" style="width:auto; padding:8px 15px; margin-top:10px; margin-left:5px; font-size:0.9em; background-color:#e74c3c;">ลบ</button>` : '';
 
                 orderItemDiv.innerHTML = `
                     <h4 style="margin-top:0; margin-bottom:8px;">Order Key: ${orderKey.length > 20 ? orderKey.substring(0,17)+'...' : orderKey}</h4>
@@ -66,6 +69,7 @@ export async function loadOperatorPendingTasks() {
                     <p style="font-size:0.9em; margin:3px 0;"><strong>Due Date:</strong> ${orderData.dueDate ? new Date(orderData.dueDate).toLocaleDateString('th-TH') : 'N/A'}</p>
                     <button type="button" class="start-packing-btn" data-orderkey="${orderKey}" style="width:auto; padding:8px 15px; margin-top:10px; font-size:0.9em;">เริ่มแพ็กรายการนี้</button>
                     ${editBtnHtml}
+                    ${deleteBtnHtml}
                 `;
                 uiElements.operatorOrderListContainer.appendChild(orderItemDiv);
             });
@@ -106,6 +110,14 @@ export async function loadOperatorPendingTasks() {
                 });
             });
 
+            // Add event listeners to the "ลบ" buttons
+            uiElements.operatorOrderListContainer.querySelectorAll('.delete-order-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const orderKeyToDelete = e.target.dataset.orderkey;
+                    deleteOrder(orderKeyToDelete);
+                });
+            });
+
         } else {
             uiElements.noOperatorTasksMessage.classList.remove('hidden');
             showAppStatus("ไม่พบออเดอร์ที่รอแพ็กในขณะนี้", "info", uiElements.appStatus);
@@ -114,5 +126,17 @@ export async function loadOperatorPendingTasks() {
         console.error("Error loading operator pending tasks:", error);
         uiElements.operatorOrderListContainer.innerHTML = '<p style="color:red; text-align:center;">เกิดข้อผิดพลาดในการโหลดรายการ</p>';
         showAppStatus("เกิดข้อผิดพลาดในการโหลดรายการ: " + error.message, "error", uiElements.appStatus);
+    }
+}
+
+async function deleteOrder(orderKey) {
+    if (!confirm('ต้องการลบออเดอร์นี้หรือไม่?')) return;
+    try {
+        await remove(ref(database, 'orders/' + orderKey));
+        showAppStatus('ลบออเดอร์เรียบร้อย', 'success', uiElements.appStatus);
+        loadOperatorPendingTasks();
+    } catch (err) {
+        console.error('Delete order error', err);
+        showAppStatus('เกิดข้อผิดพลาดในการลบ: ' + err.message, 'error', uiElements.appStatus);
     }
 }
