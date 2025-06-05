@@ -1,7 +1,7 @@
 // js/operatorTasksPage.js
 import { showPage } from './ui.js'; // uiElements for DOM, showPage for navigation
 import { database } from './config.js';        // Firebase database service
-import { ref, query, orderByChild, equalTo, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { ref, query, orderByChild, equalTo, get, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { showAppStatus } from './utils.js';
 import { getCurrentUserRole } from './auth.js';
 
@@ -56,8 +56,10 @@ export async function loadOperatorPendingTasks() {
                 orderItemDiv.style.border = '1px solid #eee';
                 orderItemDiv.style.borderRadius = '8px';
 
-                const editBtnHtml = (currentUserRole === 'administrator' || currentUserRole === 'supervisor') ?
-                    `<button type="button" class="edit-items-btn" data-orderkey="${orderKey}" style="width:auto; padding:8px 15px; margin-top:10px; margin-left:5px; font-size:0.9em; background-color:#f39c12;">แก้ไขรายการ</button>` : '';
+                const adminActionHtml = (currentUserRole === 'administrator' || currentUserRole === 'supervisor') ?
+                    `<button type="button" class="edit-items-btn" data-orderkey="${orderKey}" style="width:auto; padding:8px 15px; margin-top:10px; margin-left:5px; font-size:0.9em; background-color:#f39c12;">แก้ไขรายการ</button>` +
+                    `<button type="button" class="delete-order-btn" data-orderkey="${orderKey}" style="width:auto; padding:8px 15px; margin-top:10px; margin-left:5px; font-size:0.9em; background-color:#e74c3c;">ลบออเดอร์</button>`
+                    : '';
 
                 orderItemDiv.innerHTML = `
                     <h4 style="margin-top:0; margin-bottom:8px;">Order Key: ${orderKey.length > 20 ? orderKey.substring(0,17)+'...' : orderKey}</h4>
@@ -65,7 +67,7 @@ export async function loadOperatorPendingTasks() {
                     <p style="font-size:0.9em; margin:3px 0;"><strong>Package Code:</strong> ${orderData.packageCode || 'N/A'}</p>
                     <p style="font-size:0.9em; margin:3px 0;"><strong>Due Date:</strong> ${orderData.dueDate ? new Date(orderData.dueDate).toLocaleDateString('th-TH') : 'N/A'}</p>
                     <button type="button" class="start-packing-btn" data-orderkey="${orderKey}" style="width:auto; padding:8px 15px; margin-top:10px; font-size:0.9em;">เริ่มแพ็กรายการนี้</button>
-                    ${editBtnHtml}
+                    ${adminActionHtml}
                 `;
                 uiElements.operatorOrderListContainer.appendChild(orderItemDiv);
             });
@@ -102,6 +104,23 @@ export async function loadOperatorPendingTasks() {
                     } else {
                         console.error('loadOrderForAddingItems function is not available globally.');
                         alert('เกิดข้อผิดพลาด: ไม่สามารถโหลดหน้าปรับรายการสินค้าได้');
+                    }
+                });
+            });
+
+            // Add event listeners to the "ลบออเดอร์" buttons (admin/supervisor only)
+            uiElements.operatorOrderListContainer.querySelectorAll('.delete-order-btn').forEach(button => {
+                button.addEventListener('click', async (e) => {
+                    const orderKeyToDelete = e.target.dataset.orderkey;
+                    if (confirm('ยืนยันการลบออเดอร์นี้?')) {
+                        try {
+                            await remove(ref(database, 'orders/' + orderKeyToDelete));
+                            showAppStatus(`ลบออเดอร์ ${orderKeyToDelete} แล้ว`, 'success', uiElements.appStatus);
+                            loadOperatorPendingTasks();
+                        } catch (err) {
+                            console.error('Error deleting order:', err);
+                            showAppStatus('เกิดข้อผิดพลาดในการลบออเดอร์: ' + err.message, 'error', uiElements.appStatus);
+                        }
                     }
                 });
             });
