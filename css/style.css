@@ -47,6 +47,8 @@ thead tr { background-color:#f8f9fa; font-weight:600; color: #555;}
 th { border-top:1px solid #ecf0f1;}
 tbody tr:hover { background-color: #f1f8ff; }
 #ordersTableContainer { border:none;}
+.edit-order-btn{background-color:#f39c12;padding:6px 10px;border:none;border-radius:6px;font-size:0.8em;width:auto;color:#fff;}
+.edit-order-btn:hover{background-color:#d68910;}
 .form-group { margin-bottom: 20px; }
 .input-group { display: flex; align-items: center; margin-bottom: 15px; }
 .input-group input[type="text"] { flex-grow: 1; margin-bottom:0; border-top-right-radius:0; border-bottom-right-radius:0; }
