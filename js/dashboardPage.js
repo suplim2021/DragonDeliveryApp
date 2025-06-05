@@ -1,8 +1,8 @@
 // js/dashboardPage.js
 import { database } from './config.js';
-import { ref, get, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { ref, get, query, orderByChild, limitToLast, update, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { showAppStatus } from './utils.js';
-import { getCurrentUser } from './auth.js';
+import { getCurrentUser, getCurrentUserRole } from './auth.js';
 // ไม่ต้อง import uiElements จาก ui.js แล้ว
 
 let dailyChartInstance = null;
@@ -32,6 +32,14 @@ export function initializeDashboardPageListeners() {
     if (el_applyLogFilterButton) {
         el_applyLogFilterButton.addEventListener('click', () => {
             if (el_logFilterSelect) loadDashboardData(el_logFilterSelect.value);
+        });
+    }
+    if (el_ordersTableBody) {
+        el_ordersTableBody.addEventListener('click', (e) => {
+            if (e.target.classList.contains('edit-order-btn')) {
+                const key = e.target.dataset.orderkey;
+                if (key) handleEditOrder(key);
+            }
         });
     }
     console.log("Dashboard listeners initialized.");
@@ -102,8 +110,9 @@ function updateOrdersLogTable(orders, filterStatus = 'all') {
     el_ordersTableBody.innerHTML = '';
     const filtered = filterStatus === 'all' ? orders : orders.filter(o => o.status === filterStatus);
     if (filtered.length === 0) {
-        const r = el_ordersTableBody.insertRow(); const c = r.insertCell(); c.colSpan = 5; c.textContent = "ไม่พบข้อมูล"; c.style.textAlign = "center"; c.style.padding="20px"; return;
+        const r = el_ordersTableBody.insertRow(); const c = r.insertCell(); c.colSpan = 6; c.textContent = "ไม่พบข้อมูล"; c.style.textAlign = "center"; c.style.padding="20px"; return;
     }
+    const role = getCurrentUserRole();
     filtered.forEach(o => {
         const r = el_ordersTableBody.insertRow();
         r.insertCell().textContent = o.key && o.key.length > 20 ? o.key.substring(0,17)+'...' : (o.key || 'N/A');
@@ -111,7 +120,47 @@ function updateOrdersLogTable(orders, filterStatus = 'all') {
         r.insertCell().textContent = o.packageCode || 'N/A';
         r.insertCell().textContent = o.status || 'N/A';
         r.insertCell().textContent = o.dueDate ? new Date(o.dueDate).toLocaleDateString('th-TH',{day:'2-digit',month:'short',year:'numeric'}) : 'N/A';
+        const actCell = r.insertCell();
+        if(role === 'administrator' || role === 'supervisor') {
+            const btn = document.createElement('button');
+            btn.textContent = 'แก้ไข';
+            btn.className = 'edit-order-btn';
+            btn.dataset.orderkey = o.key;
+            actCell.appendChild(btn);
+        } else {
+            actCell.textContent = '-';
+        }
     });
+}
+
+async function handleEditOrder(orderKey) {
+    const role = getCurrentUserRole();
+    if (!(role === 'administrator' || role === 'supervisor')) {
+        alert('คุณไม่มีสิทธิ์แก้ไข');
+        return;
+    }
+    try {
+        const snap = await get(ref(database, 'orders/' + orderKey));
+        if (!snap.exists()) { alert('ไม่พบข้อมูลออเดอร์'); return; }
+        const data = snap.val();
+        const newStatus = prompt('ปรับสถานะ', data.status || '');
+        if (newStatus === null) return;
+        const currentDue = data.dueDate ? new Date(data.dueDate).toISOString().slice(0,10) : '';
+        const newDue = prompt('Due Date (YYYY-MM-DD)', currentDue);
+        if (newDue === null) return;
+        const updates = { status: newStatus.trim(), lastUpdatedAt: serverTimestamp() };
+        if (newDue) updates.dueDate = new Date(newDue).toISOString();
+        await update(ref(database, 'orders/' + orderKey), updates);
+        if (el_logFilterSelect) {
+            loadDashboardData(el_logFilterSelect.value);
+        } else {
+            loadDashboardData('all');
+        }
+        showAppStatus('อัปเดตข้อมูลแล้ว', 'success', el_appStatus);
+    } catch (err) {
+        console.error('edit order error', err);
+        showAppStatus('เกิดข้อผิดพลาด: ' + err.message, 'error', el_appStatus);
+    }
 }
 
 function renderCharts(orders) {
