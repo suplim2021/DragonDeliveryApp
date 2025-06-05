@@ -1,6 +1,6 @@
 // js/dashboardPage.js
 import { database } from './config.js';
-import { ref, get, query, orderByChild, limitToLast, update, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { ref, get, query, orderByChild, limitToLast, update, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { showAppStatus } from './utils.js';
 import { getCurrentUser, getCurrentUserRole } from './auth.js';
 // ไม่ต้อง import uiElements จาก ui.js แล้ว
@@ -39,6 +39,9 @@ export function initializeDashboardPageListeners() {
             if (e.target.classList.contains('edit-order-btn')) {
                 const key = e.target.dataset.orderkey;
                 if (key) handleEditOrder(key);
+            } else if (e.target.classList.contains('delete-order-btn')) {
+                const key = e.target.dataset.orderkey;
+                if (key) handleDeleteOrder(key);
             }
         });
     }
@@ -110,12 +113,13 @@ function updateOrdersLogTable(orders, filterStatus = 'all') {
     el_ordersTableBody.innerHTML = '';
     const filtered = filterStatus === 'all' ? orders : orders.filter(o => o.status === filterStatus);
     if (filtered.length === 0) {
-        const r = el_ordersTableBody.insertRow(); const c = r.insertCell(); c.colSpan = 6; c.textContent = "ไม่พบข้อมูล"; c.style.textAlign = "center"; c.style.padding="20px"; return;
+        const r = el_ordersTableBody.insertRow(); const c = r.insertCell(); c.colSpan = 7; c.textContent = "ไม่พบข้อมูล"; c.style.textAlign = "center"; c.style.padding="20px"; return;
     }
     const role = getCurrentUserRole();
     filtered.forEach(o => {
         const r = el_ordersTableBody.insertRow();
         r.insertCell().textContent = o.key && o.key.length > 20 ? o.key.substring(0,17)+'...' : (o.key || 'N/A');
+        r.insertCell().textContent = o.platformOrderId || '-';
         r.insertCell().textContent = o.platform || 'N/A';
         r.insertCell().textContent = o.packageCode || 'N/A';
         r.insertCell().textContent = o.status || 'N/A';
@@ -127,6 +131,11 @@ function updateOrdersLogTable(orders, filterStatus = 'all') {
             btn.className = 'edit-order-btn';
             btn.dataset.orderkey = o.key;
             actCell.appendChild(btn);
+            const delBtn = document.createElement('button');
+            delBtn.textContent = 'ลบ';
+            delBtn.className = 'delete-order-btn';
+            delBtn.dataset.orderkey = o.key;
+            actCell.appendChild(delBtn);
         } else {
             actCell.textContent = '-';
         }
@@ -206,4 +215,16 @@ function renderCharts(orders) {
         type: 'doughnut', data: { labels: Object.keys(platformCounts), datasets: [{ data: Object.values(platformCounts), backgroundColor: ['#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF','#FF9F40'] }]},
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom'}}}
     });
+}async function handleDeleteOrder(orderKey) {
+    const role = getCurrentUserRole();
+    if (!(role === 'administrator' || role === 'supervisor')) return;
+    if (!confirm('ต้องการลบออเดอร์นี้หรือไม่?')) return;
+    try {
+        await remove(ref(database, 'orders/' + orderKey));
+        if (el_logFilterSelect) loadDashboardData(el_logFilterSelect.value); else loadDashboardData('all');
+        showAppStatus('ลบออเดอร์แล้ว', 'success', el_appStatus);
+    } catch (err) {
+        console.error('delete order error', err);
+        showAppStatus('เกิดข้อผิดพลาด: ' + err.message, 'error', el_appStatus);
+    }
 }
