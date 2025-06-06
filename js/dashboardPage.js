@@ -1,6 +1,6 @@
 // js/dashboardPage.js
 import { database } from './config.js';
-import { ref, get, query, orderByChild, limitToLast, update, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { ref, get, update, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { showAppStatus } from './utils.js';
 import { getCurrentUser, getCurrentUserRole } from './auth.js';
 // ไม่ต้อง import uiElements จาก ui.js แล้ว
@@ -64,12 +64,14 @@ export async function loadDashboardData(filterStatus = 'all') {
 
     try {
         const ordersRefNode = ref(database, 'orders');
-        const dataQuery = query(ordersRefNode, orderByChild('createdAt'), limitToLast(150));
-        const snapshot = await get(dataQuery);
+        const snapshot = await get(ordersRefNode);
         let allOrders = [];
         if (snapshot.exists()) {
-            snapshot.forEach(childSnapshot => allOrders.push({ key: childSnapshot.key, ...childSnapshot.val() }));
+            snapshot.forEach(childSnapshot => {
+                allOrders.push({ key: childSnapshot.key, ...childSnapshot.val() });
+            });
             allOrders.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            allOrders = allOrders.slice(0, 150);
         }
 
         updateSummaryCards(allOrders);
