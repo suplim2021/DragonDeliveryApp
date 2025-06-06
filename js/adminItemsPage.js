@@ -53,7 +53,6 @@ export async function loadOrderForAddingItems(orderKey) {
         return;
     }
     currentOrderKeyForItems = orderKey;
-    if (adminItemsCurrentOrderIdSpan) adminItemsCurrentOrderIdSpan.textContent = orderKey;
     if (adminItemsProductSearchInput) adminItemsProductSearchInput.value = '';
     if (adminItemsQuantityInput) adminItemsQuantityInput.value = '1';
     if (adminItemsUnitInput) adminItemsUnitInput.value = '';
@@ -63,6 +62,7 @@ export async function loadOrderForAddingItems(orderKey) {
         const snap = await get(ref(database, 'orders/' + orderKey));
         if (snap.exists()) {
             const data = snap.val();
+            if (adminItemsCurrentOrderIdSpan) adminItemsCurrentOrderIdSpan.textContent = data.packageCode || orderKey;
             if (data.items) {
                 Object.keys(data.items).forEach(id => {
                     renderItemInList(id, data.items[id]);
