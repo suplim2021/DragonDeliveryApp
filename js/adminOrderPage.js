@@ -88,9 +88,15 @@ function startPackageCodeScan() {
     });
 }
 
-function stopPackageCodeScan() {
+async function stopPackageCodeScan() {
     if (html5QrCodeScannerPackageCode) {
-        html5QrCodeScannerPackageCode.stop().catch(e => console.warn("Error stopping main scanner:", e));
+        try {
+            await html5QrCodeScannerPackageCode.stop();
+            await html5QrCodeScannerPackageCode.clear();
+        } catch (e) {
+            console.warn("Error stopping main scanner:", e);
+        }
+        html5QrCodeScannerPackageCode = null;
     }
     if (scanOverlayDiv) scanOverlayDiv.classList.add('hidden');
     if (adminOrderQRContainer) adminOrderQRContainer.classList.add('hidden');
@@ -153,9 +159,15 @@ function startPlatformIdScan() {
     });
 }
 
-function stopPlatformIdScan() {
+async function stopPlatformIdScan() {
     if (html5QrCodeScannerPlatformOrderId) {
-        html5QrCodeScannerPlatformOrderId.stop().catch(e => console.warn("Error stopping Platform ID scanner:", e));
+        try {
+            await html5QrCodeScannerPlatformOrderId.stop();
+            await html5QrCodeScannerPlatformOrderId.clear();
+        } catch (e) {
+            console.warn("Error stopping Platform ID scanner:", e);
+        }
+        html5QrCodeScannerPlatformOrderId = null;
     }
     if (scanOverlayDiv) scanOverlayDiv.classList.add('hidden');
     if (adminOrderPlatformIdQRContainer) adminOrderPlatformIdQRContainer.classList.add('hidden');
