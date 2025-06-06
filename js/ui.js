@@ -161,11 +161,11 @@ export function setupRoleBasedUI(currentUserRoleForNav) {
     if (!bottomNavContainerDiv) { console.error("Bottom Nav Container not found in setupRoleBasedUI."); return; }
     bottomNavContainerDiv.innerHTML = '';
     let navHtml = '';
-    navHtml += `<button type="button" data-pageid="dashboardPage"><span class="nav-icon">🏠</span>Dashboard</button>`;
-    navHtml += `<button type="button" data-pageid="adminCreateOrderPage"><span class="nav-icon">➕</span>สร้างออเดอร์</button>`;
-    navHtml += `<button type="button" data-pageid="operatorTaskListPage"><span class="nav-icon">📦</span>รายการรอแพ็ก</button>`;
-    navHtml += `<button type="button" data-pageid="supervisorPackCheckListPage"><span class="nav-icon">✅</span>รอตรวจแพ็ก</button>`;
-    navHtml += `<button type="button" data-pageid="operatorShippingBatchPage"><span class="nav-icon">🚚</span>เตรียมส่งของ</button>`;
+    navHtml += `<button type="button" data-pageid="dashboardPage"><span class="material-icons nav-icon">home</span>Dashboard</button>`;
+    navHtml += `<button type="button" data-pageid="adminCreateOrderPage"><span class="material-icons nav-icon">add</span>สร้างออเดอร์</button>`;
+    navHtml += `<button type="button" data-pageid="operatorTaskListPage"><span class="material-icons nav-icon">inventory_2</span>รายการรอแพ็ก</button>`;
+    navHtml += `<button type="button" data-pageid="supervisorPackCheckListPage"><span class="material-icons nav-icon">checklist</span>รอตรวจแพ็ก</button>`;
+    navHtml += `<button type="button" data-pageid="operatorShippingBatchPage"><span class="material-icons nav-icon">local_shipping</span>เตรียมส่งของ</button>`;
 
     bottomNavContainerDiv.innerHTML = navHtml;
 
