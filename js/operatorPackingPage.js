@@ -3,7 +3,7 @@ import { database, storage, auth } from './config.js';
 import { ref, get, update, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { ref as storageRefFirebase, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 import { showPage } from './ui.js'; // Import showPage
-import { showAppStatus } from './utils.js';
+import { showAppStatus, formatDateDDMMYYYY } from './utils.js';
 import { getCurrentUser, getCurrentUserRole } from './auth.js';
 
 let currentOrderKeyForPacking = null;
@@ -75,7 +75,7 @@ export async function loadOrderForPacking(orderKey) {
 
             if(opPacking_currentOrderIdSpan) opPacking_currentOrderIdSpan.textContent = orderData.packageCode || orderKey;
             if(opPacking_platformSpan) opPacking_platformSpan.textContent = orderData.platform || 'N/A';
-            if(opPacking_dueDateSpan) opPacking_dueDateSpan.textContent = orderData.dueDate ? new Date(orderData.dueDate).toLocaleDateString('th-TH') : 'N/A';
+            if(opPacking_dueDateSpan) opPacking_dueDateSpan.textContent = formatDateDDMMYYYY(orderData.dueDate);
             
             if(opPacking_itemListUL) opPacking_itemListUL.innerHTML = '';
             if (orderData.items) {
