@@ -168,6 +168,20 @@
                 <div style="margin-top:20px;">
                     <h3>สแกนพัสดุเข้า Batch นี้:</h3>
                     <button id="startScanForBatchButton" type="button">สแกน QR พัสดุ</button>
+
+                    <div class="input-group" style="margin-top:10px;">
+                        <input type="text" id="manualBatchPackageInput" list="readyToShipDatalist" placeholder="พิมพ์รหัสพัสดุ" autocomplete="off">
+                        <datalist id="readyToShipDatalist"></datalist>
+                        <button id="addManualPackageButton" type="button" class="secondary" style="width:auto;">เพิ่ม</button>
+                    </div>
+
+                    <div class="input-group" style="margin-top:10px;">
+                        <select id="readyToShipSelect" style="flex-grow:1;">
+                            <option value="">-- เลือกพัสดุ --</option>
+                        </select>
+                        <button id="addSelectedPackageButton" type="button" class="secondary" style="width:auto;">เพิ่ม</button>
+                    </div>
+
                     <div id="qrScannerContainer_Batch" class="hidden" style="margin-top:10px;">
                         <div id="qrScanner_Batch" class="qr-scanner-area"></div>
                         <button id="stopScanForBatchButton" type="button" class="secondary hidden" style="margin-top:5px;">หยุดสแกน</button>

@@ -9,6 +9,7 @@ import { getCurrentUser, getCurrentUserRole } from './auth.js';
 let currentActiveBatchId = null; // Stores the ID of the batch currently being worked on
 let itemsInCurrentBatch = {}; // Stores { orderKey: packageCode } for the current batch
 let shipmentGroupPhotoFile = null; // Stores the selected group photo file for shipment
+let readyToShipPackages = []; // Array of {orderKey, packageCode}
 
 export function initializeOperatorShippingPageListeners() {
     if (!uiElements.createNewBatchButton || !uiElements.startScanForBatchButton || 
@@ -27,6 +28,22 @@ export function initializeOperatorShippingPageListeners() {
     uiElements.startScanForBatchButton.addEventListener('click', startScanForBatch);
     uiElements.stopScanForBatchButton.addEventListener('click', stopScanForBatch);
     uiElements.confirmBatchAndProceedButton.addEventListener('click', confirmBatchAndMoveToPhoto);
+
+    if (uiElements.addManualPackageButton && uiElements.manualBatchPackageInput) {
+        uiElements.addManualPackageButton.addEventListener('click', () => {
+            const code = uiElements.manualBatchPackageInput.value.trim();
+            if (code) { addPackageCodeManually(code); uiElements.manualBatchPackageInput.value = ''; }
+        });
+        uiElements.manualBatchPackageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); const code = uiElements.manualBatchPackageInput.value.trim(); if (code) { addPackageCodeManually(code); uiElements.manualBatchPackageInput.value = ''; } }
+        });
+    }
+    if (uiElements.addSelectedPackageButton && uiElements.readyToShipSelect) {
+        uiElements.addSelectedPackageButton.addEventListener('click', () => {
+            const code = uiElements.readyToShipSelect.value;
+            if (code) addPackageCodeManually(code);
+        });
+    }
     
     uiElements.shipmentGroupPhoto.addEventListener('change', handleShipmentGroupPhotoSelect);
     uiElements.getGpsButton.addEventListener('click', getGpsLocation);
@@ -49,6 +66,7 @@ export function setupShippingBatchPage() {
         uiElements.otherCourierInput.value = "";
         uiElements.otherCourierInput.classList.add('hidden');
     }
+    loadReadyToShipPackages();
     showAppStatus("พร้อมสำหรับการจัดการ Batch การส่ง", "info", uiElements.appStatus);
 }
 
@@ -198,6 +216,55 @@ async function stopScanForBatch() {
 }
 
 window.stopScanForBatch = stopScanForBatch;
+
+async function loadReadyToShipPackages() {
+    if (!uiElements.readyToShipDatalist || !uiElements.readyToShipSelect) return;
+    readyToShipPackages = [];
+    uiElements.readyToShipDatalist.innerHTML = '';
+    uiElements.readyToShipSelect.innerHTML = '<option value="">-- เลือกพัสดุ --</option>';
+    const statuses = ['Ready for Shipment', 'Pack Approved'];
+    try {
+        for (const status of statuses) {
+            const q = query(ref(database, 'orders'), orderByChild('status'), equalTo(status));
+            const snap = await get(q);
+            if (snap.exists()) {
+                snap.forEach(child => {
+                    const pkg = child.val().packageCode;
+                    if (pkg) {
+                        readyToShipPackages.push({ orderKey: child.key, packageCode: pkg });
+                    }
+                });
+            }
+        }
+        const uniqueCodes = Array.from(new Set(readyToShipPackages.map(p => p.packageCode)));
+        uniqueCodes.forEach(code => {
+            const opt = document.createElement('option');
+            opt.value = code;
+            uiElements.readyToShipDatalist.appendChild(opt);
+            const opt2 = document.createElement('option');
+            opt2.value = code;
+            opt2.textContent = code;
+            uiElements.readyToShipSelect.appendChild(opt2);
+        });
+    } catch (err) {
+        console.error('Error loading ready to ship packages', err);
+    }
+}
+
+function addPackageCodeManually(packageCode) {
+    const entry = readyToShipPackages.find(p => p.packageCode === packageCode);
+    if (!entry) {
+        showAppStatus(`ไม่พบพัสดุที่พร้อมส่งสำหรับรหัส: ${packageCode}`, 'error', uiElements.appStatus);
+        return;
+    }
+    if (itemsInCurrentBatch[entry.orderKey]) {
+        showAppStatus(`พัสดุ ${packageCode} อยู่ใน Batch นี้แล้ว`, 'info', uiElements.appStatus);
+        return;
+    }
+    itemsInCurrentBatch[entry.orderKey] = packageCode;
+    renderBatchItems();
+    showAppStatus(`เพิ่ม ${packageCode} เข้า Batch สำเร็จ`, 'success', uiElements.appStatus);
+}
 
 function renderBatchItems() {
     if (!uiElements.batchItemList || !uiElements.batchItemCount) return;
