@@ -12,7 +12,7 @@ let packingPhotoFile = null;
 // DOM Elements for this page - to be initialized
 let opPacking_pageElement, opPacking_currentOrderIdSpan, opPacking_platformSpan, opPacking_dueDateSpan,
     opPacking_itemListUL, opPacking_photoInput, opPacking_photoPreviewImg,
-    opPacking_notesTextarea, opPacking_confirmButton, opPacking_supervisorCheckResultDiv,
+    opPacking_removePhotoButton, opPacking_notesTextarea, opPacking_confirmButton, opPacking_supervisorCheckResultDiv,
     opPacking_packCheckStatusSpan, opPacking_packCheckSupervisorSpan, opPacking_packCheckNotesSpan,
     opPacking_appStatus;
 
@@ -25,6 +25,7 @@ export function initializeOperatorPackingPageListeners() {
     opPacking_itemListUL = document.getElementById('packOrderItemList');
     opPacking_photoInput = document.getElementById('packingPhoto');
     opPacking_photoPreviewImg = document.getElementById('packingPhotoPreview');
+    opPacking_removePhotoButton = document.getElementById('removePackingPhotoButton');
     opPacking_notesTextarea = document.getElementById('operatorPackNotes');
     opPacking_confirmButton = document.getElementById('confirmPackingButton');
     opPacking_supervisorCheckResultDiv = document.getElementById('supervisorPackCheckResult');
@@ -39,6 +40,7 @@ export function initializeOperatorPackingPageListeners() {
     }
 
     opPacking_photoInput.addEventListener('change', handlePackingPhotoSelect);
+    if (opPacking_removePhotoButton) opPacking_removePhotoButton.addEventListener('click', resetPackingPhoto);
     opPacking_confirmButton.addEventListener('click', confirmPacking);
 
     // Make navigateToOperatorScanToPack globally accessible for the nav button (if called from HTML onclick)
@@ -97,7 +99,8 @@ export async function loadOrderForPacking(orderKey) {
             }
 
             if(opPacking_photoInput) opPacking_photoInput.value = '';
-            if(opPacking_photoPreviewImg) { opPacking_photoPreviewImg.classList.add('hidden'); opPacking_photoPreviewImg.src = '#';}
+            if(opPacking_photoPreviewImg) { opPacking_photoPreviewImg.classList.add('hidden'); opPacking_photoPreviewImg.src = '#'; }
+            if(opPacking_removePhotoButton) opPacking_removePhotoButton.classList.add('hidden');
             if(opPacking_notesTextarea) opPacking_notesTextarea.value = orderData.packingInfo?.operatorNotes || '';
             
             showPage('operatorPackingPage');
@@ -120,12 +123,23 @@ function handlePackingPhotoSelect(event) {
     if (file) {
         packingPhotoFile = file;
         const reader = new FileReader();
-        reader.onload = (e) => { opPacking_photoPreviewImg.src = e.target.result; opPacking_photoPreviewImg.classList.remove('hidden'); }
+        reader.onload = (e) => { opPacking_photoPreviewImg.src = e.target.result; opPacking_photoPreviewImg.classList.remove('hidden'); };
         reader.readAsDataURL(file);
+        if (opPacking_removePhotoButton) opPacking_removePhotoButton.classList.remove('hidden');
     } else {
         packingPhotoFile = null;
         opPacking_photoPreviewImg.classList.add('hidden'); opPacking_photoPreviewImg.src = '#';
+        if (opPacking_removePhotoButton) opPacking_removePhotoButton.classList.add('hidden');
     }
+}
+
+function resetPackingPhoto() {
+    if (!opPacking_photoInput || !opPacking_photoPreviewImg) return;
+    opPacking_photoInput.value = '';
+    packingPhotoFile = null;
+    opPacking_photoPreviewImg.src = '#';
+    opPacking_photoPreviewImg.classList.add('hidden');
+    if (opPacking_removePhotoButton) opPacking_removePhotoButton.classList.add('hidden');
 }
 
 async function confirmPacking() {
