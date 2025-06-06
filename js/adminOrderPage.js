@@ -2,7 +2,7 @@
 import { auth, database } from './config.js';
 import { ref, set, serverTimestamp, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 // import { uiElements, showPage } from './ui.js'; // <<<--- ลบออก
-import { detectPlatformFromPackageCode, setDefaultDueDate, showAppStatus } from './utils.js';
+import { detectPlatformFromPackageCode, setDefaultDueDate, showAppStatus, beepSuccess, beepError } from './utils.js';
 import { getCurrentUser, getCurrentUserRole } from './auth.js';
 import { loadOrderForAddingItems } from './adminItemsPage.js'; // This should also not rely on global uiElements from ui.js
 
@@ -92,16 +92,19 @@ function startPackageCodeScan() {
                 { deviceId: { exact: camId } },
                 { fps: 10, qrbox: { width: 250, height: 250 }, videoConstraints: { focusMode: "continuous", facingMode: "environment" } },
                 onScanSuccess_PackageCode,
-                (errorMessage) => { console.warn("Package Code Scan failure:", errorMessage); }
+                (errorMessage) => { console.warn("Package Code Scan failure:", errorMessage); beepError(); }
             ).catch(err => {
+                beepError();
                 alert("ไม่สามารถเปิดกล้องสแกน QR ได้: " + (err?.message || err));
                 stopPackageCodeScan();
             });
         } else {
+            beepError();
             alert("ไม่พบกล้องบนอุปกรณ์");
             stopPackageCodeScan();
         }
     }).catch(err => {
+        beepError();
         alert("ไม่สามารถเข้าถึงกล้อง: " + (err?.message || err));
         stopPackageCodeScan();
     });
@@ -124,6 +127,7 @@ async function stopPackageCodeScan() {
 }
 
 function onScanSuccess_PackageCode(decodedText, decodedResult) {
+    beepSuccess();
     const packageCode = decodedText.trim();
     if (adminOrderScannedQRData) adminOrderScannedQRData.textContent = packageCode;
     if (adminOrderPackageCodeInput) {
@@ -160,19 +164,23 @@ function startPlatformIdScan() {
                     formatsToSupport: [Html5QrcodeSupportedFormats.CODE_128]
                 },
                 (decodedText, decodedResult) => {
+                    beepSuccess();
                     adminOrderPlatformOrderIdInput.value = decodedText.trim();
                     stopPlatformIdScan();
                 },
-                (errorMessage) => { console.warn("Platform Order ID Scan failure:", errorMessage); }
+                (errorMessage) => { console.warn("Platform Order ID Scan failure:", errorMessage); beepError(); }
             ).catch(err => {
+                beepError();
                 alert("ไม่สามารถเปิดกล้องสแกน Platform Order ID ได้: " + (err?.message || err));
                 stopPlatformIdScan();
             });
         } else {
+            beepError();
             alert("ไม่พบกล้องบนอุปกรณ์");
             stopPlatformIdScan();
         }
     }).catch(err => {
+        beepError();
         alert("ไม่สามารถเข้าถึงกล้อง: " + (err?.message || err));
         stopPlatformIdScan();
     });
