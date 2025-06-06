@@ -6,11 +6,12 @@ import { ref, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-da
 
 let localCurrentUser = null;
 let localCurrentUserRole = null;
+let localCurrentDisplayName = null;
 let updateMainCurrentUserCallback = null;
 
 // DOM Elements specific to auth - get them when module initializes listeners
 let authLoginPage, authMainApp, authLoginButton, authEmailInput, authPasswordInput, authLoginError,
-    authUserDisplayEmail, authUserDisplayRole, authLogoutButton, authAppStatus, authBottomNavContainer;
+    authUserDisplayEmail, authUserDisplayRole, authUserDisplayName, authLogoutButton, authAppStatus, authBottomNavContainer;
 
 
 export function initializeAuthEventListeners() {
@@ -23,6 +24,7 @@ export function initializeAuthEventListeners() {
     authLoginError = document.getElementById('loginError');
     authUserDisplayEmail = document.getElementById('userDisplayEmail');
     authUserDisplayRole = document.getElementById('userDisplayRole');
+    authUserDisplayName = document.getElementById('userDisplayName');
     authLogoutButton = document.getElementById('logoutButton');
     authAppStatus = document.getElementById('appStatus');
     authBottomNavContainer = document.getElementById('bottomNavContainer');
@@ -86,21 +88,21 @@ export function onAuthStateChangeHandler(mainUserUpdateCb) {
 
         if (user) {
             localCurrentUser = user;
-            const userRoleRef = ref(database, 'users/' + user.uid + '/role');
+            const userRefDb = ref(database, 'users/' + user.uid);
             try {
-                const snapshot = await get(userRoleRef);
+                const snapshot = await get(userRefDb);
                 if (snapshot.exists()) {
-                    localCurrentUserRole = snapshot.val();
+                    const data = snapshot.val();
+                    localCurrentUserRole = data.role || 'unknown';
+                    localCurrentDisplayName = data.displayName || user.displayName || '';
                 } else {
                     localCurrentUserRole = 'unknown';
+                    localCurrentDisplayName = user.displayName || '';
                     console.warn(`Role not found for UID: ${user.uid}. Consider setting a default role.`);
-                    // Example: For a new user, you might want to assign a default role in DB
-                    // await set(ref(database, `users/${user.uid}`), { email: user.email, role: 'operator', displayName: user.email.split('@')[0] || 'New User' });
-                    // localCurrentUserRole = 'operator';
                 }
 
                 if (updateMainCurrentUserCallback) {
-                    updateMainCurrentUserCallback(localCurrentUser, localCurrentUserRole);
+                    updateMainCurrentUserCallback(localCurrentUser, localCurrentUserRole, localCurrentDisplayName);
                 } else {
                     console.error("updateMainCurrentUserCallback is not defined in auth.js onAuthStateChangeHandler");
                 }
@@ -116,8 +118,9 @@ export function onAuthStateChangeHandler(mainUserUpdateCb) {
         } else { // User is signed out
             localCurrentUser = null;
             localCurrentUserRole = null;
+            localCurrentDisplayName = null;
             if (updateMainCurrentUserCallback) {
-                updateMainCurrentUserCallback(null, null); // Notify main.js that user is signed out
+                updateMainCurrentUserCallback(null, null, null); // Notify main.js that user is signed out
             }
         }
     });
@@ -129,4 +132,8 @@ export function getCurrentUserRole() {
 
 export function getCurrentUser() {
     return localCurrentUser;
+}
+
+export function getCurrentUserDisplayName() {
+    return localCurrentDisplayName;
 }
