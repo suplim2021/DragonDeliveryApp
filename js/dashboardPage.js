@@ -136,6 +136,8 @@ function updateOrdersLogTable(orders, filterStatus = 'all') {
             delBtn.className = 'delete-order-btn';
             delBtn.dataset.orderkey = o.key;
             actCell.appendChild(delBtn);
+            delBtn.addEventListener('click', () => handleDeleteOrder(o.key));
+            btn.addEventListener('click', () => handleEditOrder(o.key));
         } else {
             actCell.textContent = '-';
         }

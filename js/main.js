@@ -16,30 +16,34 @@ import { initializeOperatorShippingPageListeners, setupShippingBatchPage } from 
 window.currentUserFromAuth = null; 
 window.currentUserRoleFromAuth = null;
 
-function setCurrentUserAndUpdateUI(user, role) {
+function setCurrentUserAndUpdateUI(user, role, displayName) {
     window.currentUserFromAuth = user;
     window.currentUserRoleFromAuth = role;
-    console.log("User state updated in main.js: User:", user ? user.email : null, "Role:", role);
+    window.currentUserDisplayNameFromAuth = displayName;
+    console.log("User state updated in main.js: User:", user ? user.email : null, "Role:", role, "Name:", displayName);
     
     // Get global UI elements directly here if needed, or assume ui.js handles its own global elements
+    const userDisplayNameEl = document.getElementById('userDisplayName');
     const userDisplayEmailEl = document.getElementById('userDisplayEmail');
     const userDisplayRoleEl = document.getElementById('userDisplayRole');
     const loginPageEl = document.getElementById('loginPage');
     const mainAppEl = document.getElementById('mainApp');
     const bottomNavContainerEl = document.getElementById('bottomNavContainer');
 
-    if (userDisplayEmailEl && userDisplayRoleEl && loginPageEl && mainAppEl && bottomNavContainerEl) {
-        if (user) { 
+    if (userDisplayEmailEl && userDisplayRoleEl && userDisplayNameEl && loginPageEl && mainAppEl && bottomNavContainerEl) {
+        if (user) {
             userDisplayEmailEl.textContent = user.email;
             userDisplayRoleEl.textContent = role || 'N/A';
+            if (userDisplayNameEl) userDisplayNameEl.textContent = displayName || user.displayName || '';
             loginPageEl.classList.add('hidden');
             mainAppEl.classList.remove('hidden');
             bottomNavContainerEl.classList.remove('hidden');
             setupRoleBasedUI(role); // This function is imported from ui.js and uses its own DOM knowledge
             showPage('dashboardPage'); // This function is imported from ui.js
-        } else { 
+        } else {
             userDisplayEmailEl.textContent = '';
             userDisplayRoleEl.textContent = '';
+            if (userDisplayNameEl) userDisplayNameEl.textContent = '';
             mainAppEl.classList.add('hidden');
             bottomNavContainerEl.classList.add('hidden');
             if(bottomNavContainerEl) bottomNavContainerEl.innerHTML = ''; // Check if exists
