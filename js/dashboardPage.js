@@ -103,11 +103,11 @@ function updateSummaryCards(orders) {
     const todayStr = new Date().toISOString().slice(0, 10);
     const todayOrders = orders.filter(o => o.createdAt && typeof o.createdAt === 'number' && new Date(o.createdAt).toISOString().slice(0, 10) === todayStr).length;
 
-    createSummaryCard('พัสดุทั้งหมด', total, `+${todayOrders} วันนี้`, '📦');
-    createSummaryCard('รายการรอแพ็ก', readyToPack, total > 0 ? `${Math.round((readyToPack/total)*100)}%` : '0%', '📋', 'operatorTaskListPage');
-    createSummaryCard('รอตรวจเช็ค', pendingCheck, total > 0 ? `${Math.round((pendingCheck/total)*100)}%` : '0%', '🕵️', 'supervisorPackCheckListPage');
-    createSummaryCard('เตรียมส่ง', readyToShip, total > 0 ? `${Math.round((readyToShip/total)*100)}%` : '0%', '🚚', 'operatorShippingBatchPage');
-    createSummaryCard('ส่งแล้ว', shipped, total > 0 ? `${Math.round((shipped/total)*100)}%` : '0%', '✅');
+    createSummaryCard('พัสดุทั้งหมด', total, `+${todayOrders} วันนี้`, 'inventory_2');
+    createSummaryCard('รายการรอแพ็ก', readyToPack, total > 0 ? `${Math.round((readyToPack/total)*100)}%` : '0%', 'list_alt', 'operatorTaskListPage');
+    createSummaryCard('รอตรวจเช็ค', pendingCheck, total > 0 ? `${Math.round((pendingCheck/total)*100)}%` : '0%', 'fact_check', 'supervisorPackCheckListPage');
+    createSummaryCard('เตรียมส่ง', readyToShip, total > 0 ? `${Math.round((readyToShip/total)*100)}%` : '0%', 'local_shipping', 'operatorShippingBatchPage');
+    createSummaryCard('ส่งแล้ว', shipped, total > 0 ? `${Math.round((shipped/total)*100)}%` : '0%', 'check_circle');
 }
 
 function createSummaryCard(title, value, subValue, icon, pageId = null) {
@@ -118,7 +118,7 @@ function createSummaryCard(title, value, subValue, icon, pageId = null) {
         card.classList.add('clickable');
         card.addEventListener('click', () => showPage(pageId));
     }
-    card.innerHTML = `<div class="summary-card-icon">${icon}</div><h4 class="summary-card-value">${value}</h4><p class="summary-card-title">${title}</p><p class="summary-card-subvalue">${subValue}</p>`;
+    card.innerHTML = `<div class="summary-card-icon material-icons">${icon}</div><h4 class="summary-card-value">${value}</h4><p class="summary-card-title">${title}</p><p class="summary-card-subvalue">${subValue}</p>`;
     el_summaryCardsContainer.appendChild(card);
 }
 
