@@ -80,17 +80,6 @@ document.addEventListener('DOMContentLoaded', () => {
     window.loadOrderForAddingItems = loadOrderForAddingItems;
 
     let lastScrollTop = 0;
-    let navHideTimer = null;
-    const AUTO_HIDE_DELAY = 3000; // 3 seconds
-
-    function resetNavAutoHide() {
-        clearTimeout(navHideTimer);
-        const nav = document.getElementById('bottomNavContainer');
-        if (nav) {
-            nav.classList.remove('hide');
-            navHideTimer = setTimeout(() => nav.classList.add('hide'), AUTO_HIDE_DELAY);
-        }
-    }
 
     window.addEventListener('scroll', () => {
         const nav = document.getElementById('bottomNavContainer');
@@ -102,11 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
             nav.classList.remove('hide');
         }
         lastScrollTop = st <= 0 ? 0 : st;
-        resetNavAutoHide();
     });
-
-    // Start initial auto hide timer
-    resetNavAutoHide();
 });
 
 export { auth, database, storage };
