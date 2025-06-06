@@ -96,19 +96,21 @@
 
                 <button id="saveInitialOrderButton" type="button">บันทึกออเดอร์เบื้องต้น</button>
 
-                <div id="adminAddItemsSection" class="hidden" style="margin-top:20px; border-top:1px solid #ccc; padding-top:20px;">
-                    <h2>เพิ่มรายการสินค้า (Package Code: <span id="currentOrderIdForItems"></span>)</h2>
-                    <label for="productSearch">ค้นหาสินค้า:</label>
-                    <input type="text" id="productSearch" placeholder="พิมพ์ชื่อสินค้า...">
-                    <label for="quantity">จำนวน:</label>
-                    <input type="number" id="quantity" value="1" min="1">
-                    <label for="unit">หน่วย:</label>
-                    <input type="text" id="unit" placeholder="เช่น ตัว, ชิ้น">
-                    <button id="addItemToOrderButton" type="button">เพิ่มสินค้าในรายการ</button>
-                    <h3>รายการสินค้าที่เพิ่มแล้ว:</h3>
-                    <ul id="itemListCurrentOrder" class="item-checklist"></ul>
-                    <button id="confirmAllItemsButton" type="button">ยืนยันรายการสินค้าทั้งหมด</button>
-                </div>
+            </div>
+
+            <!-- Admin: Add Items Page -->
+            <div id="adminItemsPage" class="container page hidden">
+                <h2>เพิ่มรายการสินค้า (Package Code: <span id="currentOrderIdForItems"></span>)</h2>
+                <label for="productSearch">ค้นหาสินค้า:</label>
+                <input type="text" id="productSearch" placeholder="พิมพ์ชื่อสินค้า...">
+                <label for="quantity">จำนวน:</label>
+                <input type="number" id="quantity" value="1" min="1">
+                <label for="unit">หน่วย:</label>
+                <input type="text" id="unit" placeholder="เช่น ตัว, ชิ้น">
+                <button id="addItemToOrderButton" type="button">เพิ่มสินค้าในรายการ</button>
+                <h3>รายการสินค้าที่เพิ่มแล้ว:</h3>
+                <ul id="itemListCurrentOrder" class="item-checklist"></ul>
+                <button id="confirmAllItemsButton" type="button">ยืนยันรายการสินค้าทั้งหมด</button>
             </div>
             
             <!-- Operator: Packing Page (หน้ารายละเอียดการแพ็กแต่ละออเดอร์) -->
