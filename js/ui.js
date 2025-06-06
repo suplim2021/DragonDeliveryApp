@@ -113,7 +113,9 @@ export function showPage(pageId) {
             const platformInput = document.getElementById('adminPlatform');
             if(platformInput) platformInput.readOnly = true;
             const packageCodeInput = document.getElementById('adminPackageCode');
-            if(packageCodeInput) packageCodeInput.readOnly = true;
+            if(packageCodeInput) packageCodeInput.readOnly = false;
+            const addItemsSection = document.getElementById('adminAddItemsSection');
+            if(addItemsSection) addItemsSection.classList.add('hidden');
 
         } else if (pageId === 'dashboardPage') {
             if (window.currentUserFromAuth) {
