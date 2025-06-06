@@ -33,6 +33,29 @@ export function detectPlatformFromPackageCode(packageCode) {
     return "Unknown";
 }
 
+// ---- Beep Utility Functions ----
+function playBeepSequence(times = 1) {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        for (let i = 0; i < times; i++) {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = 800;
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            const startAt = ctx.currentTime + i * 0.25;
+            osc.start(startAt);
+            osc.stop(startAt + 0.15);
+        }
+    } catch (e) {
+        console.warn('playBeepSequence error:', e);
+    }
+}
+
+export function beepSuccess() { playBeepSequence(1); }
+export function beepError() { playBeepSequence(2); }
+
 /**
  * Sets the default due date for new orders in the adminDueDateInput field.
  * - If current time is 12:00 PM - 11:59 PM, sets to next day.
@@ -75,6 +98,7 @@ export function showAppStatus(message, type = 'info', appStatusElement) {
         appStatusElement.classList.add('success'); // Define .success in CSS
     } else if (type === 'error') {
         appStatusElement.classList.add('error');   // Define .error in CSS
+        beepError();
     } else {
         appStatusElement.classList.add('info');    // Define .info in CSS
     }
