@@ -78,9 +78,7 @@ export async function loadOrderForAddingItems(orderKey) {
         console.error('loadOrderForAddingItems error', err);
         showAppStatus('เกิดข้อผิดพลาด', 'error', adminItemsAppStatus);
     }
-    showPage('adminCreateOrderPage');
-    const section = document.getElementById('adminAddItemsSection');
-    if(section) section.classList.remove('hidden');
+    showPage('adminItemsPage');
 }
 
 function renderItemInList(itemId, itemData) {
@@ -131,8 +129,6 @@ async function confirmAllItems() {
         });
         showAppStatus('ยืนยันรายการสินค้าแล้ว', 'success', adminItemsAppStatus);
         currentOrderKeyForItems = null;
-        const section = document.getElementById('adminAddItemsSection');
-        if(section) section.classList.add('hidden');
         showPage('dashboardPage');
     } catch(err) {
         console.error('confirmAllItems error', err);
