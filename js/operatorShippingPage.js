@@ -171,9 +171,15 @@ function startScanForBatch() {
     });
 }
 
-function stopScanForBatch() {
+async function stopScanForBatch() {
     if (html5QrScannerForBatch) {
-        html5QrScannerForBatch.stop().catch(e => console.warn("Error stopping batch scanner:", e));
+        try {
+            await html5QrScannerForBatch.stop();
+            await html5QrScannerForBatch.clear();
+        } catch (e) {
+            console.warn("Error stopping batch scanner:", e);
+        }
+        html5QrScannerForBatch = null;
     }
     uiElements.qrScannerContainer_Batch.classList.add('hidden');
     uiElements.stopScanForBatchButton.classList.add('hidden');
