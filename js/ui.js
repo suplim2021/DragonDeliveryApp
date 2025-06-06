@@ -51,9 +51,8 @@ export function initializeCoreDOMElements() { // Renamed for clarity
     uiElements.noPackCheckOrdersMessage = document.getElementById('noPackCheckOrdersMessage');
     uiElements.approvePackButton = document.getElementById('approvePackButton');
     uiElements.rejectPackButton = document.getElementById('rejectPackButton');
-    uiElements.checkOrderKeyDisplay = document.getElementById('checkOrderKeyDisplay');
-    uiElements.checkOrderPlatformDisplay = document.getElementById('checkOrderPlatformDisplay');
     uiElements.checkOrderPackageCodeDisplay = document.getElementById('checkOrderPackageCodeDisplay');
+    uiElements.checkOrderPlatformDisplay = document.getElementById('checkOrderPlatformDisplay');
     uiElements.checkOrderItemListDisplay = document.getElementById('checkOrderItemListDisplay');
     uiElements.checkOrderPackingPhotoDisplay = document.getElementById('checkOrderPackingPhotoDisplay');
     uiElements.checkOrderOperatorNotesDisplay = document.getElementById('checkOrderOperatorNotesDisplay');
