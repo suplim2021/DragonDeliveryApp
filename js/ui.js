@@ -69,6 +69,9 @@ export function showPage(pageId) {
         if (!allPagesNodeList) allPagesNodeList = document.querySelectorAll('.page');
         if (!allPagesNodeList || allPagesNodeList.length === 0) return;
     }
+    if (typeof window.stopPackageCodeScan === 'function') window.stopPackageCodeScan();
+    if (typeof window.stopPlatformIdScan === 'function') window.stopPlatformIdScan();
+    if (typeof window.stopScanForBatch === 'function') window.stopScanForBatch();
     console.log(`UI: Attempting to show page: ${pageId}`);
 
     allPagesNodeList.forEach(page => {
@@ -155,11 +158,11 @@ export function setupRoleBasedUI(currentUserRoleForNav) {
     if (!bottomNavContainerDiv) { console.error("Bottom Nav Container not found in setupRoleBasedUI."); return; }
     bottomNavContainerDiv.innerHTML = '';
     let navHtml = '';
-    navHtml += `<button type="button" data-pageid="dashboardPage">Dashboard</button>`;
-    navHtml += `<button type="button" data-pageid="adminCreateOrderPage">สร้างออเดอร์</button>`;
-    navHtml += `<button type="button" data-pageid="operatorTaskListPage">รายการรอแพ็ก</button>`;
-    navHtml += `<button type="button" data-pageid="supervisorPackCheckListPage">รอตรวจแพ็ก</button>`;
-    navHtml += `<button type="button" data-pageid="operatorShippingBatchPage">เตรียมส่งของ</button>`;
+    navHtml += `<button type="button" data-pageid="dashboardPage"><span class="nav-icon">🏠</span>Dashboard</button>`;
+    navHtml += `<button type="button" data-pageid="adminCreateOrderPage"><span class="nav-icon">➕</span>สร้างออเดอร์</button>`;
+    navHtml += `<button type="button" data-pageid="operatorTaskListPage"><span class="nav-icon">📦</span>รายการรอแพ็ก</button>`;
+    navHtml += `<button type="button" data-pageid="supervisorPackCheckListPage"><span class="nav-icon">✅</span>รอตรวจแพ็ก</button>`;
+    navHtml += `<button type="button" data-pageid="operatorShippingBatchPage"><span class="nav-icon">🚚</span>เตรียมส่งของ</button>`;
 
     bottomNavContainerDiv.innerHTML = navHtml;
 
