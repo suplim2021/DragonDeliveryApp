@@ -55,7 +55,7 @@
                     </div>
                     <div id="ordersTableContainer" style="max-height: 400px; overflow-y: auto; border:1px solid #ccc;">
                         <table><thead><tr style="background-color:#f0f0f0;">
-                            <th>Order Key</th><th>Platform Order ID</th><th>Platform</th><th>Package Code</th><th>สถานะ</th><th>Due Date</th><th>Actions</th>
+                            <th>Package Code</th><th>Platform Order ID</th><th>Platform</th><th>สถานะ</th><th>Due Date</th><th>Actions</th>
                         </tr></thead><tbody id="ordersTableBody"></tbody></table>
                     </div>
                     <p id="noOrdersMessage" class="hidden" style="text-align:center; padding:20px;">ไม่พบข้อมูลพัสดุ</p>
@@ -97,7 +97,7 @@
                 <button id="saveInitialOrderButton" type="button">บันทึกออเดอร์เบื้องต้น</button>
 
                 <div id="adminAddItemsSection" class="hidden" style="margin-top:20px; border-top:1px solid #ccc; padding-top:20px;">
-                    <h2>เพิ่มรายการสินค้า (Order ID: <span id="currentOrderIdForItems"></span>)</h2>
+                    <h2>เพิ่มรายการสินค้า (Package Code: <span id="currentOrderIdForItems"></span>)</h2>
                     <label for="productSearch">ค้นหาสินค้า:</label>
                     <input type="text" id="productSearch" placeholder="พิมพ์ชื่อสินค้า...">
                     <label for="quantity">จำนวน:</label>
@@ -113,7 +113,7 @@
             
             <!-- Operator: Packing Page (หน้ารายละเอียดการแพ็กแต่ละออเดอร์) -->
             <div id="operatorPackingPage" class="container page hidden">
-                <h2>แพ็กสินค้า (Order ID: <span id="currentOrderIdForPacking"></span>)</h2>
+                <h2>แพ็กสินค้า (Package Code: <span id="currentOrderIdForPacking"></span>)</h2>
                 <p><strong>Platform:</strong> <span id="packOrderPlatform"></span></p>
                 <p><strong>Due Date:</strong> <span id="packOrderDueDate"></span></p>
                 <h3>Checklist รายการสินค้า:</h3>
@@ -210,10 +210,9 @@
 
             <!-- Supervisor: Individual Pack Check Page -->
             <div id="supervisorIndividualPackCheckPage" class="container page hidden">
-                <h2>ตรวจสอบการแพ็ก Order: <span id="checkOrderKeyDisplay"></span></h2>
+                <h2>ตรวจสอบการแพ็ก (Package Code: <span id="checkOrderPackageCodeDisplay"></span>)</h2>
                 <div>
                     <p><strong>Platform:</strong> <span id="checkOrderPlatformDisplay"></span></p>
-                    <p><strong>Package Code:</strong> <span id="checkOrderPackageCodeDisplay"></span></p>
                     <h3>รายการสินค้าที่ควรมี:</h3>
                     <ul id="checkOrderItemListDisplay" class="item-checklist"></ul>
                 </div>

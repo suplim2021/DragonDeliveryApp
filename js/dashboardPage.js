@@ -113,16 +113,15 @@ function updateOrdersLogTable(orders, filterStatus = 'all') {
     el_ordersTableBody.innerHTML = '';
     const filtered = filterStatus === 'all' ? orders : orders.filter(o => o.status === filterStatus);
     if (filtered.length === 0) {
-        const r = el_ordersTableBody.insertRow(); const c = r.insertCell(); c.colSpan = 7; c.textContent = "ไม่พบข้อมูล"; c.style.textAlign = "center"; c.style.padding="20px"; return;
+        const r = el_ordersTableBody.insertRow(); const c = r.insertCell(); c.colSpan = 6; c.textContent = "ไม่พบข้อมูล"; c.style.textAlign = "center"; c.style.padding="20px"; return;
     }
     const role = getCurrentUserRole();
     filtered.forEach(o => {
         const r = el_ordersTableBody.insertRow();
         r.dataset.orderkey = o.key;
-        r.insertCell().textContent = o.key && o.key.length > 20 ? o.key.substring(0,17)+'...' : (o.key || 'N/A');
+        r.insertCell().textContent = o.packageCode || 'N/A';
         r.insertCell().textContent = o.platformOrderId || '-';
         r.insertCell().textContent = o.platform || 'N/A';
-        r.insertCell().textContent = o.packageCode || 'N/A';
         r.insertCell().textContent = o.status || 'N/A';
         r.insertCell().textContent = o.dueDate ? new Date(o.dueDate).toLocaleDateString('th-TH',{day:'2-digit',month:'short',year:'numeric'}) : 'N/A';
         const actCell = r.insertCell();
@@ -155,10 +154,10 @@ async function handleEditOrder(orderKey) {
     row.dataset.editing = 'true';
 
     const cells = row.querySelectorAll('td');
+    const packageCodeCell = cells[0];
     const platformOrderCell = cells[1];
-    const packageCodeCell = cells[3];
-    const statusCell = cells[4];
-    const actionsCell = cells[6];
+    const statusCell = cells[3];
+    const actionsCell = cells[5];
 
     const platformOrderInput = document.createElement('input');
     platformOrderInput.type = 'text';

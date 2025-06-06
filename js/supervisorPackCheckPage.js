@@ -68,9 +68,8 @@ export async function loadOrdersForPackCheck() {
 
                 // Display some key information about the order
                 orderItemDiv.innerHTML = `
-                    <h4 style="margin-top:0; margin-bottom:8px;">Order Key: ${orderKey.length > 20 ? orderKey.substring(0,17)+'...' : orderKey}</h4>
+                    <h4 style="margin-top:0; margin-bottom:8px;">Package Code: ${orderData.packageCode || 'N/A'}</h4>
                     <p style="font-size:0.9em; margin:3px 0;"><strong>Platform:</strong> ${orderData.platform || 'N/A'}</p>
-                    <p style="font-size:0.9em; margin:3px 0;"><strong>Package Code:</strong> ${orderData.packageCode || 'N/A'}</p>
                     <p style="font-size:0.9em; margin:3px 0;"><strong>Packed by (Operator UID):</strong> ${orderData.packingInfo?.packedBy_operatorUid?.substring(0,8) || 'N/A'}...</p>
                     <button type="button" class="supervisor-check-btn" data-orderkey="${orderKey}" style="width:auto; padding:8px 15px; margin-top:10px; font-size:0.9em;">ตรวจสอบรายการนี้</button>
                 `;
@@ -106,10 +105,10 @@ export async function loadOrdersForPackCheck() {
 
 async function loadIndividualOrderForSupervisorCheck(orderKey) {
     currentOrderKeyForSupervisorCheck = orderKey; // Store the key for approve/reject actions
-    showAppStatus(`กำลังโหลดรายละเอียด Order ${orderKey} สำหรับการตรวจสอบ...`, "info", uiElements.appStatus);
+    showAppStatus(`กำลังโหลดรายละเอียดพัสดุสำหรับการตรวจสอบ...`, "info", uiElements.appStatus);
 
     // Ensure all relevant DOM elements for the individual check page are available
-    if (!uiElements.checkOrderKeyDisplay || !uiElements.checkOrderPlatformDisplay || !uiElements.checkOrderPackageCodeDisplay ||
+    if (!uiElements.checkOrderPackageCodeDisplay || !uiElements.checkOrderPlatformDisplay ||
         !uiElements.checkOrderItemListDisplay || !uiElements.checkOrderPackingPhotoDisplay ||
         !uiElements.checkOrderOperatorNotesDisplay || !uiElements.supervisorPackCheckNotes ||
         !uiElements.approvePackButton || !uiElements.rejectPackButton) {
@@ -124,9 +123,8 @@ async function loadIndividualOrderForSupervisorCheck(orderKey) {
         if (snapshot.exists()) {
             const orderData = snapshot.val();
             
-            uiElements.checkOrderKeyDisplay.textContent = orderKey;
-            uiElements.checkOrderPlatformDisplay.textContent = orderData.platform || 'N/A';
             uiElements.checkOrderPackageCodeDisplay.textContent = orderData.packageCode || 'N/A';
+            uiElements.checkOrderPlatformDisplay.textContent = orderData.platform || 'N/A';
             
             uiElements.checkOrderItemListDisplay.innerHTML = ''; // Clear previous items
             if(orderData.items){
@@ -145,20 +143,20 @@ async function loadIndividualOrderForSupervisorCheck(orderKey) {
             uiElements.supervisorPackCheckNotes.value = ''; // Clear supervisor's previous notes for this new check
 
             showPage('supervisorIndividualPackCheckPage'); // Show the page with details
-            showAppStatus(`แสดงรายละเอียด Order ${orderKey} สำหรับการตรวจสอบ`, "success", uiElements.appStatus);
+            showAppStatus('แสดงรายละเอียดพัสดุสำหรับการตรวจสอบ', 'success', uiElements.appStatus);
         } else {
-            showAppStatus(`ไม่พบข้อมูล Order ${orderKey}`, "error", uiElements.appStatus);
+            showAppStatus('ไม่พบข้อมูลพัสดุนี้', 'error', uiElements.appStatus);
             showPage('supervisorPackCheckListPage'); // Go back to the list if order not found
         }
     } catch (error) {
         console.error("Error loading individual order for supervisor check:", error);
-        showAppStatus("เกิดข้อผิดพลาดในการโหลดรายละเอียดออเดอร์: " + error.message, "error", uiElements.appStatus);
+        showAppStatus("เกิดข้อผิดพลาดในการโหลดรายละเอียดพัสดุ: " + error.message, 'error', uiElements.appStatus);
     }
 }
 
 async function handleSupervisorPackAction(isApproved) {
     if (!currentOrderKeyForSupervisorCheck) {
-        showAppStatus("ไม่ได้เลือกออเดอร์ที่จะดำเนินการตรวจสอบ", "error", uiElements.appStatus);
+        showAppStatus("ไม่ได้เลือกพัสดุที่จะดำเนินการตรวจสอบ", 'error', uiElements.appStatus);
         return;
     }
     const currentUser = getCurrentUser(); // From auth.js
@@ -184,13 +182,13 @@ async function handleSupervisorPackAction(isApproved) {
     updates[`/orders/${currentOrderKeyForSupervisorCheck}/lastUpdatedAt`] = serverTimestamp();
 
     const actionText = isApproved ? 'อนุมัติ' : 'ปฏิเสธ';
-    showAppStatus(`กำลัง${actionText}การแพ็กสำหรับ Order ${currentOrderKeyForSupervisorCheck}...`, "info", uiElements.appStatus);
+    showAppStatus(`กำลัง${actionText}การแพ็ก...`, 'info', uiElements.appStatus);
     uiElements.approvePackButton.disabled = true;
     uiElements.rejectPackButton.disabled = true;
 
     try {
         await update(ref(database), updates); // Perform the multi-location update
-        showAppStatus(`การแพ็กของ Order ${currentOrderKeyForSupervisorCheck} ได้ถูก${actionText}แล้ว`, "success", uiElements.appStatus);
+        showAppStatus(`การแพ็กได้ถูก${actionText}แล้ว`, 'success', uiElements.appStatus);
         
         currentOrderKeyForSupervisorCheck = null; // Reset current order key
         showPage('supervisorPackCheckListPage'); // Navigate back to the list
