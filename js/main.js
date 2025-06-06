@@ -78,6 +78,19 @@ document.addEventListener('DOMContentLoaded', () => {
     window.setupShippingBatchPageGlobal = setupShippingBatchPage;
     window.loadOrderForPacking = operatorLoadOrderForPacking;
     window.loadOrderForAddingItems = loadOrderForAddingItems;
+
+    let lastScrollTop = 0;
+    window.addEventListener('scroll', () => {
+        const nav = document.getElementById('bottomNavContainer');
+        if (!nav) return;
+        const st = window.pageYOffset || document.documentElement.scrollTop;
+        if (st > lastScrollTop) {
+            nav.classList.add('hide');
+        } else {
+            nav.classList.remove('hide');
+        }
+        lastScrollTop = st <= 0 ? 0 : st;
+    });
 });
 
 export { auth, database, storage };

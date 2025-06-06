@@ -10,7 +10,8 @@ import { loadOrderForAddingItems } from './adminItemsPage.js'; // This should al
 let adminOrderAppStatus, adminOrderStartQRButton, adminOrderQRContainer, adminOrderQRDiv, adminOrderStopQRButton,
     adminOrderScannedQRData, adminOrderPlatformInput, adminOrderPlatformOrderIdInput, adminOrderScanPlatformIdButton,
     adminOrderPlatformIdQRContainer, adminOrderPlatformIdQRDiv, adminOrderStopPlatformIdQRButton,
-    adminOrderPackageCodeInput, adminOrderDueDateInput, adminOrderNotesInput, adminOrderSaveButton;
+    adminOrderPackageCodeInput, adminOrderDueDateInput, adminOrderNotesInput, adminOrderSaveButton,
+    scanOverlayDiv, overlayScannerDiv, closeOverlayBtn;
 
 let html5QrCodeScannerPackageCode = null;
 let html5QrCodeScannerPlatformOrderId = null;
@@ -33,11 +34,19 @@ export function initializeAdminOrderPageListeners() {
     adminOrderDueDateInput = document.getElementById('adminDueDate');
     adminOrderNotesInput = document.getElementById('adminNotes');
     adminOrderSaveButton = document.getElementById('saveInitialOrderButton');
+    scanOverlayDiv = document.getElementById('scanOverlay');
+    overlayScannerDiv = document.getElementById('overlayScanner');
+    closeOverlayBtn = document.getElementById('closeScanOverlayButton');
 
     if (!adminOrderStartQRButton || !adminOrderSaveButton || !adminOrderScanPlatformIdButton) {
         console.warn("Admin Order Page core elements not found for listeners.");
         return;
     }
+
+    if (closeOverlayBtn) closeOverlayBtn.addEventListener('click', () => {
+        stopPackageCodeScan();
+        stopPlatformIdScan();
+    });
 
     adminOrderStartQRButton.addEventListener('click', startPackageCodeScan);
     adminOrderStopQRButton.addEventListener('click', stopPackageCodeScan);
@@ -46,18 +55,20 @@ export function initializeAdminOrderPageListeners() {
     adminOrderSaveButton.addEventListener('click', saveInitialOrder);
 }
 
+// Expose stop functions for other modules (e.g., page navigation cleanup)
+window.stopPackageCodeScan = stopPackageCodeScan;
+window.stopPlatformIdScan = stopPlatformIdScan;
+
 function startPackageCodeScan() {
-    if (!adminOrderQRDiv) { alert("QR Scanner element for Package Code not found!"); return; }
-    adminOrderQRContainer.classList.remove('hidden');
-    adminOrderStopQRButton.classList.remove('hidden');
+    if (!overlayScannerDiv || !scanOverlayDiv) { alert("QR Scanner element not found!"); return; }
+    scanOverlayDiv.classList.remove('hidden');
     adminOrderStartQRButton.disabled = true;
     if (!html5QrCodeScannerPackageCode) {
-        html5QrCodeScannerPackageCode = new Html5Qrcode(adminOrderQRDiv.id, false);
+        html5QrCodeScannerPackageCode = new Html5Qrcode(overlayScannerDiv.id, false);
     }
     Html5Qrcode.getCameras().then(cameras => {
         if (cameras && cameras.length) {
-            const backCamera = cameras.find(c => c.label.toLowerCase().includes('back'));
-            const camId = (backCamera || cameras[0]).id;
+            const camId = cameras[0].id;
             html5QrCodeScannerPackageCode.start(
                 { deviceId: { exact: camId } },
                 { fps: 10, qrbox: { width: 250, height: 250 }, videoConstraints: { focusMode: "continuous" } },
@@ -81,8 +92,9 @@ function stopPackageCodeScan() {
     if (html5QrCodeScannerPackageCode) {
         html5QrCodeScannerPackageCode.stop().catch(e => console.warn("Error stopping main scanner:", e));
     }
-    adminOrderQRContainer.classList.add('hidden');
-    adminOrderStopQRButton.classList.add('hidden');
+    if (scanOverlayDiv) scanOverlayDiv.classList.add('hidden');
+    if (adminOrderQRContainer) adminOrderQRContainer.classList.add('hidden');
+    if (adminOrderStopQRButton) adminOrderStopQRButton.classList.add('hidden');
     adminOrderStartQRButton.disabled = false;
 }
 
@@ -105,20 +117,23 @@ function onScanSuccess_PackageCode(decodedText, decodedResult) {
 }
 
 function startPlatformIdScan() {
-    if (!adminOrderPlatformIdQRDiv) { alert("QR Scanner element for Platform Order ID not found!"); return; }
-    adminOrderPlatformIdQRContainer.classList.remove('hidden');
-    adminOrderStopPlatformIdQRButton.classList.remove('hidden');
+    if (!overlayScannerDiv || !scanOverlayDiv) { alert("QR Scanner element not found!"); return; }
+    scanOverlayDiv.classList.remove('hidden');
     adminOrderScanPlatformIdButton.disabled = true;
     if (!html5QrCodeScannerPlatformOrderId) {
-        html5QrCodeScannerPlatformOrderId = new Html5Qrcode(adminOrderPlatformIdQRDiv.id, false);
+        html5QrCodeScannerPlatformOrderId = new Html5Qrcode(overlayScannerDiv.id, false);
     }
     Html5Qrcode.getCameras().then(cameras => {
         if (cameras && cameras.length) {
-            const backCamera = cameras.find(c => c.label.toLowerCase().includes('back'));
-            const camId = (backCamera || cameras[0]).id;
+            const camId = cameras[0].id;
             html5QrCodeScannerPlatformOrderId.start(
                 { deviceId: { exact: camId } },
-                { fps: 10, qrbox: { width: 250, height: 150 }, videoConstraints: { focusMode: "continuous" } },
+                {
+                    fps: 10,
+                    qrbox: { width: 250, height: 150 },
+                    videoConstraints: { focusMode: "continuous" },
+                    formatsToSupport: [Html5QrcodeSupportedFormats.CODE_128]
+                },
                 (decodedText, decodedResult) => {
                     adminOrderPlatformOrderIdInput.value = decodedText.trim();
                     stopPlatformIdScan();
@@ -142,8 +157,9 @@ function stopPlatformIdScan() {
     if (html5QrCodeScannerPlatformOrderId) {
         html5QrCodeScannerPlatformOrderId.stop().catch(e => console.warn("Error stopping Platform ID scanner:", e));
     }
-    adminOrderPlatformIdQRContainer.classList.add('hidden');
-    adminOrderStopPlatformIdQRButton.classList.add('hidden');
+    if (scanOverlayDiv) scanOverlayDiv.classList.add('hidden');
+    if (adminOrderPlatformIdQRContainer) adminOrderPlatformIdQRContainer.classList.add('hidden');
+    if (adminOrderStopPlatformIdQRButton) adminOrderStopPlatformIdQRButton.classList.add('hidden');
     adminOrderScanPlatformIdButton.disabled = false;
 }
 
@@ -193,5 +209,3 @@ async function saveInitialOrder() {
         if (adminOrderSaveButton) adminOrderSaveButton.disabled = false;
     }
 }
-// (โค้ดส่วนที่เหลือของ adminOrderPage.js ที่คุณมี ก็ปรับให้ใช้ Local Variables ที่ Get มาใน initializeAdminOrderPageListeners)
-// (ฟังก์ชัน onScanSuccess_PackageCode และ saveInitialOrder จะต้องถูกปรับให้ใช้ตัวแปร Local เหล่านี้)

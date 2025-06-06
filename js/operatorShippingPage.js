@@ -109,8 +109,7 @@ function startScanForBatch() {
     }
     Html5Qrcode.getCameras().then(cameras => {
         if (cameras && cameras.length) {
-            const backCamera = cameras.find(c => c.label.toLowerCase().includes('back'));
-            const camId = (backCamera || cameras[0]).id;
+            const camId = cameras[0].id;
             html5QrScannerForBatch.start(
                 { deviceId: { exact: camId } }, { fps: 10, qrbox: { width: 250, height: 250 } },
                 async (decodedText, decodedResult) => { // onScanSuccess
@@ -180,6 +179,8 @@ function stopScanForBatch() {
     uiElements.stopScanForBatchButton.classList.add('hidden');
     uiElements.startScanForBatchButton.disabled = false;
 }
+
+window.stopScanForBatch = stopScanForBatch;
 
 function renderBatchItems() {
     if (!uiElements.batchItemList || !uiElements.batchItemCount) return;
