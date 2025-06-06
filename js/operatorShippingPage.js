@@ -3,7 +3,7 @@ import { showPage, uiElements } from './ui.js';
 import { database, storage, auth } from './config.js';
 import { ref, set, get, update, serverTimestamp, push, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { ref as storageRefFirebase, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js"; // Renamed to avoid conflict
-import { showAppStatus } from './utils.js';
+import { showAppStatus, beepSuccess, beepError } from './utils.js';
 import { getCurrentUser, getCurrentUserRole } from './auth.js';
 
 let currentActiveBatchId = null; // Stores the ID of the batch currently being worked on
@@ -114,6 +114,7 @@ function startScanForBatch() {
             html5QrScannerForBatch.start(
                 { deviceId: { exact: camId } }, { fps: 10, qrbox: { width: 250, height: 250 } },
                 async (decodedText, decodedResult) => { // onScanSuccess
+            beepSuccess();
             const packageCodeScanned = decodedText.trim();
             console.log(`Scanned for batch: ${packageCodeScanned}`);
             // Find the order with this packageCode that is "Ready for Shipment" or similar
@@ -151,20 +152,23 @@ function startScanForBatch() {
             }
             // Scanner does not stop automatically here, user can scan multiple items
         },
-                (errorMessage) => { /* console.warn("Batch Scan failure:", errorMessage); */ }
+                (errorMessage) => { /* console.warn("Batch Scan failure:", errorMessage); */ beepError(); }
             ).catch(err => {
+                beepError();
                 alert("ไม่สามารถเปิดกล้องสแกน QR สำหรับ Batch ได้: " + (err?.message || err));
                 uiElements.qrScannerContainer_Batch.classList.add('hidden');
                 uiElements.stopScanForBatchButton.classList.add('hidden');
                 uiElements.startScanForBatchButton.disabled = false;
             });
         } else {
+            beepError();
             alert("ไม่พบกล้องบนอุปกรณ์");
             uiElements.qrScannerContainer_Batch.classList.add('hidden');
             uiElements.stopScanForBatchButton.classList.add('hidden');
             uiElements.startScanForBatchButton.disabled = false;
         }
     }).catch(err => {
+        beepError();
         alert("ไม่สามารถเข้าถึงกล้อง: " + (err?.message || err));
         uiElements.qrScannerContainer_Batch.classList.add('hidden');
         uiElements.stopScanForBatchButton.classList.add('hidden');
