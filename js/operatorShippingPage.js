@@ -1,7 +1,7 @@
 // js/operatorShippingPage.js
 import { showPage, uiElements } from './ui.js';
 import { database, storage, auth } from './config.js';
-import { ref, set, get, update, serverTimestamp, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { ref, set, get, update, serverTimestamp, push, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { ref as storageRefFirebase, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js"; // Renamed to avoid conflict
 import { showAppStatus } from './utils.js';
 import { getCurrentUser, getCurrentUserRole } from './auth.js';
