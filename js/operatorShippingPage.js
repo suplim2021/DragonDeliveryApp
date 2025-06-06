@@ -139,11 +139,11 @@ function startScanForBatch() {
 
             if (orderKeyFound) {
                 if (itemsInCurrentBatch[orderKeyFound]) {
-                    showAppStatus(`พัสดุ ${packageCodeScanned} (Order: ${orderKeyFound}) อยู่ใน Batch นี้แล้ว`, "info", uiElements.appStatus);
+                    showAppStatus(`พัสดุ ${packageCodeScanned} อยู่ใน Batch นี้แล้ว`, 'info', uiElements.appStatus);
                 } else {
                     itemsInCurrentBatch[orderKeyFound] = packageCodeScanned; // Store package code for display
                     renderBatchItems();
-                    showAppStatus(`เพิ่ม ${packageCodeScanned} (Order: ${orderKeyFound}) เข้า Batch สำเร็จ`, "success", uiElements.appStatus);
+                    showAppStatus(`เพิ่ม ${packageCodeScanned} เข้า Batch สำเร็จ`, 'success', uiElements.appStatus);
                 }
             } else {
                 showAppStatus(`ไม่พบออเดอร์ที่พร้อมส่งสำหรับรหัสพัสดุ: ${packageCodeScanned} หรือสถานะไม่ถูกต้อง`, "error", uiElements.appStatus);
@@ -195,7 +195,7 @@ function renderBatchItems() {
     for (const orderKey in itemsInCurrentBatch) {
         const packageCode = itemsInCurrentBatch[orderKey];
         const li = document.createElement('li');
-        li.textContent = `Order: ${orderKey.substring(0,10)}... - Pkg: ${packageCode}`;
+        li.textContent = packageCode;
         // Add a remove button if needed
         uiElements.batchItemList.appendChild(li);
     }

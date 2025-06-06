@@ -63,9 +63,8 @@ export async function loadOperatorPendingTasks() {
                     `<button type="button" class="delete-order-btn" data-orderkey="${orderKey}" style="width:auto; padding:8px 15px; margin-top:10px; margin-left:5px; font-size:0.9em; background-color:#e74c3c;">ลบ</button>` : '';
 
                 orderItemDiv.innerHTML = `
-                    <h4 style="margin-top:0; margin-bottom:8px;">Order Key: ${orderKey.length > 20 ? orderKey.substring(0,17)+'...' : orderKey}</h4>
+                    <h4 style="margin-top:0; margin-bottom:8px;">Package Code: ${orderData.packageCode || 'N/A'}</h4>
                     <p style="font-size:0.9em; margin:3px 0;"><strong>Platform:</strong> ${orderData.platform || 'N/A'}</p>
-                    <p style="font-size:0.9em; margin:3px 0;"><strong>Package Code:</strong> ${orderData.packageCode || 'N/A'}</p>
                     <p style="font-size:0.9em; margin:3px 0;"><strong>Due Date:</strong> ${orderData.dueDate ? new Date(orderData.dueDate).toLocaleDateString('th-TH') : 'N/A'}</p>
                     <button type="button" class="start-packing-btn" data-orderkey="${orderKey}" style="width:auto; padding:8px 15px; margin-top:10px; font-size:0.9em;">เริ่มแพ็กรายการนี้</button>
                     ${editBtnHtml}

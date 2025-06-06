@@ -50,14 +50,14 @@ export function initializeOperatorPackingPageListeners() {
 export async function loadOrderForPacking(orderKey) {
     if (!opPacking_appStatus) { console.error("App status element missing in loadOrderForPacking"); return; }
     if (!orderKey) {
-        showAppStatus("ไม่พบ Order Key สำหรับการแพ็ก", "error", opPacking_appStatus);
+        showAppStatus('ไม่พบรหัสพัสดุสำหรับการแพ็ก', 'error', opPacking_appStatus);
         showPage('dashboardPage'); // Or operator's task list
         return;
     }
     currentOrderKeyForPacking = orderKey;
     packingPhotoFile = null;
 
-    showAppStatus(`กำลังโหลดข้อมูลออเดอร์ ${orderKey}...`, "info", opPacking_appStatus);
+    showAppStatus('กำลังโหลดข้อมูลพัสดุ...', 'info', opPacking_appStatus);
 
     const orderRef = ref(database, 'orders/' + orderKey);
     try {
@@ -65,13 +65,13 @@ export async function loadOrderForPacking(orderKey) {
         if (snapshot.exists()) {
             const orderData = snapshot.val();
             if (orderData.status !== "Ready to Pack" && orderData.status !== "Pack Rejected") {
-                alert(`ออเดอร์ ${orderKey} ไม่พร้อมสำหรับการแพ็ก (สถานะ: ${orderData.status})`);
-                showAppStatus(`ออเดอร์ ${orderKey} สถานะ: ${orderData.status}`, "info", opPacking_appStatus);
+                alert(`พัสดุนี้ไม่พร้อมสำหรับการแพ็ก (สถานะ: ${orderData.status})`);
+                showAppStatus(`พัสดุสถานะ: ${orderData.status}`, 'info', opPacking_appStatus);
                 showPage('dashboardPage'); // Or back to operator's task list
                 return;
             }
 
-            if(opPacking_currentOrderIdSpan) opPacking_currentOrderIdSpan.textContent = orderKey;
+            if(opPacking_currentOrderIdSpan) opPacking_currentOrderIdSpan.textContent = orderData.packageCode || orderKey;
             if(opPacking_platformSpan) opPacking_platformSpan.textContent = orderData.platform || 'N/A';
             if(opPacking_dueDateSpan) opPacking_dueDateSpan.textContent = orderData.dueDate ? new Date(orderData.dueDate).toLocaleDateString('th-TH') : 'N/A';
             
@@ -101,15 +101,15 @@ export async function loadOrderForPacking(orderKey) {
             if(opPacking_notesTextarea) opPacking_notesTextarea.value = orderData.packingInfo?.operatorNotes || '';
             
             showPage('operatorPackingPage');
-            showAppStatus(`โหลดออเดอร์ ${orderKey} สำหรับแพ็กแล้ว`, "success", opPacking_appStatus);
+            showAppStatus('โหลดพัสดุสำหรับแพ็กแล้ว', 'success', opPacking_appStatus);
         } else {
-            alert(`ไม่พบข้อมูลออเดอร์ ID: ${orderKey}`);
-            showAppStatus(`ไม่พบออเดอร์ ID: ${orderKey}`, "error", opPacking_appStatus);
+            alert('ไม่พบข้อมูลพัสดุนี้');
+            showAppStatus('ไม่พบข้อมูลพัสดุนี้', 'error', opPacking_appStatus);
             showPage('dashboardPage'); // Or back to operator's task list
         }
     } catch (error) {
         console.error(`Error loading order ${orderKey} for packing:`, error);
-        showAppStatus("เกิดข้อผิดพลาดในการโหลดข้อมูลออเดอร์: " + error.message, "error", opPacking_appStatus);
+        showAppStatus('เกิดข้อผิดพลาดในการโหลดข้อมูลพัสดุ: ' + error.message, 'error', opPacking_appStatus);
         showPage('dashboardPage'); // Or back to operator's task list
     }
 }
@@ -132,7 +132,7 @@ async function confirmPacking() {
     const currentUser = getCurrentUser(); const currentUserRole = getCurrentUserRole();
     if (!opPacking_appStatus) {console.error("App status element not found in confirmPacking"); return;}
     if (!['operator','administrator','supervisor'].includes(currentUserRole) || !currentOrderKeyForPacking) {
-        showAppStatus("ไม่มีสิทธิ์หรือไม่ได้เลือกออเดอร์", "error", opPacking_appStatus); return; }
+        showAppStatus('ไม่มีสิทธิ์หรือไม่ได้เลือกพัสดุ', 'error', opPacking_appStatus); return; }
     if (!packingPhotoFile) { showAppStatus("กรุณาถ่ายรูปสินค้าก่อนยืนยัน", "error", opPacking_appStatus); return; }
 
     if(opPacking_confirmButton) opPacking_confirmButton.disabled = true;
