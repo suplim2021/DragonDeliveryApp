@@ -1,7 +1,7 @@
 // js/dashboardPage.js
 import { database } from './config.js';
 import { ref, get, update, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-import { showAppStatus } from './utils.js';
+import { showAppStatus, formatDateDDMMYYYY } from './utils.js';
 import { getCurrentUser, getCurrentUserRole } from './auth.js';
 import { showPage } from './ui.js';
 // ไม่ต้อง import uiElements จาก ui.js แล้ว
@@ -137,7 +137,7 @@ function updateOrdersLogTable(orders, filterStatus = 'all') {
         r.insertCell().textContent = o.platformOrderId || '-';
         r.insertCell().textContent = o.platform || 'N/A';
         r.insertCell().textContent = o.status || 'N/A';
-        r.insertCell().textContent = o.dueDate ? new Date(o.dueDate).toLocaleDateString('th-TH',{day:'2-digit',month:'short',year:'numeric'}) : 'N/A';
+        r.insertCell().textContent = formatDateDDMMYYYY(o.dueDate);
         const actCell = r.insertCell();
         if(role === 'administrator' || role === 'supervisor') {
             const btn = document.createElement('button');
