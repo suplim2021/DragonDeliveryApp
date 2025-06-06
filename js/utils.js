@@ -110,3 +110,15 @@ export function showAppStatus(message, type = 'info', appStatusElement) {
 
 // You can add more utility functions here as your app grows
 // e.g., formatDate, generateUniqueId, etc.
+
+/**
+ * Formats a date value as DD/MM/YYYY using the Gregorian calendar.
+ * @param {number|string|Date} dateInput - The date to format.
+ * @returns {string} - Formatted date string or 'N/A' if invalid.
+ */
+export function formatDateDDMMYYYY(dateInput) {
+    if (!dateInput) return 'N/A';
+    const d = new Date(dateInput);
+    if (isNaN(d)) return 'N/A';
+    return d.toLocaleDateString('en-GB');
+}
