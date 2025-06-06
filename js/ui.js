@@ -32,6 +32,11 @@ export function initializeCoreDOMElements() { // Renamed for clarity
     uiElements.confirmBatchAndProceedButton = document.getElementById('confirmBatchAndProceedButton');
     uiElements.courierSelect = document.getElementById('courierSelect');
     uiElements.otherCourierInput = document.getElementById('otherCourierInput');
+    uiElements.manualBatchPackageInput = document.getElementById('manualBatchPackageInput');
+    uiElements.addManualPackageButton = document.getElementById('addManualPackageButton');
+    uiElements.readyToShipDatalist = document.getElementById('readyToShipDatalist');
+    uiElements.readyToShipSelect = document.getElementById('readyToShipSelect');
+    uiElements.addSelectedPackageButton = document.getElementById('addSelectedPackageButton');
     uiElements.currentBatchIdDisplay = document.getElementById('currentBatchIdDisplay');
     uiElements.batchItemList = document.getElementById('batchItemList');
     uiElements.batchItemCount = document.getElementById('batchItemCount');
@@ -171,7 +176,7 @@ export function setupRoleBasedUI(currentUserRoleForNav) {
         if (currentUserRoleForNav === 'operator') {
             if (pageId === 'adminCreateOrderPage' || pageId === 'supervisorPackCheckListPage') btn.disabled = true;
         } else if (currentUserRoleForNav === 'supervisor') {
-            if (pageId === 'adminCreateOrderPage' || pageId === 'operatorShippingBatchPage') btn.disabled = true;
+            if (pageId === 'adminCreateOrderPage') btn.disabled = true;
         } else if (currentUserRoleForNav !== 'administrator') {
             // Unknown role: disable everything except dashboard
             if (pageId !== 'dashboardPage') btn.disabled = true;
