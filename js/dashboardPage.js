@@ -3,6 +3,7 @@ import { database } from './config.js';
 import { ref, get, update, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { showAppStatus } from './utils.js';
 import { getCurrentUser, getCurrentUserRole } from './auth.js';
+import { showPage } from './ui.js';
 // ไม่ต้อง import uiElements จาก ui.js แล้ว
 
 let dailyChartInstance = null;
@@ -94,18 +95,29 @@ function updateSummaryCards(orders) {
     if (!el_summaryCardsContainer) return;
     el_summaryCardsContainer.innerHTML = '';
     const total = orders.length;
-    const shipped = orders.filter(o => o.status === "Shipped" || o.status === "Shipment Approved").length;
-    const pending = orders.filter(o => o.status === "Ready for Shipment" || o.status === "Pending Supervisor Ship Check").length;
+    const readyToPack = orders.filter(o => o.status === 'Ready to Pack').length;
+    const pendingCheck = orders.filter(o => o.status === 'Pending Supervisor Pack Check').length;
+    const readyToShip = orders.filter(o => o.status === 'Ready for Shipment' || o.status === 'Pack Approved').length;
+    const shipped = orders.filter(o => o.status === 'Shipped' || o.status === 'Shipment Approved').length;
+
     const todayStr = new Date().toISOString().slice(0, 10);
     const todayOrders = orders.filter(o => o.createdAt && typeof o.createdAt === 'number' && new Date(o.createdAt).toISOString().slice(0, 10) === todayStr).length;
-    createSummaryCard("พัสดุทั้งหมด", total, `+${todayOrders} วันนี้`, "📦");
-    createSummaryCard("ส่งแล้ว", shipped, total > 0 ? `${Math.round((shipped / total) * 100)}%` : "0%", "✅");
-    createSummaryCard("รอส่ง", pending, total > 0 ? `${Math.round((pending / total) * 100)}%` : "0%", "⏰");
+
+    createSummaryCard('พัสดุทั้งหมด', total, `+${todayOrders} วันนี้`, '📦');
+    createSummaryCard('รายการรอแพ็ก', readyToPack, total > 0 ? `${Math.round((readyToPack/total)*100)}%` : '0%', '📋', 'operatorTaskListPage');
+    createSummaryCard('รอตรวจเช็ค', pendingCheck, total > 0 ? `${Math.round((pendingCheck/total)*100)}%` : '0%', '🕵️', 'supervisorPackCheckListPage');
+    createSummaryCard('เตรียมส่ง', readyToShip, total > 0 ? `${Math.round((readyToShip/total)*100)}%` : '0%', '🚚', 'operatorShippingBatchPage');
+    createSummaryCard('ส่งแล้ว', shipped, total > 0 ? `${Math.round((shipped/total)*100)}%` : '0%', '✅');
 }
 
-function createSummaryCard(title, value, subValue, icon) {
+function createSummaryCard(title, value, subValue, icon, pageId = null) {
     if (!el_summaryCardsContainer) return;
-    const card = document.createElement('div'); card.className = 'summary-card';
+    const card = document.createElement('div');
+    card.className = 'summary-card';
+    if (pageId) {
+        card.classList.add('clickable');
+        card.addEventListener('click', () => showPage(pageId));
+    }
     card.innerHTML = `<div class="summary-card-icon">${icon}</div><h4 class="summary-card-value">${value}</h4><p class="summary-card-title">${title}</p><p class="summary-card-subvalue">${subValue}</p>`;
     el_summaryCardsContainer.appendChild(card);
 }
