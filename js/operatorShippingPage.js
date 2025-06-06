@@ -10,6 +10,70 @@ let currentActiveBatchId = null; // Stores the ID of the batch currently being w
 let itemsInCurrentBatch = {}; // Stores { orderKey: packageCode } for the current batch
 let shipmentGroupPhotoFile = null; // Stores the selected group photo file for shipment
 
+async function getExistingOpenBatchForUser(userUid) {
+    const batchesRef = ref(database, 'shipmentBatches');
+    const userBatchesQuery = query(batchesRef, orderByChild('createdBy_operatorUid'), equalTo(userUid));
+    const snapshot = await get(userBatchesQuery);
+    if (snapshot.exists()) {
+        let found = null;
+        snapshot.forEach(child => {
+            if (!found && child.val().status === 'Open') {
+                found = { id: child.key, data: child.val() };
+            }
+        });
+        return found;
+    }
+    return null;
+}
+
+async function ensureBatchExists(showMessages = false) {
+    if (currentActiveBatchId) return;
+    const currentUser = getCurrentUser();
+    if (!currentUser) { if (showMessages) showAppStatus("กรุณา Login ก่อน", "error", uiElements.appStatus); return; }
+
+    const existing = await getExistingOpenBatchForUser(currentUser.uid);
+    if (existing) {
+        currentActiveBatchId = existing.id;
+        itemsInCurrentBatch = {}; // No items are persisted before finalizing
+        if (uiElements.currentBatchIdDisplay) uiElements.currentBatchIdDisplay.textContent = currentActiveBatchId;
+        renderBatchItems();
+        if (showMessages) showAppStatus(`ใช้ Batch เดิม: ${currentActiveBatchId}`, 'info', uiElements.appStatus);
+        return;
+    }
+
+    let courier = uiElements.courierSelect ? uiElements.courierSelect.value : '';
+    if (courier === 'Other') {
+        courier = uiElements.otherCourierInput.value.trim();
+    }
+    if (!courier) {
+        courier = 'Unknown';
+    }
+
+    const newBatchRef = push(ref(database, 'shipmentBatches'));
+    currentActiveBatchId = newBatchRef.key;
+    itemsInCurrentBatch = {};
+
+    const batchData = {
+        batchId: currentActiveBatchId,
+        courierShop: courier,
+        status: "Open",
+        createdAt: serverTimestamp(),
+        createdBy_operatorUid: currentUser.uid,
+        orders: {}
+    };
+
+    try {
+        await set(newBatchRef, batchData);
+        if (uiElements.currentBatchIdDisplay) uiElements.currentBatchIdDisplay.textContent = currentActiveBatchId;
+        renderBatchItems();
+        if (showMessages) showAppStatus(`สร้าง Batch ID: ${currentActiveBatchId} สำหรับ ${courier} สำเร็จ`, "success", uiElements.appStatus);
+    } catch (error) {
+        console.error("Error creating new batch:", error);
+        if (showMessages) showAppStatus("เกิดข้อผิดพลาดในการสร้าง Batch: " + error.message, "error", uiElements.appStatus);
+        currentActiveBatchId = null;
+    }
+}
+
 export function initializeOperatorShippingPageListeners() {
     if (!uiElements.createNewBatchButton || !uiElements.startScanForBatchButton || 
         !uiElements.confirmBatchAndProceedButton || !uiElements.finalizeShipmentButton ||
@@ -36,14 +100,16 @@ export function initializeOperatorShippingPageListeners() {
 export function setupShippingBatchPage() {
     // This function is called when the 'operatorShippingBatchPage' is shown
     // Reset or load existing batch state if needed
-    if (currentActiveBatchId) {
-        if (uiElements.currentBatchIdDisplay) uiElements.currentBatchIdDisplay.textContent = currentActiveBatchId;
-        renderBatchItems(); // Re-render items if a batch is already active
-    } else {
-        if (uiElements.currentBatchIdDisplay) uiElements.currentBatchIdDisplay.textContent = 'N/A';
-        if (uiElements.batchItemList) uiElements.batchItemList.innerHTML = '<li>ยังไม่มีพัสดุใน Batch นี้</li>';
-        if (uiElements.batchItemCount) uiElements.batchItemCount.textContent = '0';
-    }
+    ensureBatchExists(false).then(() => {
+        if (currentActiveBatchId) {
+            if (uiElements.currentBatchIdDisplay) uiElements.currentBatchIdDisplay.textContent = currentActiveBatchId;
+            renderBatchItems();
+        } else {
+            if (uiElements.currentBatchIdDisplay) uiElements.currentBatchIdDisplay.textContent = 'N/A';
+            if (uiElements.batchItemList) uiElements.batchItemList.innerHTML = '<li>ยังไม่มีพัสดุใน Batch นี้</li>';
+            if (uiElements.batchItemCount) uiElements.batchItemCount.textContent = '0';
+        }
+    });
     if (uiElements.courierSelect) uiElements.courierSelect.value = "";
     if (uiElements.otherCourierInput) {
         uiElements.otherCourierInput.value = "";
@@ -53,122 +119,80 @@ export function setupShippingBatchPage() {
 }
 
 async function createOrSelectBatch() {
-    const currentUser = getCurrentUser();
-    if (!currentUser) { showAppStatus("กรุณา Login ก่อน", "error", uiElements.appStatus); return; }
-
-    let courier = uiElements.courierSelect.value;
-    if (courier === 'Other') {
-        courier = uiElements.otherCourierInput.value.trim();
-    }
-    if (!courier) {
-        showAppStatus("กรุณาเลือกหรือระบุ Courier", "error", uiElements.appStatus);
-        return;
-    }
-
-    // For simplicity, we'll always create a new batch ID.
-    // In a real app, you might want to let users resume an existing open batch.
-    const newBatchRef = push(ref(database, 'shipmentBatches'));
-    currentActiveBatchId = newBatchRef.key;
-    itemsInCurrentBatch = {}; // Reset items for the new batch
-
-    const batchData = {
-        batchId: currentActiveBatchId,
-        courierShop: courier,
-        status: "Open", // Initial status for a new batch
-        createdAt: serverTimestamp(),
-        createdBy_operatorUid: currentUser.uid,
-        orders: {} // Will be populated as items are scanned
-    };
-
-    try {
-        await set(newBatchRef, batchData);
-        if (uiElements.currentBatchIdDisplay) uiElements.currentBatchIdDisplay.textContent = currentActiveBatchId;
-        renderBatchItems(); // Clear list and show 'no items'
-        showAppStatus(`สร้าง Batch ID: ${currentActiveBatchId} สำหรับ ${courier} สำเร็จ`, "success", uiElements.appStatus);
-    } catch (error) {
-        console.error("Error creating new batch:", error);
-        showAppStatus("เกิดข้อผิดพลาดในการสร้าง Batch: " + error.message, "error", uiElements.appStatus);
-        currentActiveBatchId = null;
-    }
+    await ensureBatchExists(true);
 }
 
 let html5QrScannerForBatch = null;
 let isBatchScannerStopping = false; // Flag to prevent double stop calls
 function startScanForBatch() {
-    if (!currentActiveBatchId) {
-        showAppStatus("กรุณาสร้างหรือเลือก Batch ก่อนสแกนพัสดุ", "error", uiElements.appStatus);
-        return;
-    }
-    if (!uiElements.qrScanner_Batch_div) { alert("QR Scanner element for Batch not found!"); return; }
+    ensureBatchExists(false).then(() => {
+        if (!currentActiveBatchId) {
+            showAppStatus("กรุณาเลือก Courier และสร้าง Batch ก่อน", "error", uiElements.appStatus);
+            return;
+        }
+        if (!uiElements.qrScanner_Batch_div) { alert("QR Scanner element for Batch not found!"); return; }
 
-    uiElements.qrScannerContainer_Batch.classList.remove('hidden');
-    uiElements.stopScanForBatchButton.classList.remove('hidden');
-    uiElements.startScanForBatchButton.disabled = true;
+        uiElements.qrScannerContainer_Batch.classList.remove('hidden');
+        uiElements.stopScanForBatchButton.classList.remove('hidden');
+        uiElements.startScanForBatchButton.disabled = true;
 
-    if (!html5QrScannerForBatch) {
-        html5QrScannerForBatch = new Html5Qrcode(uiElements.qrScanner_Batch_div.id, false);
-    }
-    Html5Qrcode.getCameras().then(cameras => {
-        if (cameras && cameras.length) {
-            const camId = cameras[0].id;
-            html5QrScannerForBatch.start(
-                { deviceId: { exact: camId } }, { fps: 10, qrbox: { width: 250, height: 250 } },
-                async (decodedText, decodedResult) => { // onScanSuccess
-            const packageCodeScanned = decodedText.trim();
-            console.log(`Scanned for batch: ${packageCodeScanned}`);
-            // Find the order with this packageCode that is "Ready for Shipment" or similar
-            // This requires a query or fetching all relevant orders and filtering client-side (less efficient for many orders)
-            // For now, a simplified approach: assume packageCode is unique enough or part of a constructed orderKey
-            
-            // Find order by package code (this is a simplified search, ideally query by packageCode index)
-            const ordersRef = ref(database, 'orders');
-            const ordersQuery = query(ordersRef, orderByChild('packageCode'), equalTo(packageCodeScanned));
-            const snapshot = await get(ordersQuery);
+        if (!html5QrScannerForBatch) {
+            html5QrScannerForBatch = new Html5Qrcode(uiElements.qrScanner_Batch_div.id, false);
+        }
 
-            let orderKeyFound = null;
-            let orderDataFound = null;
+        Html5Qrcode.getCameras().then(cameras => {
+            if (cameras && cameras.length) {
+                const camId = cameras[0].id;
+                html5QrScannerForBatch.start(
+                    { deviceId: { exact: camId } }, { fps: 10, qrbox: { width: 250, height: 250 } },
+                    async (decodedText, decodedResult) => {
+                        const packageCodeScanned = decodedText.trim();
+                        console.log(`Scanned for batch: ${packageCodeScanned}`);
 
-            if (snapshot.exists()) {
-                snapshot.forEach(child => {
-                    // Pick the first one that's ready for shipment if multiple match (unlikely if package codes are unique)
-                    if (child.val().status === "Ready for Shipment" || child.val().status === "Pack Approved") {
-                        orderKeyFound = child.key;
-                        orderDataFound = child.val();
-                    }
+                        const ordersRef = ref(database, 'orders');
+                        const ordersQuery = query(ordersRef, orderByChild('packageCode'), equalTo(packageCodeScanned));
+                        const snapshot = await get(ordersQuery);
+
+                        let orderKeyFound = null;
+                        if (snapshot.exists()) {
+                            snapshot.forEach(child => {
+                                if (!orderKeyFound && (child.val().status === "Ready for Shipment" || child.val().status === "Pack Approved")) {
+                                    orderKeyFound = child.key;
+                                }
+                            });
+                        }
+
+                        if (orderKeyFound) {
+                            if (itemsInCurrentBatch[orderKeyFound]) {
+                                showAppStatus(`พัสดุ ${packageCodeScanned} อยู่ใน Batch นี้แล้ว`, 'info', uiElements.appStatus);
+                            } else {
+                                itemsInCurrentBatch[orderKeyFound] = packageCodeScanned;
+                                renderBatchItems();
+                                showAppStatus(`เพิ่ม ${packageCodeScanned} เข้า Batch สำเร็จ`, 'success', uiElements.appStatus);
+                            }
+                        } else {
+                            showAppStatus(`ไม่พบออเดอร์ที่พร้อมส่งสำหรับรหัสพัสดุ: ${packageCodeScanned} หรือสถานะไม่ถูกต้อง`, "error", uiElements.appStatus);
+                        }
+                    },
+                    (errorMessage) => { /* ignore scan errors */ }
+                ).catch(err => {
+                    alert("ไม่สามารถเปิดกล้องสแกน QR สำหรับ Batch ได้: " + (err?.message || err));
+                    uiElements.qrScannerContainer_Batch.classList.add('hidden');
+                    uiElements.stopScanForBatchButton.classList.add('hidden');
+                    uiElements.startScanForBatchButton.disabled = false;
                 });
-            }
-
-            if (orderKeyFound) {
-                if (itemsInCurrentBatch[orderKeyFound]) {
-                    showAppStatus(`พัสดุ ${packageCodeScanned} อยู่ใน Batch นี้แล้ว`, 'info', uiElements.appStatus);
-                } else {
-                    itemsInCurrentBatch[orderKeyFound] = packageCodeScanned; // Store package code for display
-                    renderBatchItems();
-                    showAppStatus(`เพิ่ม ${packageCodeScanned} เข้า Batch สำเร็จ`, 'success', uiElements.appStatus);
-                }
             } else {
-                showAppStatus(`ไม่พบออเดอร์ที่พร้อมส่งสำหรับรหัสพัสดุ: ${packageCodeScanned} หรือสถานะไม่ถูกต้อง`, "error", uiElements.appStatus);
-            }
-            // Scanner does not stop automatically here, user can scan multiple items
-        },
-                (errorMessage) => { /* console.warn("Batch Scan failure:", errorMessage); */ }
-            ).catch(err => {
-                alert("ไม่สามารถเปิดกล้องสแกน QR สำหรับ Batch ได้: " + (err?.message || err));
+                alert("ไม่พบกล้องบนอุปกรณ์");
                 uiElements.qrScannerContainer_Batch.classList.add('hidden');
                 uiElements.stopScanForBatchButton.classList.add('hidden');
                 uiElements.startScanForBatchButton.disabled = false;
-            });
-        } else {
-            alert("ไม่พบกล้องบนอุปกรณ์");
+            }
+        }).catch(err => {
+            alert("ไม่สามารถเข้าถึงกล้อง: " + (err?.message || err));
             uiElements.qrScannerContainer_Batch.classList.add('hidden');
             uiElements.stopScanForBatchButton.classList.add('hidden');
             uiElements.startScanForBatchButton.disabled = false;
-        }
-    }).catch(err => {
-        alert("ไม่สามารถเข้าถึงกล้อง: " + (err?.message || err));
-        uiElements.qrScannerContainer_Batch.classList.add('hidden');
-        uiElements.stopScanForBatchButton.classList.add('hidden');
-        uiElements.startScanForBatchButton.disabled = false;
+        });
     });
 }
 
@@ -214,7 +238,8 @@ function renderBatchItems() {
     }
 }
 
-function confirmBatchAndMoveToPhoto() {
+async function confirmBatchAndMoveToPhoto() {
+    await ensureBatchExists(false);
     if (!currentActiveBatchId || Object.keys(itemsInCurrentBatch).length === 0) {
         showAppStatus("กรุณาสร้าง Batch และเพิ่มพัสดุอย่างน้อย 1 รายการก่อน", "error", uiElements.appStatus);
         return;
