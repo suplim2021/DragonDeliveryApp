@@ -60,7 +60,7 @@ function startPackageCodeScan() {
             const camId = (backCamera || cameras[0]).id;
             html5QrCodeScannerPackageCode.start(
                 { deviceId: { exact: camId } },
-                { fps: 10, qrbox: { width: 250, height: 250 } },
+                { fps: 10, qrbox: { width: 250, height: 250 }, videoConstraints: { focusMode: "continuous" } },
                 onScanSuccess_PackageCode,
                 (errorMessage) => { console.warn("Package Code Scan failure:", errorMessage); }
             ).catch(err => {
@@ -118,7 +118,7 @@ function startPlatformIdScan() {
             const camId = (backCamera || cameras[0]).id;
             html5QrCodeScannerPlatformOrderId.start(
                 { deviceId: { exact: camId } },
-                { fps: 10, qrbox: { width: 250, height: 150 } },
+                { fps: 10, qrbox: { width: 250, height: 150 }, videoConstraints: { focusMode: "continuous" } },
                 (decodedText, decodedResult) => {
                     adminOrderPlatformOrderIdInput.value = decodedText.trim();
                     stopPlatformIdScan();
@@ -148,13 +148,50 @@ function stopPlatformIdScan() {
 }
 
 async function saveInitialOrder() {
-    const currentUser = getCurrentUser(); const currentUserRole = getCurrentUserRole();
-    if (currentUserRole !== 'administrator') { showAppStatus("คุณไม่มีสิทธิ์", 'error', adminOrderAppStatus); return; }
-    // ... (rest of the logic using local vars like adminOrderPlatformInput.value) ...
-    // ... when navigating:
-    // loadOrderForAddingItems(orderKey); // This function is in adminItemsPage.js
-                                        // It will need to query its own DOM elements or receive them.
-                                        // For now, assuming it works or will be refactored similarly.
+    const currentUser = getCurrentUser();
+    const currentUserRole = getCurrentUserRole();
+    if (!currentUser || currentUserRole !== 'administrator') {
+        showAppStatus("คุณไม่มีสิทธิ์", 'error', adminOrderAppStatus);
+        return;
+    }
+
+    const platform = adminOrderPlatformInput ? adminOrderPlatformInput.value.trim() : '';
+    const platformOrderId = adminOrderPlatformOrderIdInput ? adminOrderPlatformOrderIdInput.value.trim() : '';
+    const packageCode = adminOrderPackageCodeInput ? adminOrderPackageCodeInput.value.trim() : '';
+    const dueDateStr = adminOrderDueDateInput ? adminOrderDueDateInput.value : '';
+    const notes = adminOrderNotesInput ? adminOrderNotesInput.value.trim() : '';
+
+    if (!packageCode || !dueDateStr) {
+        showAppStatus('กรุณากรอกข้อมูลให้ครบ', 'error', adminOrderAppStatus);
+        return;
+    }
+
+    const dueDate = new Date(dueDateStr).getTime();
+
+    if (adminOrderSaveButton) adminOrderSaveButton.disabled = true;
+    showAppStatus('กำลังบันทึกออเดอร์...', 'info', adminOrderAppStatus);
+
+    try {
+        const newRef = push(ref(database, 'orders'));
+        const orderData = {
+            platform: platform || 'Unknown',
+            platformOrderId: platformOrderId || null,
+            packageCode: packageCode,
+            dueDate: dueDate,
+            createdAt: serverTimestamp(),
+            createdBy_adminUid: currentUser.uid,
+            notes: notes || null,
+            status: 'Adding Items'
+        };
+        await set(newRef, orderData);
+        showAppStatus('สร้างออเดอร์เรียบร้อย', 'success', adminOrderAppStatus);
+        loadOrderForAddingItems(newRef.key);
+    } catch (err) {
+        console.error('save initial order error', err);
+        showAppStatus('เกิดข้อผิดพลาด: ' + err.message, 'error', adminOrderAppStatus);
+    } finally {
+        if (adminOrderSaveButton) adminOrderSaveButton.disabled = false;
+    }
 }
 // (โค้ดส่วนที่เหลือของ adminOrderPage.js ที่คุณมี ก็ปรับให้ใช้ Local Variables ที่ Get มาใน initializeAdminOrderPageListeners)
 // (ฟังก์ชัน onScanSuccess_PackageCode และ saveInitialOrder จะต้องถูกปรับให้ใช้ตัวแปร Local เหล่านี้)
