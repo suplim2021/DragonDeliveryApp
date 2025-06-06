@@ -7,24 +7,30 @@
  */
 export function detectPlatformFromPackageCode(packageCode) {
     if (!packageCode) return "Unknown";
-    const code = packageCode.toUpperCase(); // Normalize to uppercase for easier comparison
+    const code = packageCode.toUpperCase().replace(/\s+/g, ""); // Normalize for easier comparison
 
-    // --- Example Platform Detection Logic (NEEDS CUSTOMIZATION) ---
+    // Shopee codes usually start with TH + digits or the prefix SPX
     if ((code.startsWith("TH") && code.length >= 12) || code.startsWith("SPX")) {
-        // Example: Shopee or SPX Express often starts with TH followed by many digits, or SPX
         return "Shopee";
-    } else if (code.includes("LEX") || code.startsWith("LX")) {
-        // Example: Lazada Express often contains LEX or starts with LX
-        return "Lazada";
-    } else if (code.startsWith("JT") || code.startsWith("JTS") || code.startsWith("KER")) {
-        // Example: J&T Express or Kerry (often used by Tiktok or other platforms)
-        // You might want to differentiate further if needed
-        return "Tiktok"; // Or "J&T", "Kerry"
     }
-    // Add more conditions for other platforms/couriers you use
-    // --- End Example Platform Detection Logic ---
 
-    return "Unknown"; // Default if no specific pattern matches
+    // Lazada often uses prefixes like LAZ, LEX or LX
+    if (code.startsWith("LAZ") || code.includes("LEX") || code.startsWith("LX")) {
+        return "Lazada";
+    }
+
+    // Tiktok shipments may be handled by J&T or Kerry or contain only digits
+    if (
+        code.startsWith("JT") ||
+        code.startsWith("JTS") ||
+        code.startsWith("KER") ||
+        /^\d{10,20}$/.test(code)
+    ) {
+        return "Tiktok";
+    }
+
+    // Fallback
+    return "Unknown";
 }
 
 /**
