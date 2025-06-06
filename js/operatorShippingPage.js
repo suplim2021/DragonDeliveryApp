@@ -93,6 +93,7 @@ async function createOrSelectBatch() {
 }
 
 let html5QrScannerForBatch = null;
+let isBatchScannerStopping = false; // Flag to prevent double stop calls
 function startScanForBatch() {
     if (!currentActiveBatchId) {
         showAppStatus("กรุณาสร้างหรือเลือก Batch ก่อนสแกนพัสดุ", "error", uiElements.appStatus);
@@ -172,9 +173,14 @@ function startScanForBatch() {
 }
 
 async function stopScanForBatch() {
+    if (isBatchScannerStopping) return; // Prevent concurrent stop attempts
+    isBatchScannerStopping = true;
     if (html5QrScannerForBatch) {
         try {
-            await html5QrScannerForBatch.stop();
+            // Some devices may trigger stop twice; check if scanner is running
+            if (html5QrScannerForBatch._isScanning) {
+                await html5QrScannerForBatch.stop();
+            }
             await html5QrScannerForBatch.clear();
         } catch (e) {
             console.warn("Error stopping batch scanner:", e);
@@ -184,6 +190,7 @@ async function stopScanForBatch() {
     uiElements.qrScannerContainer_Batch.classList.add('hidden');
     uiElements.stopScanForBatchButton.classList.add('hidden');
     uiElements.startScanForBatchButton.disabled = false;
+    isBatchScannerStopping = false;
 }
 
 window.stopScanForBatch = stopScanForBatch;
