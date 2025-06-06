@@ -53,6 +53,20 @@ export function initializeAdminOrderPageListeners() {
     adminOrderScanPlatformIdButton.addEventListener('click', startPlatformIdScan);
     adminOrderStopPlatformIdQRButton.addEventListener('click', stopPlatformIdScan);
     adminOrderSaveButton.addEventListener('click', saveInitialOrder);
+    if (scanOverlayDiv) {
+        scanOverlayDiv.addEventListener('click', (e) => {
+            if (e.target === scanOverlayDiv) {
+                stopPackageCodeScan();
+                stopPlatformIdScan();
+            }
+        });
+    }
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            stopPackageCodeScan();
+            stopPlatformIdScan();
+        }
+    });
 }
 
 // Expose stop functions for other modules (e.g., page navigation cleanup)
@@ -68,10 +82,12 @@ function startPackageCodeScan() {
     }
     Html5Qrcode.getCameras().then(cameras => {
         if (cameras && cameras.length) {
-            const camId = cameras[0].id;
+            let cam = cameras.find(c => /back|rear|environment/i.test(c.label));
+            if(!cam) cam = cameras[cameras.length - 1];
+            const camId = cam.id;
             html5QrCodeScannerPackageCode.start(
                 { deviceId: { exact: camId } },
-                { fps: 10, qrbox: { width: 250, height: 250 }, videoConstraints: { focusMode: "continuous" } },
+                { fps: 10, qrbox: { width: 250, height: 250 }, videoConstraints: { focusMode: "continuous", facingMode: "environment" } },
                 onScanSuccess_PackageCode,
                 (errorMessage) => { console.warn("Package Code Scan failure:", errorMessage); }
             ).catch(err => {
@@ -109,12 +125,10 @@ function onScanSuccess_PackageCode(decodedText, decodedResult) {
     if (adminOrderScannedQRData) adminOrderScannedQRData.textContent = packageCode;
     if (adminOrderPackageCodeInput) {
         adminOrderPackageCodeInput.value = packageCode;
-        adminOrderPackageCodeInput.readOnly = true;
     }
     const detectedPlatform = detectPlatformFromPackageCode(packageCode);
     if (adminOrderPlatformInput) {
         adminOrderPlatformInput.value = detectedPlatform;
-        adminOrderPlatformInput.readOnly = true;
     }
     if (adminOrderPlatformOrderIdInput && !adminOrderPlatformOrderIdInput.value.trim()) {
         adminOrderPlatformOrderIdInput.focus();
@@ -131,13 +145,15 @@ function startPlatformIdScan() {
     }
     Html5Qrcode.getCameras().then(cameras => {
         if (cameras && cameras.length) {
-            const camId = cameras[0].id;
+            let cam = cameras.find(c => /back|rear|environment/i.test(c.label));
+            if(!cam) cam = cameras[cameras.length - 1];
+            const camId = cam.id;
             html5QrCodeScannerPlatformOrderId.start(
                 { deviceId: { exact: camId } },
                 {
                     fps: 10,
                     qrbox: { width: 250, height: 150 },
-                    videoConstraints: { focusMode: "continuous" },
+                    videoConstraints: { focusMode: "continuous", facingMode: "environment" },
                     formatsToSupport: [Html5QrcodeSupportedFormats.CODE_128]
                 },
                 (decodedText, decodedResult) => {
