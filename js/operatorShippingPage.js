@@ -38,10 +38,19 @@ export function initializeOperatorShippingPageListeners() {
             if (e.key === 'Enter') { e.preventDefault(); const code = uiElements.manualBatchPackageInput.value.trim(); if (code) { addPackageCodeManually(code); uiElements.manualBatchPackageInput.value = ''; } }
         });
     }
-    if (uiElements.addSelectedPackageButton && uiElements.readyToShipSelect) {
-        uiElements.addSelectedPackageButton.addEventListener('click', () => {
-            const code = uiElements.readyToShipSelect.value;
-            if (code) addPackageCodeManually(code);
+
+    if (uiElements.readyToShipCheckboxList) {
+        uiElements.readyToShipCheckboxList.addEventListener('change', (e) => {
+            const cb = e.target;
+            if (cb && cb.matches('input[type="checkbox"]')) {
+                const orderKey = cb.dataset.orderkey;
+                const code = cb.dataset.code;
+                if (cb.checked) {
+                    addPackageCodeManually(code);
+                } else {
+                    removePackageFromBatch(orderKey);
+                }
+            }
         });
     }
     
@@ -218,10 +227,10 @@ async function stopScanForBatch() {
 window.stopScanForBatch = stopScanForBatch;
 
 async function loadReadyToShipPackages() {
-    if (!uiElements.readyToShipDatalist || !uiElements.readyToShipSelect) return;
+    if (!uiElements.readyToShipDatalist || !uiElements.readyToShipCheckboxList) return;
     readyToShipPackages = [];
     uiElements.readyToShipDatalist.innerHTML = '';
-    uiElements.readyToShipSelect.innerHTML = '<option value="">-- เลือกพัสดุ --</option>';
+    uiElements.readyToShipCheckboxList.innerHTML = '';
     const statuses = ['Ready for Shipment', 'Pack Approved'];
     try {
         for (const status of statuses) {
@@ -241,10 +250,20 @@ async function loadReadyToShipPackages() {
             const opt = document.createElement('option');
             opt.value = code;
             uiElements.readyToShipDatalist.appendChild(opt);
-            const opt2 = document.createElement('option');
-            opt2.value = code;
-            opt2.textContent = code;
-            uiElements.readyToShipSelect.appendChild(opt2);
+        });
+
+        readyToShipPackages.forEach(entry => {
+            const li = document.createElement('li');
+            const label = document.createElement('label');
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.dataset.orderkey = entry.orderKey;
+            cb.dataset.code = entry.packageCode;
+            if (itemsInCurrentBatch[entry.orderKey]) cb.checked = true;
+            label.appendChild(cb);
+            label.appendChild(document.createTextNode(' ' + entry.packageCode));
+            li.appendChild(label);
+            uiElements.readyToShipCheckboxList.appendChild(li);
         });
     } catch (err) {
         console.error('Error loading ready to ship packages', err);
@@ -262,8 +281,24 @@ function addPackageCodeManually(packageCode) {
         return;
     }
     itemsInCurrentBatch[entry.orderKey] = packageCode;
+    if (uiElements.readyToShipCheckboxList) {
+        const cb = uiElements.readyToShipCheckboxList.querySelector(`input[data-orderkey="${entry.orderKey}"]`);
+        if (cb) cb.checked = true;
+    }
     renderBatchItems();
     showAppStatus(`เพิ่ม ${packageCode} เข้า Batch สำเร็จ`, 'success', uiElements.appStatus);
+}
+
+function removePackageFromBatch(orderKey) {
+    const code = itemsInCurrentBatch[orderKey];
+    if (!code) return;
+    delete itemsInCurrentBatch[orderKey];
+    if (uiElements.readyToShipCheckboxList) {
+        const cb = uiElements.readyToShipCheckboxList.querySelector(`input[data-orderkey="${orderKey}"]`);
+        if (cb) cb.checked = false;
+    }
+    renderBatchItems();
+    showAppStatus(`ลบ ${code} ออกจาก Batch`, 'info', uiElements.appStatus);
 }
 
 function renderBatchItems() {
@@ -280,7 +315,11 @@ function renderBatchItems() {
         const packageCode = itemsInCurrentBatch[orderKey];
         const li = document.createElement('li');
         li.textContent = packageCode;
-        // Add a remove button if needed
+        const btn = document.createElement('button');
+        btn.textContent = '✖';
+        btn.className = 'remove-batch-item-btn';
+        btn.addEventListener('click', () => removePackageFromBatch(orderKey));
+        li.appendChild(btn);
         uiElements.batchItemList.appendChild(li);
     }
 }
