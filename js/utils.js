@@ -76,8 +76,8 @@ export function setDefaultDueDate(adminDueDateInputElement) {
     }
     // If before 12:00 PM, it remains the current day
 
-    // Format date as YYYY-MM-DD for the input type="date"
-    adminDueDateInputElement.value = defaultDueDate.toISOString().slice(0, 10);
+    // Format date as YYYY-MM-DD in local time for the input type="date"
+    adminDueDateInputElement.value = formatDateYYYYMMDD(defaultDueDate);
 }
 
 /**
@@ -121,4 +121,20 @@ export function formatDateDDMMYYYY(dateInput) {
     const d = new Date(dateInput);
     if (isNaN(d)) return 'N/A';
     return d.toLocaleDateString('en-GB');
+}
+
+/**
+ * Formats a date value as YYYY-MM-DD using the local timezone.
+ * Useful for populating <input type="date"> values.
+ * @param {number|string|Date} dateInput - The date to format.
+ * @returns {string} - Formatted date string or 'N/A' if invalid.
+ */
+export function formatDateYYYYMMDD(dateInput) {
+    if (!dateInput) return 'N/A';
+    const d = new Date(dateInput);
+    if (isNaN(d)) return 'N/A';
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 }
