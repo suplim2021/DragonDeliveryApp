@@ -53,6 +53,9 @@ export function initializeAdminOrderPageListeners() {
     adminOrderScanPlatformIdButton.addEventListener('click', startPlatformIdScan);
     adminOrderStopPlatformIdQRButton.addEventListener('click', stopPlatformIdScan);
     adminOrderSaveButton.addEventListener('click', saveInitialOrder);
+    if (adminOrderPackageCodeInput) {
+        adminOrderPackageCodeInput.addEventListener('input', onPackageCodeInputChange);
+    }
     if (scanOverlayDiv) {
         scanOverlayDiv.addEventListener('click', (e) => {
             if (e.target === scanOverlayDiv) {
@@ -235,5 +238,15 @@ async function saveInitialOrder() {
         showAppStatus('เกิดข้อผิดพลาด: ' + err.message, 'error', adminOrderAppStatus);
     } finally {
         if (adminOrderSaveButton) adminOrderSaveButton.disabled = false;
+    }
+}
+
+function onPackageCodeInputChange() {
+    const packageCode = adminOrderPackageCodeInput ? adminOrderPackageCodeInput.value.trim() : '';
+    if (adminOrderScannedQRData) {
+        adminOrderScannedQRData.textContent = packageCode || 'N/A';
+    }
+    if (adminOrderPlatformInput) {
+        adminOrderPlatformInput.value = detectPlatformFromPackageCode(packageCode);
     }
 }
