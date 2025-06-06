@@ -35,8 +35,7 @@ export function initializeCoreDOMElements() { // Renamed for clarity
     uiElements.manualBatchPackageInput = document.getElementById('manualBatchPackageInput');
     uiElements.addManualPackageButton = document.getElementById('addManualPackageButton');
     uiElements.readyToShipDatalist = document.getElementById('readyToShipDatalist');
-    uiElements.readyToShipSelect = document.getElementById('readyToShipSelect');
-    uiElements.addSelectedPackageButton = document.getElementById('addSelectedPackageButton');
+    uiElements.readyToShipCheckboxList = document.getElementById('readyToShipCheckboxList');
     uiElements.currentBatchIdDisplay = document.getElementById('currentBatchIdDisplay');
     uiElements.batchItemList = document.getElementById('batchItemList');
     uiElements.batchItemCount = document.getElementById('batchItemCount');
