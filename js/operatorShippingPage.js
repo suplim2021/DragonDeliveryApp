@@ -139,7 +139,6 @@ function startScanForBatch() {
             html5QrScannerForBatch.start(
                 { deviceId: { exact: camId } }, { fps: 10, qrbox: { width: 250, height: 250 } },
                 async (decodedText, decodedResult) => { // onScanSuccess
-            beepSuccess();
             const packageCodeScanned = decodedText.trim();
             console.log(`Scanned for batch: ${packageCodeScanned}`);
             // Find the order with this packageCode that is "Ready for Shipment" or similar
@@ -172,6 +171,7 @@ function startScanForBatch() {
                     renderBatchItems();
                     showAppStatus(`เพิ่ม ${packageCodeScanned} เข้า Batch สำเร็จ`, 'success', uiElements.appStatus);
                 }
+                beepSuccess();
             } else {
                 showAppStatus(`ไม่พบออเดอร์ที่พร้อมส่งสำหรับรหัสพัสดุ: ${packageCodeScanned} หรือสถานะไม่ถูกต้อง`, "error", uiElements.appStatus);
             }
