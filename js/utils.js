@@ -33,28 +33,14 @@ export function detectPlatformFromPackageCode(packageCode) {
     return "Unknown";
 }
 
-// ---- Beep Utility Functions ----
-function playBeepSequence(times = 1) {
-    try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        for (let i = 0; i < times; i++) {
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = 'sine';
-            osc.frequency.value = 800;
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            const startAt = ctx.currentTime + i * 0.25;
-            osc.start(startAt);
-            osc.stop(startAt + 0.15);
-        }
-    } catch (e) {
-        console.warn('playBeepSequence error:', e);
-    }
+// ---- Scan Feedback Utility Functions ----
+export function beepSuccess() {
+    alert('การอ่านค่าสำเร็จ');
 }
 
-export function beepSuccess() { playBeepSequence(1); }
-export function beepError() { playBeepSequence(2); }
+export function beepError() {
+    // No sound; reserved for future visual feedback if needed
+}
 
 /**
  * Sets the default due date for new orders in the adminDueDateInput field.
