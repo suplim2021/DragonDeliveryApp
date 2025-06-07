@@ -160,35 +160,44 @@ export function updateBottomNavActiveState(currentPageId) {
 export function setupRoleBasedUI(currentUserRoleForNav) {
     if (!bottomNavContainerDiv) { console.error("Bottom Nav Container not found in setupRoleBasedUI."); return; }
     bottomNavContainerDiv.innerHTML = '';
-    let navHtml = '';
-    navHtml += `<button type="button" data-pageid="dashboardPage"><span class="material-icons nav-icon">home</span>Dashboard</button>`;
-    navHtml += `<button type="button" data-pageid="adminCreateOrderPage"><span class="material-icons nav-icon">add</span>สร้างออเดอร์</button>`;
-    navHtml += `<button type="button" data-pageid="operatorTaskListPage"><span class="material-icons nav-icon">inventory_2</span>รายการรอแพ็ก</button>`;
-    navHtml += `<button type="button" data-pageid="supervisorPackCheckListPage"><span class="material-icons nav-icon">checklist</span>รอตรวจแพ็ก</button>`;
-    navHtml += `<button type="button" data-pageid="operatorShippingBatchPage"><span class="material-icons nav-icon">local_shipping</span>เตรียมส่งของ</button>`;
+
+    const navItems = [
+        { pageId: 'dashboardPage', icon: 'home', label: 'Dashboard', roles: ['administrator','operator','supervisor'] },
+        { pageId: 'adminCreateOrderPage', icon: 'add', label: 'สร้างออเดอร์', roles: ['administrator','supervisor'] },
+        { pageId: 'operatorTaskListPage', icon: 'inventory_2', label: 'รายการรอแพ็ก', roles: ['administrator','operator','supervisor'] },
+        { pageId: 'supervisorPackCheckListPage', icon: 'checklist', label: 'รอตรวจแพ็ก', roles: ['administrator','supervisor'] },
+        { pageId: 'operatorShippingBatchPage', icon: 'local_shipping', label: 'เตรียมส่งของ', roles: ['administrator','operator','supervisor'] },
+    ];
+
+    const allowedItems = navItems.filter(item => item.roles.includes(currentUserRoleForNav));
+    const navHtml = allowedItems.map(item =>
+        `<button type="button" data-pageid="${item.pageId}"><span class="material-icons nav-icon">${item.icon}</span>${item.label}<span id="${item.pageId}Badge" class="nav-badge hidden"></span></button>`
+    ).join('');
 
     bottomNavContainerDiv.innerHTML = navHtml;
 
     bottomNavContainerDiv.querySelectorAll('button[data-pageid]').forEach(btn => {
         const pageId = btn.dataset.pageid;
-        // Disable buttons based on role
-        if (currentUserRoleForNav === 'operator') {
-            if (pageId === 'adminCreateOrderPage' || pageId === 'supervisorPackCheckListPage') btn.disabled = true;
-        } else if (currentUserRoleForNav === 'supervisor') {
-            if (pageId === 'adminCreateOrderPage') btn.disabled = true;
-        } else if (currentUserRoleForNav !== 'administrator') {
-            // Unknown role: disable everything except dashboard
-            if (pageId !== 'dashboardPage') btn.disabled = true;
-        }
-
         btn.addEventListener('click', () => {
-            if (!btn.disabled) {
-                console.log("UI: Nav button clicked, attempting to show page:", pageId);
-                showPage(pageId);
-            }
+            console.log("UI: Nav button clicked, attempting to show page:", pageId);
+            showPage(pageId);
         });
     });
 }
 
+export function setNavBadgeCount(pageId, count) {
+    if (!bottomNavContainerDiv) return;
+    const badgeEl = bottomNavContainerDiv.querySelector(`#${pageId}Badge`);
+    if (!badgeEl) return;
+    if (count > 0) {
+        badgeEl.textContent = count;
+        badgeEl.classList.remove('hidden');
+    } else {
+        badgeEl.textContent = '';
+        badgeEl.classList.add('hidden');
+    }
+}
+
 // Expose uiElements globally for modules that expect it without importing
 window.uiElements = uiElements;
+window.setNavBadgeCount = setNavBadgeCount;
