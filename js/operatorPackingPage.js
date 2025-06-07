@@ -82,7 +82,19 @@ export async function loadOrderForPacking(orderKey) {
                 for (const itemId in orderData.items) {
                     const item = orderData.items[itemId];
                     const li = document.createElement('li');
-                    li.textContent = `${item.productName} - ${item.quantity} ${item.unit}`;
+                    const label = document.createElement('label');
+                    const cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    cb.addEventListener('change', () => {
+                        if (cb.checked) {
+                            li.classList.add('checked');
+                        } else {
+                            li.classList.remove('checked');
+                        }
+                    });
+                    label.appendChild(cb);
+                    label.appendChild(document.createTextNode(` ${item.productName} - ${item.quantity} ${item.unit}`));
+                    li.appendChild(label);
                     if(opPacking_itemListUL) opPacking_itemListUL.appendChild(li);
                 }
             }

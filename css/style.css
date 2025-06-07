@@ -68,6 +68,11 @@ label { display: block; margin-bottom: 8px; font-weight: 600; color: #555; font-
 .item-checklist li { padding: 8px 0; border-bottom: 1px dashed #ecf0f1; font-size: 0.95em; display: flex; justify-content: space-between; align-items: center;}
 .item-checklist li:last-child { border-bottom: none; }
 
+/* Checklist styles for packing page */
+.packing-checklist li { font-size: 1.1em; }
+.item-checklist input[type="checkbox"] { transform: scale(1.3); margin-right: 10px; }
+.item-checklist li.checked label { text-decoration: line-through; color: #888; }
+
 .qr-scanner-area { width: 100%; max-width:350px; border:2px dashed #3498db; margin:10px auto; padding:5px; background-color: #f9f9f9; border-radius: 8px;}
 #photoPreview, #packingPhotoPreview { max-width:100%; max-height:250px; margin-top:10px; border:1px solid #dce4ec; display:block; border-radius: 8px; }
 
