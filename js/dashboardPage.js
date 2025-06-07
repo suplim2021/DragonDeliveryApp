@@ -12,7 +12,8 @@ let platformChartInstance = null;
 // DOM Elements specific to dashboard - get them when the module initializes or functions are called
 let el_appStatus, el_currentDateDisplay, el_refreshDashboardButton,
     el_summaryCardsContainer, el_dailyStatsCanvas, el_platformStatsCanvas,
-    el_logFilterSelect, el_applyLogFilterButton, el_ordersTableBody, el_noOrdersMessage;
+    el_logFilterSelect, el_applyLogFilterButton, el_logSearchInput,
+    el_ordersTableBody, el_noOrdersMessage;
 
 export function initializeDashboardPageListeners() {
     // Query for elements specific to this page when listeners are set up
@@ -24,15 +25,25 @@ export function initializeDashboardPageListeners() {
     el_platformStatsCanvas = document.getElementById('platformStatsChart');
     el_logFilterSelect = document.getElementById('logFilterStatus');
     el_applyLogFilterButton = document.getElementById('applyLogFilterButton');
+    el_logSearchInput = document.getElementById('logSearchPackageCode');
     el_ordersTableBody = document.getElementById('ordersTableBody');
     el_noOrdersMessage = document.getElementById('noOrdersMessage');
 
     if (el_refreshDashboardButton) {
-        el_refreshDashboardButton.addEventListener('click', () => loadDashboardData(el_logFilterSelect ? el_logFilterSelect.value : 'all'));
+        el_refreshDashboardButton.addEventListener('click', () => loadDashboardData(el_logFilterSelect ? el_logFilterSelect.value : 'all', el_logSearchInput ? el_logSearchInput.value.trim() : ''));
     }
     if (el_applyLogFilterButton) {
         el_applyLogFilterButton.addEventListener('click', () => {
-            if (el_logFilterSelect) loadDashboardData(el_logFilterSelect.value);
+            const filter = el_logFilterSelect ? el_logFilterSelect.value : 'all';
+            const search = el_logSearchInput ? el_logSearchInput.value.trim() : '';
+            loadDashboardData(filter, search);
+        });
+    }
+    if (el_logFilterSelect) {
+        el_logFilterSelect.addEventListener('change', () => {
+            const filter = el_logFilterSelect.value;
+            const search = el_logSearchInput ? el_logSearchInput.value.trim() : '';
+            loadDashboardData(filter, search);
         });
     }
     if (el_ordersTableBody) {
@@ -56,7 +67,7 @@ export function updateCurrentDateOnDashboard() {
     }
 }
 
-export async function loadDashboardData(filterStatus = 'all') {
+export async function loadDashboardData(filterStatus = 'all', searchCode = '') {
     const currentUser = getCurrentUser();
     if (!currentUser) { console.log("No user logged in, skipping dashboard load."); return; }
     if (!el_appStatus) { console.error("el_appStatus (appStatus element) not found for dashboard."); return; }
@@ -76,12 +87,16 @@ export async function loadDashboardData(filterStatus = 'all') {
         }
 
         updateSummaryCards(allOrders);
-        updateOrdersLogTable(allOrders, filterStatus);
+        updateOrdersLogTable(allOrders, filterStatus, searchCode);
         renderCharts(allOrders);
 
         showAppStatus("โหลดข้อมูล Dashboard สำเร็จ", "success", el_appStatus);
         if (el_noOrdersMessage) {
-            const displayOrders = filterStatus === 'all' ? allOrders : allOrders.filter(o => o.status === filterStatus);
+            let displayOrders = filterStatus === 'all' ? allOrders : allOrders.filter(o => o.status === filterStatus);
+            if (searchCode) {
+                const scLower = searchCode.toLowerCase();
+                displayOrders = displayOrders.filter(o => (o.packageCode || '').toLowerCase().includes(scLower));
+            }
             el_noOrdersMessage.classList.toggle('hidden', displayOrders.length > 0);
         }
     } catch (error) {
@@ -122,10 +137,14 @@ function createSummaryCard(title, value, subValue, icon, pageId = null) {
     el_summaryCardsContainer.appendChild(card);
 }
 
-function updateOrdersLogTable(orders, filterStatus = 'all') {
+function updateOrdersLogTable(orders, filterStatus = 'all', searchCode = '') {
     if (!el_ordersTableBody) return;
     el_ordersTableBody.innerHTML = '';
-    const filtered = filterStatus === 'all' ? orders : orders.filter(o => o.status === filterStatus);
+    let filtered = filterStatus === 'all' ? orders : orders.filter(o => o.status === filterStatus);
+    if (searchCode) {
+        const scLower = searchCode.toLowerCase();
+        filtered = filtered.filter(o => (o.packageCode || '').toLowerCase().includes(scLower));
+    }
     if (filtered.length === 0) {
         const r = el_ordersTableBody.insertRow(); const c = r.insertCell(); c.colSpan = 6; c.textContent = "ไม่พบข้อมูล"; c.style.textAlign = "center"; c.style.padding="20px"; return;
     }
@@ -226,7 +245,9 @@ async function handleEditOrder(orderKey) {
                 lastUpdatedAt: serverTimestamp()
             };
             await update(ref(database, 'orders/' + orderKey), updates);
-            loadDashboardData(el_logFilterSelect ? el_logFilterSelect.value : 'all');
+            const filter = el_logFilterSelect ? el_logFilterSelect.value : 'all';
+            const search = el_logSearchInput ? el_logSearchInput.value.trim() : '';
+            loadDashboardData(filter, search);
             showAppStatus('อัปเดตข้อมูลแล้ว', 'success', el_appStatus);
         } catch (err) {
             console.error('edit order error', err);
@@ -235,7 +256,9 @@ async function handleEditOrder(orderKey) {
     });
 
     cancelBtn.addEventListener('click', () => {
-        loadDashboardData(el_logFilterSelect ? el_logFilterSelect.value : 'all');
+        const filter = el_logFilterSelect ? el_logFilterSelect.value : 'all';
+        const search = el_logSearchInput ? el_logSearchInput.value.trim() : '';
+        loadDashboardData(filter, search);
     });
 }
 
@@ -288,7 +311,9 @@ function renderCharts(orders) {
     if (!confirm('ต้องการลบออเดอร์นี้หรือไม่?')) return;
     try {
         await remove(ref(database, 'orders/' + orderKey));
-        if (el_logFilterSelect) loadDashboardData(el_logFilterSelect.value); else loadDashboardData('all');
+        const filter = el_logFilterSelect ? el_logFilterSelect.value : 'all';
+        const search = el_logSearchInput ? el_logSearchInput.value.trim() : '';
+        loadDashboardData(filter, search);
         showAppStatus('ลบออเดอร์แล้ว', 'success', el_appStatus);
     } catch (err) {
         console.error('delete order error', err);
