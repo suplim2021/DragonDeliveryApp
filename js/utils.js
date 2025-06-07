@@ -138,3 +138,24 @@ export function formatDateYYYYMMDD(dateInput) {
     const day = String(d.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
 }
+
+/**
+ * Translates an order status value to its Thai display label.
+ * If the status is not recognised, the original value is returned.
+ * @param {string} status - The status value stored in the database
+ * @returns {string} - Thai label for the status
+ */
+export function translateStatusToThai(status) {
+    const map = {
+        'Adding Items': 'รอเพิ่มสินค้า',
+        'Ready to Pack': 'รอแพ็ก',
+        'Pending Supervisor Pack Check': 'รอตรวจแพ็ค',
+        'Pack Approved': 'ตรวจแพ็คแล้ว',
+        'Pack Rejected': 'แพ็คไม่ผ่าน',
+        'Ready for Shipment': 'รอส่ง',
+        'Shipped - Pending Supervisor Check': 'ส่งแล้ว-รอตรวจ',
+        'Shipped': 'ส่งแล้ว',
+        'Shipment Approved': 'ตรวจส่งแล้ว'
+    };
+    return map[status] || status || 'N/A';
+}
