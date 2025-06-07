@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dragon Delivery Tracking</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Libraries -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div id="appContainer">
+        <!-- Login Page -->
+        <div id="loginPage" class="container page">
+            <h2>Login</h2>
+            <div class="form-group"><label for="email">Email:</label><input type="email" id="email" placeholder="your@email.com"></div>
+            <div class="form-group"><label for="password">Password:</label><input type="password" id="password" placeholder="รหัสผ่าน"></div>
+            <button id="loginButton" type="button">เข้าสู่ระบบ</button>
+            <p id="loginError" class="hidden" style="color:red; margin-top:10px; text-align:center;"></p>
+        </div>
+
+        <!-- Main App Area (Content will be dynamically shown) -->
+        <div id="mainApp" class="hidden">
+            <div class="user-info">Logged in as: <span id="userDisplayName"></span> (<span id="userDisplayEmail"></span>, <span id="userDisplayRole"></span>)<button id="logoutButton" type="button">Logout</button></div>
+            
+            <!-- Dashboard Page -->
+            <div id="dashboardPage" class="container page current-page">
+                <h2>Dashboard</h2>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <span id="currentDateDisplay" style="font-size:0.9em;"></span>
+                    <button id="refreshDashboardButton" type="button" class="secondary" style="width:auto; font-size:0.8em; padding:8px;">รีเฟรช</button>
+                </div>
+                <div id="summaryCardsContainer" style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;"></div>
+                <div id="chartsContainer" style="margin-bottom: 20px;">
+                    <h3>สถิติรายวัน</h3>
+                    <div style="height:250px;"><canvas id="dailyStatsChart"></canvas></div>
+                    <h3 style="margin-top:20px;">สถิติตามแพลตฟอร์ม</h3>
+                    <div style="height:280px; max-width:400px; margin:auto;"><canvas id="platformStatsChart"></canvas></div>
+                </div>
+                <div id="ordersLogContainer">
+                    <h3>ประวัติพัสดุล่าสุด</h3>
+                    <div style="display:flex; gap:10px; margin-bottom:10px; align-items:center;">
+                        <label for="logFilterStatus" style="margin-bottom:0;">สถานะ:</label>
+                        <select id="logFilterStatus" style="width:auto; padding:8px; margin-bottom:0;">
+                            <option value="all">ทั้งหมด</option>
+                            <option value="Pending Item Details">รอเพิ่มสินค้า</option>
+                            <option value="Ready to Pack">รอแพ็ก</option>
+                            <option value="Pending Supervisor Pack Check">รอตรวจแพ็ก</option>
+                            <option value="Ready for Shipment">รอส่ง</option>
+                            <option value="Shipped">ส่งแล้ว</option>
+                        </select>
+                        <input id="logSearchPackageCode" type="text" placeholder="รหัสพัสดุ" style="flex:1; padding:8px; margin-bottom:0;">
+                        <button id="applyLogFilterButton" type="button" class="secondary" style="width:auto; font-size:0.8em; padding:8px;">ค้นหา</button>
+                    </div>
+                    <div id="ordersTableContainer" style="max-height: 400px; overflow-y: auto; border:1px solid #ccc;">
+                        <table><thead><tr style="background-color:#f0f0f0;">
+                            <th>Package Code</th><th>Platform Order ID</th><th>Platform</th><th>สถานะ</th><th>Due Date</th><th>Actions</th>
+                        </tr></thead><tbody id="ordersTableBody"></tbody></table>
+                    </div>
+                    <p id="noOrdersMessage" class="hidden" style="text-align:center; padding:20px;">ไม่พบข้อมูลพัสดุ</p>
+                </div>
+            </div>
+
+            <!-- Admin: Create Order Page -->
+            <div id="adminCreateOrderPage" class="container page hidden">
+                <h2>สร้างออเดอร์ใหม่</h2>
+                <button id="startQRScanButton_AdminOrder" type="button">สแกน QR ใบปะหน้า (รหัสพัสดุ)</button>
+                <div id="qrScannerContainer_AdminOrder" class="hidden" style="margin-top:10px;">
+                    <div id="qrScanner_AdminOrder" class="qr-scanner-area"></div>
+                    <button id="stopQRScanButton_AdminOrder" type="button" class="secondary hidden" style="margin-top:5px;">หยุดสแกน</button>
+                </div>
+                <p>Scanned Package Code: <span id="scannedQRData_AdminOrder">N/A</span></p>
+
+                <label for="adminPlatform">Platform:</label>
+                <input type="text" id="adminPlatform" placeholder="จะถูก Detect อัตโนมัติ" readonly>
+
+                <label for="adminPlatformOrderId">Platform Order ID (ถ้ามี):</label>
+                <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                    <input type="text" id="adminPlatformOrderId" placeholder="กรอกเอง หรือ สแกน" style="flex-grow: 1; margin-bottom:0;">
+                    <button id="scanPlatformOrderIdButton" type="button" class="secondary" style="width:auto; padding: 8px; margin-left:5px; font-size:0.8em;">สแกน ID</button>
+                </div>
+                <div id="qrScannerContainer_PlatformOrderId" class="hidden" style="margin-top:5px;">
+                    <div id="qrScanner_PlatformOrderId" class="qr-scanner-area"></div>
+                    <button id="stopScanPlatformOrderIdButton" type="button" class="secondary hidden" style="margin-top:5px;">หยุดสแกน Platform ID</button>
+                </div>
+
+                <label for="adminPackageCode">Package Code:</label>
+                <input type="text" id="adminPackageCode" placeholder="กรอกเอง หรือ สแกน">
+
+                <label for="adminDueDate">Due Date:</label>
+                <input type="date" id="adminDueDate">
+
+                <label for="adminNotes">หมายเหตุ (ถ้ามี):</label>
+                <textarea id="adminNotes"></textarea>
+
+                <button id="saveInitialOrderButton" type="button">บันทึกออเดอร์เบื้องต้น</button>
+
+            </div>
+
+            <!-- Admin: Add Items Page -->
+            <div id="adminItemsPage" class="container page hidden">
+                <h2>เพิ่มรายการสินค้า (Package Code: <span id="currentOrderIdForItems"></span>)</h2>
+                <label for="productSearch">ค้นหาสินค้า:</label>
+                <input type="text" id="productSearch" placeholder="พิมพ์ชื่อสินค้า...">
+                <label for="quantity">จำนวน:</label>
+                <input type="number" id="quantity" value="1" min="1">
+                <label for="unit">หน่วย:</label>
+                <input type="text" id="unit" placeholder="เช่น ตัว, ชิ้น">
+                <button id="addItemToOrderButton" type="button">เพิ่มสินค้าในรายการ</button>
+                <h3>รายการสินค้าที่เพิ่มแล้ว:</h3>
+                <ul id="itemListCurrentOrder" class="item-checklist"></ul>
+                <button id="confirmAllItemsButton" type="button">ยืนยันรายการสินค้าทั้งหมด</button>
+            </div>
+            
+            <!-- Operator: Packing Page (หน้ารายละเอียดการแพ็กแต่ละออเดอร์) -->
+            <div id="operatorPackingPage" class="container page hidden">
+                <h2>แพ็กสินค้า (Package Code: <span id="currentOrderIdForPacking"></span>)</h2>
+                <p><strong>Platform:</strong> <span id="packOrderPlatform"></span></p>
+                <p><strong>Due Date:</strong> <span id="packOrderDueDate"></span></p>
+                <h3>Checklist รายการสินค้า:</h3>
+                <ul id="packOrderItemList" class="item-checklist packing-checklist"></ul>
+                <label for="packingPhoto">ถ่ายรูปสินค้าที่เตรียม:</label>
+                <input type="file" id="packingPhoto" accept="image/*" capture="environment">
+                <img id="packingPhotoPreview" src="#" alt="Preview" class="hidden">
+                <button id="removePackingPhotoButton" type="button" class="secondary hidden" style="width:auto; margin-top:10px;">ลบรูป / ถ่ายใหม่</button>
+                <label for="operatorPackNotes">หมายเหตุ (ถ้ามี):</label>
+                <textarea id="operatorPackNotes"></textarea>
+                <button id="confirmPackingButton" type="button">ยืนยันการแพ็ก</button>
+                <div id="supervisorPackCheckResult" class="hidden" style="margin-top:15px; padding:10px; border:1px solid #ccc;">
+                    <h4>ผลการตรวจสอบโดย Supervisor:</h4>
+                    <p>สถานะ: <span id="packCheckStatus"></span></p>
+                    <p>ผู้ตรวจ: <span id="packCheckSupervisor"></span></p>
+                    <p>หมายเหตุ: <span id="packCheckNotes"></span></p>
+                </div>
+            </div>
+
+            <!-- ***** หน้าใหม่สำหรับ Operator: รายการรอแพ็ก ***** -->
+            <div id="operatorTaskListPage" class="container page hidden">
+                <h2>รายการรอแพ็ก</h2>
+                <button id="refreshOperatorTaskList" type="button" class="secondary" style="width:auto; margin-bottom:15px;">รีเฟรชรายการ</button>
+                <div id="operatorOrderListContainer">
+                    <!-- รายการออเดอร์จะถูกสร้างด้วย JavaScript -->
+                    <p>กำลังโหลดรายการออเดอร์ที่รอแพ็ก...</p>
+                </div>
+                <p id="noOperatorTasksMessage" class="hidden" style="text-align:center; padding:20px; color:#7f8c8d;">ไม่มีออเดอร์รอแพ็กในขณะนี้</p>
+            </div>
+            <!-- ***** สิ้นสุดหน้า Operator Task List ***** -->
+
+            <!-- ***** หน้าใหม่สำหรับ Operator: จัดการ Batch การส่ง ***** -->
+            <div id="operatorShippingBatchPage" class="container page hidden">
+                <h2>จัดการ Batch การส่ง</h2>
+                <div class="form-group">
+                    <label for="courierSelect">เลือก Courier/ร้านที่จะไปส่ง:</label>
+                    <select id="courierSelect">
+                        <option value="">-- เลือก Courier --</option>
+                        <option value="Shopee-Flash">Shopee (Flash)</option>
+                        <option value="Lazada-LEX">Lazada (LEX)</option>
+                        <option value="Tiktok-J&T">Tiktok (J&T)</option>
+                        <option value="Tiktok-Kerry">Tiktok (Kerry)</option>
+                        <option value="Other">อื่นๆ (ระบุเอง)</option>
+                    </select>
+                    <input type="text" id="otherCourierInput" class="hidden" placeholder="ระบุชื่อ Courier อื่นๆ" style="margin-top:10px;">
+                </div>
+                <button id="createNewBatchButton" type="button" class="hidden">สร้าง Batch ใหม่ / เลือก Batch ปัจจุบัน</button>
+                <p><strong>Batch ID ปัจจุบัน:</strong> <span id="currentBatchIdDisplay">N/A</span></p>
+                
+                <div style="margin-top:20px;">
+                    <h3>สแกนพัสดุเข้า Batch นี้:</h3>
+                    <button id="startScanForBatchButton" type="button">สแกน QR พัสดุ</button>
+
+                    <div class="input-group" style="margin-top:10px;">
+                        <input type="text" id="manualBatchPackageInput" placeholder="พิมพ์รหัสพัสดุ" autocomplete="off">
+                        <datalist id="readyToShipDatalist"></datalist>
+                        <button id="addManualPackageButton" type="button" class="secondary" style="width:auto;">เพิ่ม</button>
+                    </div>
+
+                    <div style="margin-top:10px;">
+                        <ul id="readyToShipCheckboxList" class="item-checklist" style="max-height:150px; overflow-y:auto; border:1px solid #eee; padding:10px;"></ul>
+                    </div>
+
+                    <div id="qrScannerContainer_Batch" class="hidden" style="margin-top:10px;">
+                        <div id="qrScanner_Batch" class="qr-scanner-area"></div>
+                        <button id="stopScanForBatchButton" type="button" class="secondary hidden" style="margin-top:5px;">หยุดสแกน</button>
+                    </div>
+                    <h4>รายการพัสดุใน Batch: (<span id="batchItemCount">0</span> ชิ้น)</h4>
+                    <ul id="batchItemList" class="item-checklist" style="max-height:200px; overflow-y:auto; border:1px solid #eee; padding:10px;">
+                        <!-- พัสดุที่สแกนแล้วจะแสดงที่นี่ -->
+                    </ul>
+                    <button id="confirmBatchAndProceedButton" type="button" style="margin-top:15px;">ยืนยัน Batch และไปถ่ายรูป</button>
+                </div>
+            </div>
+            <!-- ***** สิ้นสุดหน้า Operator Shipping Batch ***** -->
+
+            <!-- ***** หน้าใหม่สำหรับ Operator: ยืนยันการส่ง Batch ***** -->
+            <div id="operatorConfirmShipmentPage" class="container page hidden">
+                <h2>ยืนยันการส่ง Batch ID: <span id="confirmShipBatchIdDisplay"></span></h2>
+                <p><strong>Courier:</strong> <span id="confirmShipCourierDisplay"></span></p>
+                <p><strong>จำนวนพัสดุ:</strong> <span id="confirmShipItemCountDisplay"></span> รายการ</p>
+                <div class="form-group">
+                    <label for="shipmentGroupPhoto">ถ่ายรูปรวมพัสดุที่ส่ง:</label>
+                    <input type="file" id="shipmentGroupPhoto" accept="image/*" capture="environment">
+                    <img id="shipmentGroupPhotoPreview" src="#" alt="Preview รูปรวม" class="hidden">
+                </div>
+                <div class="form-group hidden">
+                    <label>ตำแหน่ง GPS (ถ้ามี):</label>
+                    <p id="shipmentGpsLocationDisplay" style="font-size:0.9em; color:#555;">กำลังดึงข้อมูล...</p>
+                    <button id="getGpsButton" type="button" class="secondary" style="width:auto;">ดึง GPS ปัจจุบัน</button>
+                </div>
+                <button id="finalizeShipmentButton" type="button">ยืนยันการจัดส่ง Batch นี้</button>
+            </div>
+            <!-- ***** สิ้นสุดหน้า Operator Confirm Shipment ***** -->
+
+
+            <!-- Supervisor: Pack Check List Page -->
+            <div id="supervisorPackCheckListPage" class="container page hidden">
+                <h2>รายการรอตรวจสอบการแพ็ก (Supervisor)</h2>
+                <button id="refreshSupervisorPackCheckList" type="button" class="secondary" style="width:auto; margin-bottom:15px;">รีเฟรชรายการ</button>
+                <div id="packCheckListContainer">
+                    <p>กำลังโหลดรายการ...</p>
+                </div>
+                <p id="noPackCheckOrdersMessage" class="hidden">ไม่มีออเดอร์รอตรวจสอบการแพ็ก</p>
+            </div>
+
+            <!-- Supervisor: Individual Pack Check Page -->
+            <div id="supervisorIndividualPackCheckPage" class="container page hidden">
+                <h2>ตรวจสอบการแพ็ก (Package Code: <span id="checkOrderPackageCodeDisplay"></span>)</h2>
+                <div>
+                    <p><strong>Platform:</strong> <span id="checkOrderPlatformDisplay"></span></p>
+                    <h3>รายการสินค้าที่ควรมี:</h3>
+                    <ul id="checkOrderItemListDisplay" class="item-checklist"></ul>
+                </div>
+                <div style="margin-top:20px;">
+                    <h3>รูปภาพจาก Operator:</h3>
+                    <img id="checkOrderPackingPhotoDisplay" src="#" alt="รูปภาพการแพ็ก" style="max-width:100%; border:1px solid #ccc; border-radius:8px;">
+                    <p><strong>หมายเหตุจาก Operator:</strong> <span id="checkOrderOperatorNotesDisplay"></span></p>
+                </div>
+                <div style="margin-top:20px;">
+                    <h3>การดำเนินการตรวจสอบ:</h3>
+                    <div class="form-group">
+                        <label for="supervisorPackCheckNotes">หมายเหตุ Supervisor:</label>
+                        <textarea id="supervisorPackCheckNotes" rows="3"></textarea>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <button id="approvePackButton" type="button" style="background-color:#2ecc71;">อนุมัติการแพ็ก</button>
+                        <button id="rejectPackButton" type="button" style="background-color:#e74c3c;">ปฏิเสธการแพ็ก</button>
+                    </div>
+                </div>
+            </div>
+            
+            <p id="appStatus" style="text-align:center; padding:10px; font-size:0.9em;"></p>
+        </div>
+
+        <div id="bottomNavContainer" class="bottom-nav hidden"></div>
+        <div id="scanOverlay" class="scan-overlay hidden">
+            <div id="overlayScanner" class="qr-scanner-area"></div>
+            <button id="closeScanOverlayButton" type="button" class="secondary" style="margin-top:10px;">ปิดการสแกน</button>
+        </div>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
