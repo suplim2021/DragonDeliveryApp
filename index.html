@@ -164,7 +164,7 @@
                     </select>
                     <input type="text" id="otherCourierInput" class="hidden" placeholder="ระบุชื่อ Courier อื่นๆ" style="margin-top:10px;">
                 </div>
-                <button id="createNewBatchButton" type="button">สร้าง Batch ใหม่ / เลือก Batch ปัจจุบัน</button>
+                <button id="createNewBatchButton" type="button" class="hidden">สร้าง Batch ใหม่ / เลือก Batch ปัจจุบัน</button>
                 <p><strong>Batch ID ปัจจุบัน:</strong> <span id="currentBatchIdDisplay">N/A</span></p>
                 
                 <div style="margin-top:20px;">
@@ -204,7 +204,7 @@
                     <input type="file" id="shipmentGroupPhoto" accept="image/*" capture="environment">
                     <img id="shipmentGroupPhotoPreview" src="#" alt="Preview รูปรวม" class="hidden">
                 </div>
-                <div class="form-group">
+                <div class="form-group hidden">
                     <label>ตำแหน่ง GPS (ถ้ามี):</label>
                     <p id="shipmentGpsLocationDisplay" style="font-size:0.9em; color:#555;">กำลังดึงข้อมูล...</p>
                     <button id="getGpsButton" type="button" class="secondary" style="width:auto;">ดึง GPS ปัจจุบัน</button>
