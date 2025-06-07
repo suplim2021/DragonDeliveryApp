@@ -46,7 +46,6 @@ export function initializeCoreDOMElements() { // Renamed for clarity
     uiElements.confirmShipItemCountDisplay = document.getElementById('confirmShipItemCountDisplay');
     uiElements.shipmentGroupPhoto = document.getElementById('shipmentGroupPhoto');
     uiElements.shipmentGroupPhotoPreview = document.getElementById('shipmentGroupPhotoPreview');
-    uiElements.getGpsButton = document.getElementById('getGpsButton');
     uiElements.shipmentGpsLocationDisplay = document.getElementById('shipmentGpsLocationDisplay');
     uiElements.finalizeShipmentButton = document.getElementById('finalizeShipmentButton');
 
