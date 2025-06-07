@@ -300,9 +300,18 @@ function renderCharts(orders) {
 
     // Platform Stats
     const platformCounts = {}; orders.forEach(o => { const p = o.platform || "Unknown"; platformCounts[p] = (platformCounts[p] || 0) + 1; });
+    const platformLabels = Object.keys(platformCounts);
+    const defaultColors = ['#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF','#FF9F40'];
+    const platformColors = platformLabels.map((label, idx) => {
+        const lower = label.toLowerCase();
+        if (lower.includes('shopee')) return '#FFA500'; // orange
+        if (lower.includes('lazada')) return '#4B0082'; // blue-purple
+        if (lower.includes('tiktok')) return '#000000'; // black
+        return defaultColors[idx % defaultColors.length];
+    });
     if (platformChartInstance) platformChartInstance.destroy();
     platformChartInstance = new Chart(el_platformStatsCanvas, {
-        type: 'doughnut', data: { labels: Object.keys(platformCounts), datasets: [{ data: Object.values(platformCounts), backgroundColor: ['#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF','#FF9F40'] }]},
+        type: 'doughnut', data: { labels: platformLabels, datasets: [{ data: Object.values(platformCounts), backgroundColor: platformColors }]},
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom'}}}
     });
 }async function handleDeleteOrder(orderKey) {
