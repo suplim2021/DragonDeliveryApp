@@ -16,7 +16,7 @@ export function initializeOperatorShippingPageListeners() {
     if (!uiElements.createNewBatchButton || !uiElements.startScanForBatchButton || 
         !uiElements.confirmBatchAndProceedButton || !uiElements.finalizeShipmentButton ||
         !uiElements.courierSelect || !uiElements.otherCourierInput ||
-        !uiElements.stopScanForBatchButton || !uiElements.getGpsButton || !uiElements.shipmentGroupPhoto) {
+        !uiElements.stopScanForBatchButton || !uiElements.shipmentGroupPhoto) {
         console.warn("Operator Shipping Page elements not fully initialized for listeners.");
         return;
     }
@@ -56,7 +56,6 @@ export function initializeOperatorShippingPageListeners() {
     }
     
     uiElements.shipmentGroupPhoto.addEventListener('change', handleShipmentGroupPhotoSelect);
-    uiElements.getGpsButton.addEventListener('click', getGpsLocation);
     uiElements.finalizeShipmentButton.addEventListener('click', finalizeShipment);
 }
 
@@ -365,29 +364,6 @@ function handleShipmentGroupPhotoSelect(event) {
     }
 }
 
-function getGpsLocation() {
-    if (!uiElements.shipmentGpsLocationDisplay) return;
-    if (navigator.geolocation) {
-        uiElements.shipmentGpsLocationDisplay.textContent = "กำลังดึงพิกัด GPS...";
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const lat = position.coords.latitude;
-                const lon = position.coords.longitude;
-                uiElements.shipmentGpsLocationDisplay.textContent = `Lat: ${lat.toFixed(6)}, Lon: ${lon.toFixed(6)}`;
-                // You might want to store lat, lon in global variables to save with the batch
-                window.currentShipmentLatitude = lat;
-                window.currentShipmentLongitude = lon;
-            },
-            (error) => {
-                console.warn("Error getting GPS location:", error);
-                uiElements.shipmentGpsLocationDisplay.textContent = "ไม่สามารถดึง GPS: " + error.message;
-            },
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-        );
-    } else {
-        uiElements.shipmentGpsLocationDisplay.textContent = "เบราว์เซอร์นี้ไม่รองรับ Geolocation";
-    }
-}
 
 async function finalizeShipment() {
     const currentUser = getCurrentUser();
@@ -423,12 +399,6 @@ async function finalizeShipment() {
         batchUpdates.status = "Shipped - Pending Supervisor Check";
         batchUpdates.groupPhotoUrl = groupPhotoUrl;
         batchUpdates.shippedAt_actual = serverTimestamp();
-        if (window.currentShipmentLatitude && window.currentShipmentLongitude) {
-            batchUpdates.gpsLocation = {
-                latitude: window.currentShipmentLatitude,
-                longitude: window.currentShipmentLongitude
-            };
-        }
         for (const orderKey in itemsInCurrentBatch) {
             batchUpdates[`orders/${orderKey}`] = true;
         }
@@ -451,8 +421,6 @@ async function finalizeShipment() {
         currentBatchCourier = '';
         itemsInCurrentBatch = {};
         shipmentGroupPhotoFile = null;
-        window.currentShipmentLatitude = null;
-        window.currentShipmentLongitude = null;
         showPage('dashboardPage'); // Or operator's task list
 
     } catch (error) {
