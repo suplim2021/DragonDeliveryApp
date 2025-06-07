@@ -51,9 +51,9 @@ export async function loadOrdersForPackCheck() {
         const snapshot = await get(dataQuery);
 
         uiElements.packCheckListContainer.innerHTML = ''; // Clear loading message
+        let tasksFound = 0;
 
         if (snapshot.exists()) {
-            let tasksFound = 0;
             snapshot.forEach(childSnapshot => {
                 tasksFound++;
                 const orderKey = childSnapshot.key;
@@ -96,6 +96,7 @@ export async function loadOrdersForPackCheck() {
             uiElements.noPackCheckOrdersMessage.classList.remove('hidden');
             showAppStatus("ไม่พบออเดอร์ที่รอตรวจสอบการแพ็กในขณะนี้", "info", uiElements.appStatus);
         }
+        if (typeof window.setNavBadgeCount === 'function') window.setNavBadgeCount('supervisorPackCheckListPage', tasksFound);
     } catch (error) {
         console.error("Error loading orders for supervisor pack check:", error);
         uiElements.packCheckListContainer.innerHTML = '<p style="color:red; text-align:center;">เกิดข้อผิดพลาดในการโหลดรายการ</p>';
