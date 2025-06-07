@@ -1,7 +1,7 @@
 // js/dashboardPage.js
 import { database } from './config.js';
 import { ref, get, update, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-import { showAppStatus, formatDateDDMMYYYY } from './utils.js';
+import { showAppStatus, formatDateDDMMYYYY, formatDateYYYYMMDD, translateStatusToThai } from './utils.js';
 import { getCurrentUser, getCurrentUserRole } from './auth.js';
 import { showPage } from './ui.js';
 // ไม่ต้อง import uiElements จาก ui.js แล้ว
@@ -152,10 +152,11 @@ function updateOrdersLogTable(orders, filterStatus = 'all', searchCode = '') {
     filtered.forEach(o => {
         const r = el_ordersTableBody.insertRow();
         r.dataset.orderkey = o.key;
+        r.dataset.duedate = o.dueDate || '';
         r.insertCell().textContent = o.packageCode || 'N/A';
         r.insertCell().textContent = o.platformOrderId || '-';
         r.insertCell().textContent = o.platform || 'N/A';
-        r.insertCell().textContent = o.status || 'N/A';
+        r.insertCell().textContent = translateStatusToThai(o.status);
         r.insertCell().textContent = formatDateDDMMYYYY(o.dueDate);
         const actCell = r.insertCell();
         if(role === 'administrator' || role === 'supervisor') {
@@ -192,6 +193,7 @@ async function handleEditOrder(orderKey) {
     const packageCodeCell = cells[0];
     const platformOrderCell = cells[1];
     const statusCell = cells[3];
+    const dueDateCell = cells[4];
     const actionsCell = cells[5];
 
     const platformOrderInput = document.createElement('input');
@@ -217,12 +219,18 @@ async function handleEditOrder(orderKey) {
     });
     statusSelect.value = statusCell.textContent.trim();
 
+    const dueDateInput = document.createElement('input');
+    dueDateInput.type = 'date';
+    dueDateInput.value = formatDateYYYYMMDD(row.dataset.duedate);
+
     platformOrderCell.innerHTML = '';
     packageCodeCell.innerHTML = '';
     statusCell.innerHTML = '';
+    dueDateCell.innerHTML = '';
     platformOrderCell.appendChild(platformOrderInput);
     packageCodeCell.appendChild(packageCodeInput);
     statusCell.appendChild(statusSelect);
+    dueDateCell.appendChild(dueDateInput);
 
     const saveBtn = document.createElement('button');
     saveBtn.textContent = 'บันทึก';
@@ -242,6 +250,7 @@ async function handleEditOrder(orderKey) {
                 platformOrderId: platformOrderInput.value.trim(),
                 packageCode: packageCodeInput.value.trim(),
                 status: statusSelect.value,
+                dueDate: dueDateInput.value ? new Date(dueDateInput.value).getTime() : null,
                 lastUpdatedAt: serverTimestamp()
             };
             await update(ref(database, 'orders/' + orderKey), updates);
