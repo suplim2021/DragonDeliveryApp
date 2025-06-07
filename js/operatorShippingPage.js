@@ -7,6 +7,7 @@ import { showAppStatus, beepSuccess, beepError } from './utils.js';
 import { getCurrentUser, getCurrentUserRole } from './auth.js';
 
 let currentActiveBatchId = null; // Stores the ID of the batch currently being worked on
+let currentBatchCourier = '';
 let itemsInCurrentBatch = {}; // Stores { orderKey: packageCode } for the current batch
 let shipmentGroupPhotoFile = null; // Stores the selected group photo file for shipment
 let readyToShipPackages = []; // Array of {orderKey, packageCode}
@@ -75,6 +76,7 @@ export function setupShippingBatchPage() {
         uiElements.otherCourierInput.value = "";
         uiElements.otherCourierInput.classList.add('hidden');
     }
+    currentBatchCourier = '';
     loadReadyToShipPackages();
     showAppStatus("พร้อมสำหรับการจัดการ Batch การส่ง", "info", uiElements.appStatus);
 }
@@ -91,6 +93,7 @@ async function createOrSelectBatch() {
         showAppStatus("กรุณาเลือกหรือระบุ Courier", "error", uiElements.appStatus);
         return;
     }
+    currentBatchCourier = courier;
 
     // For simplicity, we'll always create a new batch ID.
     // In a real app, you might want to let users resume an existing open batch.
@@ -122,10 +125,6 @@ async function createOrSelectBatch() {
 let html5QrScannerForBatch = null;
 let isBatchScannerStopping = false; // Flag to prevent double stop calls
 function startScanForBatch() {
-    if (!currentActiveBatchId) {
-        showAppStatus("กรุณาสร้างหรือเลือก Batch ก่อนสแกนพัสดุ", "error", uiElements.appStatus);
-        return;
-    }
     if (!uiElements.qrScanner_Batch_div) { alert("QR Scanner element for Batch not found!"); return; }
 
     uiElements.qrScannerContainer_Batch.classList.remove('hidden');
@@ -325,13 +324,19 @@ function renderBatchItems() {
 }
 
 function confirmBatchAndMoveToPhoto() {
-    if (!currentActiveBatchId || Object.keys(itemsInCurrentBatch).length === 0) {
-        showAppStatus("กรุณาสร้าง Batch และเพิ่มพัสดุอย่างน้อย 1 รายการก่อน", "error", uiElements.appStatus);
+    if (Object.keys(itemsInCurrentBatch).length === 0) {
+        showAppStatus("กรุณาเพิ่มพัสดุอย่างน้อย 1 รายการก่อน", "error", uiElements.appStatus);
         return;
     }
-    // Populate info on the confirm shipment page
-    if(uiElements.confirmShipBatchIdDisplay) uiElements.confirmShipBatchIdDisplay.textContent = currentActiveBatchId;
-    if(uiElements.confirmShipCourierDisplay) uiElements.confirmShipCourierDisplay.textContent = document.getElementById('courierSelect').value === 'Other' ? document.getElementById('otherCourierInput').value : document.getElementById('courierSelect').value; // Get current courier
+    let courier = uiElements.courierSelect.value;
+    if (courier === 'Other') courier = uiElements.otherCourierInput.value.trim();
+    if (!currentBatchCourier && !courier) {
+        showAppStatus("กรุณาเลือกหรือระบุ Courier", "error", uiElements.appStatus);
+        return;
+    }
+    if (!currentBatchCourier) currentBatchCourier = courier;
+    if(uiElements.confirmShipBatchIdDisplay) uiElements.confirmShipBatchIdDisplay.textContent = currentActiveBatchId || 'จะสร้างอัตโนมัติ';
+    if(uiElements.confirmShipCourierDisplay) uiElements.confirmShipCourierDisplay.textContent = currentBatchCourier;
     if(uiElements.confirmShipItemCountDisplay) uiElements.confirmShipItemCountDisplay.textContent = Object.keys(itemsInCurrentBatch).length;
     
     if(uiElements.shipmentGroupPhoto) uiElements.shipmentGroupPhoto.value = ''; // Reset file input
@@ -386,13 +391,19 @@ function getGpsLocation() {
 
 async function finalizeShipment() {
     const currentUser = getCurrentUser();
-    if (!currentUser || !currentActiveBatchId) { showAppStatus("ข้อมูลไม่ครบถ้วนสำหรับการยืนยันการส่ง", "error", uiElements.appStatus); return; }
+    if (!currentUser || Object.keys(itemsInCurrentBatch).length === 0) { showAppStatus("ข้อมูลไม่ครบถ้วนสำหรับการยืนยันการส่ง", "error", uiElements.appStatus); return; }
+    if (!currentBatchCourier) { showAppStatus("กรุณาเลือกหรือระบุ Courier", "error", uiElements.appStatus); return; }
     if (!shipmentGroupPhotoFile) { showAppStatus("กรุณาถ่ายรูปรวมพัสดุก่อน", "error", uiElements.appStatus); return; }
 
     uiElements.finalizeShipmentButton.disabled = true;
     showAppStatus("กำลังยืนยันการส่งและอัปโหลดรูป...", "info", uiElements.appStatus);
 
     try {
+        if (!currentActiveBatchId) {
+            const newBatchRef = push(ref(database, 'shipmentBatches'));
+            currentActiveBatchId = newBatchRef.key;
+        }
+
         // 1. Upload group photo
         const photoFileName = `shipment_${currentActiveBatchId}_${Date.now()}_${shipmentGroupPhotoFile.name}`;
         const photoPath = `shipmentGroupPhotos/${currentActiveBatchId}/${photoFileName}`;
@@ -401,20 +412,27 @@ async function finalizeShipment() {
         const groupPhotoUrl = await getDownloadURL(imageRef);
 
         // 2. Prepare updates for the batch
+        const batchRef = ref(database, `shipmentBatches/${currentActiveBatchId}`);
         const batchUpdates = {};
-        batchUpdates[`/shipmentBatches/${currentActiveBatchId}/status`] = "Shipped - Pending Supervisor Check"; // Or "Shipped"
-        batchUpdates[`/shipmentBatches/${currentActiveBatchId}/groupPhotoUrl`] = groupPhotoUrl;
-        batchUpdates[`/shipmentBatches/${currentActiveBatchId}/shippedAt_actual`] = serverTimestamp();
+        if (await get(batchRef).then(s => !s.exists())) {
+            batchUpdates.batchId = currentActiveBatchId;
+            batchUpdates.courierShop = currentBatchCourier;
+            batchUpdates.createdAt = serverTimestamp();
+            batchUpdates.createdBy_operatorUid = currentUser.uid;
+        }
+        batchUpdates.status = "Shipped - Pending Supervisor Check";
+        batchUpdates.groupPhotoUrl = groupPhotoUrl;
+        batchUpdates.shippedAt_actual = serverTimestamp();
         if (window.currentShipmentLatitude && window.currentShipmentLongitude) {
-            batchUpdates[`/shipmentBatches/${currentActiveBatchId}/gpsLocation`] = {
+            batchUpdates.gpsLocation = {
                 latitude: window.currentShipmentLatitude,
                 longitude: window.currentShipmentLongitude
             };
         }
-        // Add order keys to the batch orders node
         for (const orderKey in itemsInCurrentBatch) {
-            batchUpdates[`/shipmentBatches/${currentActiveBatchId}/orders/${orderKey}`] = true;
+            batchUpdates[`orders/${orderKey}`] = true;
         }
+        await update(batchRef, batchUpdates);
 
         // 3. Prepare updates for each order within the batch
         const orderUpdates = {};
@@ -425,15 +443,12 @@ async function finalizeShipment() {
             orderUpdates[`/orders/${orderKey}/lastUpdatedAt`] = serverTimestamp();
         }
 
-        // Perform all updates (batch and individual orders)
-        // It's better to combine these into a single multi-path update if possible,
-        // but Realtime DB might require separate updates or careful structuring for atomic operations.
-        // For now, separate updates:
-        await update(ref(database), batchUpdates); // Update batch details
+        // Perform order updates
         await update(ref(database), orderUpdates); // Update individual orders
 
         showAppStatus(`Batch ${currentActiveBatchId} ยืนยันการส่งเรียบร้อย!`, "success", uiElements.appStatus);
         currentActiveBatchId = null; // Clear active batch
+        currentBatchCourier = '';
         itemsInCurrentBatch = {};
         shipmentGroupPhotoFile = null;
         window.currentShipmentLatitude = null;
