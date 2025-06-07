@@ -325,7 +325,7 @@ function renderCharts(orders) {
     const defaultColors = ['#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF','#FF9F40'];
     const platformColors = platformLabels.map((label, idx) => {
         const lower = label.toLowerCase();
-        if (lower.includes('shopee')) return '#FFA500'; // orange
+        if (lower.includes('shopee')) return '#EE4D2D'; // orange
         if (lower.includes('lazada')) return '#4B0082'; // blue-purple
         if (lower.includes('tiktok')) return '#000000'; // black
         return defaultColors[idx % defaultColors.length];
