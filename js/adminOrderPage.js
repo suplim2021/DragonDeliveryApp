@@ -127,7 +127,6 @@ async function stopPackageCodeScan() {
 }
 
 function onScanSuccess_PackageCode(decodedText, decodedResult) {
-    beepSuccess();
     const packageCode = decodedText.trim();
     if (adminOrderScannedQRData) adminOrderScannedQRData.textContent = packageCode;
     if (adminOrderPackageCodeInput) {
@@ -140,6 +139,7 @@ function onScanSuccess_PackageCode(decodedText, decodedResult) {
     if (adminOrderPlatformOrderIdInput && !adminOrderPlatformOrderIdInput.value.trim()) {
         adminOrderPlatformOrderIdInput.focus();
     }
+    beepSuccess();
     stopPackageCodeScan();
 }
 
@@ -164,8 +164,8 @@ function startPlatformIdScan() {
                     formatsToSupport: [Html5QrcodeSupportedFormats.CODE_128]
                 },
                 (decodedText, decodedResult) => {
-                    beepSuccess();
                     adminOrderPlatformOrderIdInput.value = decodedText.trim();
+                    beepSuccess();
                     stopPlatformIdScan();
                 },
                 (errorMessage) => { console.warn("Platform Order ID Scan failure:", errorMessage); beepError(); }
