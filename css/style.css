@@ -15,6 +15,10 @@ body {
     background-color: #f4f7f6;
     color: #333;
 }
+
+body.home-page {
+    background-color: var(--primary-blue);
+}
 .container { background-color: white; padding: 20px; border-radius: 12px; margin-bottom:15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
 h1, h2, h3 { color: var(--primary-blue); margin-top:0; }
 h2 { font-size: 1.5em; margin-bottom: 20px; }
