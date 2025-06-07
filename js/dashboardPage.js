@@ -221,7 +221,13 @@ async function handleEditOrder(orderKey) {
 
     const dueDateInput = document.createElement('input');
     dueDateInput.type = 'date';
-    dueDateInput.value = formatDateYYYYMMDD(row.dataset.duedate);
+    const dueDateVal = row.dataset.duedate;
+    if (dueDateVal) {
+        const ts = parseInt(dueDateVal, 10);
+        if (!isNaN(ts)) {
+            dueDateInput.value = formatDateYYYYMMDD(ts);
+        }
+    }
 
     platformOrderCell.innerHTML = '';
     packageCodeCell.innerHTML = '';
