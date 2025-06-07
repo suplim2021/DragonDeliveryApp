@@ -41,9 +41,9 @@ export async function loadOperatorPendingTasks() {
         const snapshot = await get(dataQuery);
 
         uiElements.operatorOrderListContainer.innerHTML = ''; // Clear loading message
+        let tasksFound = 0;
 
         if (snapshot.exists()) {
-            let tasksFound = 0;
             snapshot.forEach(childSnapshot => {
                 tasksFound++;
                 const orderKey = childSnapshot.key;
@@ -121,6 +121,7 @@ export async function loadOperatorPendingTasks() {
             uiElements.noOperatorTasksMessage.classList.remove('hidden');
             showAppStatus("ไม่พบออเดอร์ที่รอแพ็กในขณะนี้", "info", uiElements.appStatus);
         }
+        if (typeof window.setNavBadgeCount === 'function') window.setNavBadgeCount('operatorTaskListPage', tasksFound);
     } catch (error) {
         console.error("Error loading operator pending tasks:", error);
         uiElements.operatorOrderListContainer.innerHTML = '<p style="color:red; text-align:center;">เกิดข้อผิดพลาดในการโหลดรายการ</p>';
