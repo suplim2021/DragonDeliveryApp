@@ -157,6 +157,7 @@ function updateOrdersLogTable(orders, filterStatus = 'all', searchCode = '') {
         const r = el_ordersTableBody.insertRow();
         r.dataset.orderkey = o.key;
         r.dataset.duedate = o.dueDate || '';
+        r.dataset.status = o.status || '';
         r.insertCell().textContent = o.packageCode || 'N/A';
         r.insertCell().textContent = o.platformOrderId || '-';
         r.insertCell().textContent = o.platform || 'N/A';
@@ -221,7 +222,8 @@ async function handleEditOrder(orderKey) {
         opt.textContent = text;
         statusSelect.appendChild(opt);
     });
-    statusSelect.value = statusCell.textContent.trim();
+    const currentStatus = row.dataset.status || statusCell.textContent.trim();
+    statusSelect.value = currentStatus;
 
     const dueDateInput = document.createElement('input');
     dueDateInput.type = 'date';
