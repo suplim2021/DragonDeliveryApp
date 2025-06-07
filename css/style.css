@@ -37,6 +37,8 @@ label { display: block; margin-bottom: 8px; font-weight: 600; color: #555; font-
 .user-info span { font-weight: bold; color: var(--primary-blue);}
 .user-info button { width:auto; font-size:0.8em; padding:6px 10px; margin-left:10px; background-color: #e74c3c;}
 .user-info button:hover { background-color: #c0392b;}
+.user-info a.home-link { display:inline-block; margin-left:10px; font-size:0.8em; padding:6px 10px; background-color: var(--primary-green); color:#fff; text-decoration:none; border-radius:8px; }
+.user-info a.home-link:hover { background-color:#9bb81a; }
 
 .page { padding-bottom: 70px; /* For fixed bottom nav */ }
 .bottom-nav {
