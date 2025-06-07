@@ -123,6 +123,10 @@ function updateSummaryCards(orders) {
     createSummaryCard('รอตรวจเช็ค', pendingCheck, total > 0 ? `${Math.round((pendingCheck/total)*100)}%` : '0%', 'fact_check', 'supervisorPackCheckListPage');
     createSummaryCard('เตรียมส่ง', readyToShip, total > 0 ? `${Math.round((readyToShip/total)*100)}%` : '0%', 'local_shipping', 'operatorShippingBatchPage');
     createSummaryCard('ส่งแล้ว', shipped, total > 0 ? `${Math.round((shipped/total)*100)}%` : '0%', 'check_circle');
+    if (typeof window.setNavBadgeCount === 'function') {
+        window.setNavBadgeCount('operatorTaskListPage', readyToPack);
+        window.setNavBadgeCount('supervisorPackCheckListPage', pendingCheck);
+    }
 }
 
 function createSummaryCard(title, value, subValue, icon, pageId = null) {
