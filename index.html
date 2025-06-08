@@ -9,16 +9,33 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
 <body class="home-page">
-    <div class="container" style="text-align:center;">
-        <h2>เลือกแอพที่ต้องการใช้งาน</h2>
-        <div class="app-grid">
-            <a href="delivery.html" class="app-item">
-                <div class="app-icon-square">
-                    <span class="material-icons">local_shipping</span>
-                </div>
-                <span class="app-label">Dragon Delivery</span>
-            </a>
-        </div>
+    <!-- Login Page -->
+    <div id="loginPage" class="container page">
+        <h2>Login</h2>
+        <div class="form-group"><label for="email">Email:</label><input type="email" id="email" placeholder="your@email.com"></div>
+        <div class="form-group"><label for="password">Password:</label><input type="password" id="password" placeholder="รหัสผ่าน"></div>
+        <button id="loginButton" type="button">เข้าสู่ระบบ</button>
+        <p id="loginError" class="hidden" style="color:red; margin-top:10px; text-align:center;"></p>
     </div>
+
+    <!-- Main App/Home Page -->
+    <div id="mainApp" class="hidden">
+        <div class="user-info">Logged in as: <span id="userDisplayName"></span> (<span id="userDisplayEmail"></span>, <span id="userDisplayRole"></span>) <button id="logoutButton" type="button">Logout</button></div>
+        <div class="container" style="text-align:center;">
+            <h2>เลือกแอพที่ต้องการใช้งาน</h2>
+            <div class="app-grid">
+                <a href="delivery.html" class="app-item">
+                    <div class="app-icon-square">
+                        <span class="material-icons">local_shipping</span>
+                    </div>
+                    <span class="app-label">Dragon Delivery</span>
+                </a>
+            </div>
+        </div>
+        <p id="appStatus" style="text-align:center; padding:10px; font-size:0.9em;"></p>
+        <div id="bottomNavContainer" class="hidden"></div>
+    </div>
+
+    <script type="module" src="js/home.js"></script>
 </body>
 </html>
