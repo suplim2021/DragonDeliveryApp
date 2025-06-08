@@ -1,7 +1,7 @@
 // js/dashboardPage.js
 import { database } from './config.js';
 import { ref, get, update, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-import { showAppStatus, formatDateDDMMYYYY, formatDateYYYYMMDD, formatDateTimeDDMMYYYYHHMM, translateStatusToThai } from './utils.js';
+import { showAppStatus, showToast, formatDateDDMMYYYY, formatDateYYYYMMDD, formatDateTimeDDMMYYYYHHMM, translateStatusToThai } from './utils.js';
 import { getCurrentUser, getCurrentUserRole } from './auth.js';
 import { showPage } from './ui.js';
 // ไม่ต้อง import uiElements จาก ui.js แล้ว
@@ -187,7 +187,7 @@ function updateOrdersLogTable(orders, filterStatus = 'all', searchCode = '') {
 async function handleEditOrder(orderKey) {
     const role = getCurrentUserRole();
     if (!(role === 'administrator' || role === 'supervisor')) {
-        alert('คุณไม่มีสิทธิ์แก้ไข');
+        showToast('คุณไม่มีสิทธิ์แก้ไข', 'error');
         return;
     }
     const row = el_ordersTableBody ? el_ordersTableBody.querySelector(`tr[data-orderkey="${orderKey}"]`) : null;
