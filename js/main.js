@@ -30,28 +30,37 @@ function setCurrentUserAndUpdateUI(user, role, displayName) {
     const mainAppEl = document.getElementById('mainApp');
     const bottomNavContainerEl = document.getElementById('bottomNavContainer');
 
-    if (userDisplayEmailEl && userDisplayRoleEl && userDisplayNameEl && loginPageEl && mainAppEl && bottomNavContainerEl) {
+    if (userDisplayEmailEl && userDisplayRoleEl && userDisplayNameEl && mainAppEl) {
         if (user) {
             userDisplayEmailEl.textContent = user.email;
             userDisplayRoleEl.textContent = role || 'N/A';
             if (userDisplayNameEl) userDisplayNameEl.textContent = displayName || user.displayName || '';
-            loginPageEl.classList.add('hidden');
+            if (loginPageEl) loginPageEl.classList.add('hidden');
             mainAppEl.classList.remove('hidden');
-            bottomNavContainerEl.classList.remove('hidden');
-            setupRoleBasedUI(role); // This function is imported from ui.js and uses its own DOM knowledge
-            showPage('dashboardPage'); // This function is imported from ui.js
+            if (bottomNavContainerEl) {
+                bottomNavContainerEl.classList.remove('hidden');
+                setupRoleBasedUI(role);
+            }
+            showPage('dashboardPage');
         } else {
             userDisplayEmailEl.textContent = '';
             userDisplayRoleEl.textContent = '';
             if (userDisplayNameEl) userDisplayNameEl.textContent = '';
             mainAppEl.classList.add('hidden');
-            bottomNavContainerEl.classList.add('hidden');
-            if(bottomNavContainerEl) bottomNavContainerEl.innerHTML = ''; // Check if exists
-            loginPageEl.classList.remove('hidden');
-            console.log("UI reset for login page (main.js).");
+            if (bottomNavContainerEl) {
+                bottomNavContainerEl.classList.add('hidden');
+                bottomNavContainerEl.innerHTML = '';
+            }
+            if (loginPageEl) {
+                loginPageEl.classList.remove('hidden');
+            } else {
+                console.warn('Login page not found, redirecting to home.');
+                window.location.href = 'index.html';
+            }
+            console.log("UI reset for login state (main.js).");
         }
     } else {
-        console.error("Core UI elements for login/logout state missing in setCurrentUserAndUpdateUI. Check IDs.");
+        console.error("Core UI elements missing in setCurrentUserAndUpdateUI. Check IDs.");
     }
 }
 
