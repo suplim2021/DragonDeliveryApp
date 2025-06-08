@@ -41,7 +41,7 @@ label { display: block; margin-bottom: 8px; font-weight: 600; color: #555; font-
 .user-info a.home-link { display:inline-block; margin-left:10px; font-size:0.8em; padding:6px 10px; background-color: var(--primary-green); color:#fff; text-decoration:none; border-radius:8px; }
 .user-info a.home-link:hover { background-color:#9bb81a; }
 
-.page { padding-bottom: 60px; /* For fixed bottom nav */ }
+.page { padding-bottom: 70px; /* For fixed bottom nav */ }
 .bottom-nav {
     position: fixed;
     bottom: 0;
@@ -50,8 +50,8 @@ label { display: block; margin-bottom: 8px; font-weight: 600; color: #555; font-
     background-color: var(--primary-blue);
     display: flex;
     justify-content: space-around;
-    height: 60px;
-    padding: 2px 0 4px; /* adjusted for mobile */
+    height: 70px;
+    padding: 4px 0; /* default padding */
     box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
     z-index:1000;
     transition: transform 0.3s ease;
@@ -62,8 +62,8 @@ label { display: block; margin-bottom: 8px; font-weight: 600; color: #555; font-
     width: auto;
     background:none;
     color: #ecf0f1;
-    padding: 6px 4px 2px; /* prevent label clipping on small screens */
-    font-size:0.75em; /* reduce text size for cramped screens */
+    padding: 8px 4px;
+    font-size:0.75em; /* reduce text size so labels fit */
     border:none;
     opacity: 0.8;
     display:flex;
@@ -71,7 +71,7 @@ label { display: block; margin-bottom: 8px; font-weight: 600; color: #555; font-
     align-items:center;
 }
 .bottom-nav button.active { color: var(--primary-green); font-weight:bold; opacity: 1; }
-.bottom-nav button .nav-icon { font-size:1.5em; line-height:1; }
+.bottom-nav button .nav-icon { font-size:1.6em; line-height:1; }
 .material-icons.nav-icon { vertical-align: middle; }
 .nav-badge {
     position: absolute;

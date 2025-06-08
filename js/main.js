@@ -92,18 +92,18 @@ document.addEventListener('DOMContentLoaded', () => {
     window.loadOrderForPacking = operatorLoadOrderForPacking;
     window.loadOrderForAddingItems = loadOrderForAddingItems;
 
-    let lastScrollTop = 0;
-
     window.addEventListener('scroll', () => {
         const nav = document.getElementById('bottomNavContainer');
         if (!nav) return;
-        const st = window.pageYOffset || document.documentElement.scrollTop;
-        if (st > lastScrollTop) {
+        const doc = document.documentElement;
+        const scrollHeight = Math.max(doc.scrollHeight, document.body.scrollHeight);
+        const canScroll = scrollHeight > window.innerHeight + 1;
+        const atBottom = window.innerHeight + window.pageYOffset >= scrollHeight - 1;
+        if (canScroll && atBottom) {
             nav.classList.add('hide');
         } else {
             nav.classList.remove('hide');
         }
-        lastScrollTop = st <= 0 ? 0 : st;
     });
 });
 
