@@ -3,7 +3,7 @@ import { showPage, uiElements } from './ui.js';
 import { database, storage, auth } from './config.js';
 import { ref, set, get, update, serverTimestamp, push, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { ref as storageRefFirebase, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js"; // Renamed to avoid conflict
-import { showAppStatus, beepSuccess, beepError } from './utils.js';
+import { showAppStatus, beepSuccess, beepError, getTimestampForFilename, resizeImageFileIfNeeded } from './utils.js';
 import { getCurrentUser, getCurrentUserRole } from './auth.js';
 
 let currentActiveBatchId = null; // Stores the ID of the batch currently being worked on
@@ -381,10 +381,13 @@ async function finalizeShipment() {
         }
 
         // 1. Upload group photo
-        const photoFileName = `shipment_${currentActiveBatchId}_${Date.now()}_${shipmentGroupPhotoFile.name}`;
+        const timestamp = getTimestampForFilename();
+        const extension = shipmentGroupPhotoFile.name.split('.').pop();
+        const photoFileName = `shipment_${currentActiveBatchId}_${timestamp}.${extension}`;
         const photoPath = `shipmentGroupPhotos/${currentActiveBatchId}/${photoFileName}`;
         const imageRef = storageRefFirebase(storage, photoPath); // Use aliased storageRef
-        await uploadBytes(imageRef, shipmentGroupPhotoFile);
+        const resized = await resizeImageFileIfNeeded(shipmentGroupPhotoFile, 1500);
+        await uploadBytes(imageRef, resized);
         const groupPhotoUrl = await getDownloadURL(imageRef);
 
         // 2. Prepare updates for the batch
