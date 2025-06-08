@@ -13,7 +13,7 @@ let platformChartInstance = null;
 let el_appStatus, el_currentDateDisplay, el_refreshDashboardButton,
     el_summaryCardsContainer, el_dailyStatsCanvas, el_platformStatsCanvas,
     el_logFilterSelect, el_applyLogFilterButton, el_logSearchInput,
-    el_ordersTableBody, el_noOrdersMessage;
+    el_ordersTableBody, el_noOrdersMessage,
     el_dueTodayTableBody, el_noDueTodayMessage;
 
 export function initializeDashboardPageListeners() {
