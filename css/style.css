@@ -229,3 +229,6 @@ tbody tr:hover { background-color: #f1f8ff; }
 .toast.success { background-color: var(--primary-green); }
 .toast.error { background-color: #e74c3c; }
 
+.urgent-container { border:2px solid #e74c3c; background-color:#fff5f5; padding:10px; margin-bottom:20px; border-radius:8px; }
+.urgent-container h3 { color:#e74c3c; margin-top:0; }
+.urgent-row { background-color:#ffe5e5; }
