@@ -55,7 +55,7 @@ export async function loadOrderForAddingItems(orderKey) {
     currentOrderKeyForItems = orderKey;
     if (adminItemsProductSearchInput) adminItemsProductSearchInput.value = '';
     if (adminItemsQuantityInput) adminItemsQuantityInput.value = '1';
-    if (adminItemsUnitInput) adminItemsUnitInput.value = '';
+    if (adminItemsUnitInput) adminItemsUnitInput.value = 'ถุง';
     if (adminItemsItemListUL) adminItemsItemListUL.innerHTML = '';
 
     try {
@@ -107,7 +107,7 @@ async function addItemToOrder() {
         renderItemInList(newRef.key, { productName: name, quantity: qty, unit });
         if (adminItemsProductSearchInput) adminItemsProductSearchInput.value = '';
         if (adminItemsQuantityInput) adminItemsQuantityInput.value = '1';
-        if (adminItemsUnitInput) adminItemsUnitInput.value = '';
+        if (adminItemsUnitInput) adminItemsUnitInput.value = 'ถุง';
         showAppStatus('เพิ่มสินค้าแล้ว', 'success', adminItemsAppStatus);
     } catch (err) {
         console.error('addItemToOrder error', err);
