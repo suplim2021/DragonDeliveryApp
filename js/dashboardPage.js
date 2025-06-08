@@ -159,8 +159,8 @@ function createSummaryCard(title, value, subValue, icon, pageId = null) {
 function updateDueTodayTable(orders) {
     if (!el_dueTodayTableBody) return;
     el_dueTodayTableBody.innerHTML = '';
-    const todayStr = new Date().toISOString().slice(0, 10);
-    const dueToday = orders.filter(o => o.dueDate && new Date(o.dueDate).toISOString().slice(0, 10) === todayStr);
+    const todayStr = formatDateYYYYMMDD(new Date());
+    const dueToday = orders.filter(o => o.dueDate && formatDateYYYYMMDD(o.dueDate) === todayStr);
     if (dueToday.length === 0) {
         const r = el_dueTodayTableBody.insertRow();
         const c = r.insertCell();
@@ -381,7 +381,11 @@ function renderCharts(orders) {
     });
 
     // Platform Stats
-    const platformCounts = {}; orders.forEach(o => { const p = o.platform || "Unknown"; platformCounts[p] = (platformCounts[p] || 0) + 1; });
+    const platformCounts = {}; orders.forEach(o => {
+        let p = o.platform || 'Other';
+        if (p === 'Unknown') p = 'Other';
+        platformCounts[p] = (platformCounts[p] || 0) + 1;
+    });
     const platformLabels = Object.keys(platformCounts);
     const defaultColors = ['#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF','#FF9F40'];
     const platformColors = platformLabels.map((label, idx) => {
@@ -389,6 +393,7 @@ function renderCharts(orders) {
         if (lower.includes('shopee')) return '#EE4D2D'; // orange
         if (lower.includes('lazada')) return '#4B0082'; // blue-purple
         if (lower.includes('tiktok')) return '#000000'; // black
+        if (lower.includes('other')) return '#2ecc71'; // green
         return defaultColors[idx % defaultColors.length];
     });
     if (platformChartInstance) platformChartInstance.destroy();

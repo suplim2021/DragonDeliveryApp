@@ -3,10 +3,10 @@
  * Detects the platform based on the package code.
  * IMPORTANT: This logic needs to be customized based on actual package code formats.
  * @param {string} packageCode - The package code scanned from the QR.
- * @returns {string} - The detected platform name (e.g., "Shopee", "Lazada", "Tiktok") or "Unknown".
+ * @returns {string} - The detected platform name (e.g., "Shopee", "Lazada", "Tiktok") or "Other".
  */
 export function detectPlatformFromPackageCode(packageCode) {
-    if (!packageCode) return "Unknown";
+    if (!packageCode) return "Other";
     const code = packageCode.toUpperCase().replace(/\s+/g, ""); // Normalize for easier comparison
 
     // Shopee codes usually start with TH + digits or the prefix SPX
@@ -29,8 +29,8 @@ export function detectPlatformFromPackageCode(packageCode) {
         return "Tiktok";
     }
 
-    // Fallback
-    return "Unknown";
+    // Fallback for any other platform
+    return "Other";
 }
 
 // ---- Scan Feedback Utility Functions ----

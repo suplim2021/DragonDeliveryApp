@@ -228,7 +228,7 @@ async function saveInitialOrder() {
     try {
         const newRef = push(ref(database, 'orders'));
         const orderData = {
-            platform: platform || 'Unknown',
+            platform: platform || 'Other',
             platformOrderId: platformOrderId || null,
             packageCode: packageCode,
             dueDate: dueDate,
