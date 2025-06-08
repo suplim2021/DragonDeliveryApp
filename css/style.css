@@ -201,3 +201,13 @@ tbody tr:hover { background-color: #f1f8ff; }
 .app-item .app-label {
     font-size: 0.85em;
 }
+
+.logo {
+    display: block;
+    margin: 10px auto;
+    max-width: 160px;
+}
+
+.app-header {
+    text-align: center;
+}
