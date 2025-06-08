@@ -30,14 +30,15 @@ export function initializeAuthEventListeners() {
     authBottomNavContainer = document.getElementById('bottomNavContainer');
 
 
-    if (!authLoginButton || !authLogoutButton || !authEmailInput || !authPasswordInput || !authLoginError || !authAppStatus) {
-        console.error("Auth related DOM elements not found during listener setup in auth.js!");
+    if (!authLogoutButton || !authAppStatus) {
+        console.error("Auth logout elements not found during listener setup in auth.js!");
         return;
     }
 
-    authLoginButton.addEventListener('click', () => {
-        const emailValue = authEmailInput.value.trim();
-        const passwordValue = authPasswordInput.value;
+    if (authLoginButton && authEmailInput && authPasswordInput && authLoginError) {
+        authLoginButton.addEventListener('click', () => {
+            const emailValue = authEmailInput.value.trim();
+            const passwordValue = authPasswordInput.value;
         
         if (!emailValue || !passwordValue) {
             authLoginError.textContent = "กรุณากรอกอีเมลและรหัสผ่าน";
@@ -66,7 +67,8 @@ export function initializeAuthEventListeners() {
             }).finally(() => {
                 authLoginButton.disabled = false;
             });
-    });
+        });
+    }
 
     authLogoutButton.addEventListener('click', () => {
         signOut(auth).then(() => {
