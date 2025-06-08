@@ -3,7 +3,7 @@ import { showPage, uiElements } from './ui.js';
 import { database, storage, auth } from './config.js';
 import { ref, set, get, update, serverTimestamp, push, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { ref as storageRefFirebase, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js"; // Renamed to avoid conflict
-import { showAppStatus, beepSuccess, beepError, getTimestampForFilename, resizeImageFileIfNeeded } from './utils.js';
+import { showAppStatus, showToast, beepSuccess, beepError, getTimestampForFilename, resizeImageFileIfNeeded } from './utils.js';
 import { getCurrentUser, getCurrentUserRole } from './auth.js';
 
 let currentActiveBatchId = null; // Stores the ID of the batch currently being worked on
@@ -124,7 +124,7 @@ async function createOrSelectBatch() {
 let html5QrScannerForBatch = null;
 let isBatchScannerStopping = false; // Flag to prevent double stop calls
 function startScanForBatch() {
-    if (!uiElements.qrScanner_Batch_div) { alert("QR Scanner element for Batch not found!"); return; }
+    if (!uiElements.qrScanner_Batch_div) { showToast("QR Scanner element for Batch not found!", "error"); return; }
 
     uiElements.qrScannerContainer_Batch.classList.remove('hidden');
     uiElements.stopScanForBatchButton.classList.remove('hidden');
@@ -180,21 +180,21 @@ function startScanForBatch() {
                 (errorMessage) => { /* console.warn("Batch Scan failure:", errorMessage); */ beepError(); }
             ).catch(err => {
                 beepError();
-                alert("ไม่สามารถเปิดกล้องสแกน QR สำหรับ Batch ได้: " + (err?.message || err));
+                showToast("ไม่สามารถเปิดกล้องสแกน QR สำหรับ Batch ได้: " + (err?.message || err), "error");
                 uiElements.qrScannerContainer_Batch.classList.add('hidden');
                 uiElements.stopScanForBatchButton.classList.add('hidden');
                 uiElements.startScanForBatchButton.disabled = false;
             });
         } else {
             beepError();
-            alert("ไม่พบกล้องบนอุปกรณ์");
+            showToast("ไม่พบกล้องบนอุปกรณ์", "error");
             uiElements.qrScannerContainer_Batch.classList.add('hidden');
             uiElements.stopScanForBatchButton.classList.add('hidden');
             uiElements.startScanForBatchButton.disabled = false;
         }
     }).catch(err => {
         beepError();
-        alert("ไม่สามารถเข้าถึงกล้อง: " + (err?.message || err));
+        showToast("ไม่สามารถเข้าถึงกล้อง: " + (err?.message || err), "error");
         uiElements.qrScannerContainer_Batch.classList.add('hidden');
         uiElements.stopScanForBatchButton.classList.add('hidden');
         uiElements.startScanForBatchButton.disabled = false;

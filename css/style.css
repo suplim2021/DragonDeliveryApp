@@ -208,3 +208,24 @@ tbody tr:hover { background-color: #f1f8ff; }
 .app-header {
     text-align: center;
 }
+
+/* Toast notifications */
+.toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0,0,0,0.85);
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 0.9em;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 3000;
+}
+.toast.show { opacity: 1; }
+.toast.success { background-color: var(--primary-green); }
+.toast.error { background-color: #e74c3c; }
+

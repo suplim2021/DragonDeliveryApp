@@ -34,8 +34,26 @@ export function detectPlatformFromPackageCode(packageCode) {
 }
 
 // ---- Scan Feedback Utility Functions ----
+let toastTimer;
+export function showToast(message, type = 'info', duration = 3000) {
+    let toastEl = document.getElementById('toast');
+    if (!toastEl) {
+        toastEl = document.createElement('div');
+        toastEl.id = 'toast';
+        toastEl.className = 'toast';
+        document.body.appendChild(toastEl);
+    }
+    toastEl.textContent = message;
+    toastEl.className = `toast ${type}`;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+        toastEl.classList.remove('show');
+    }, duration);
+}
+
 export function beepSuccess() {
-    alert('การอ่านค่าสำเร็จ');
+    showToast('การอ่านค่าสำเร็จ', 'success', 1500);
 }
 
 export function beepError() {
