@@ -2,7 +2,7 @@
 import { auth, database } from './config.js';
 import { ref, set, serverTimestamp, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 // import { uiElements, showPage } from './ui.js'; // <<<--- ลบออก
-import { detectPlatformFromPackageCode, setDefaultDueDate, showAppStatus, beepSuccess, beepError } from './utils.js';
+import { detectPlatformFromPackageCode, setDefaultDueDate, showAppStatus, showToast, beepSuccess, beepError } from './utils.js';
 import { getCurrentUser, getCurrentUserRole } from './auth.js';
 import { loadOrderForAddingItems } from './adminItemsPage.js'; // This should also not rely on global uiElements from ui.js
 
@@ -77,7 +77,7 @@ window.stopPackageCodeScan = stopPackageCodeScan;
 window.stopPlatformIdScan = stopPlatformIdScan;
 
 function startPackageCodeScan() {
-    if (!overlayScannerDiv || !scanOverlayDiv) { alert("QR Scanner element not found!"); return; }
+    if (!overlayScannerDiv || !scanOverlayDiv) { showToast("QR Scanner element not found!", "error"); return; }
     scanOverlayDiv.classList.remove('hidden');
     adminOrderStartQRButton.disabled = true;
     if (!html5QrCodeScannerPackageCode) {
@@ -95,17 +95,17 @@ function startPackageCodeScan() {
                 (errorMessage) => { console.warn("Package Code Scan failure:", errorMessage); beepError(); }
             ).catch(err => {
                 beepError();
-                alert("ไม่สามารถเปิดกล้องสแกน QR ได้: " + (err?.message || err));
+                showToast("ไม่สามารถเปิดกล้องสแกน QR ได้: " + (err?.message || err), "error");
                 stopPackageCodeScan();
             });
         } else {
             beepError();
-            alert("ไม่พบกล้องบนอุปกรณ์");
+            showToast("ไม่พบกล้องบนอุปกรณ์", "error");
             stopPackageCodeScan();
         }
     }).catch(err => {
         beepError();
-        alert("ไม่สามารถเข้าถึงกล้อง: " + (err?.message || err));
+        showToast("ไม่สามารถเข้าถึงกล้อง: " + (err?.message || err), "error");
         stopPackageCodeScan();
     });
 }
@@ -144,7 +144,7 @@ function onScanSuccess_PackageCode(decodedText, decodedResult) {
 }
 
 function startPlatformIdScan() {
-    if (!overlayScannerDiv || !scanOverlayDiv) { alert("QR Scanner element not found!"); return; }
+    if (!overlayScannerDiv || !scanOverlayDiv) { showToast("QR Scanner element not found!", "error"); return; }
     scanOverlayDiv.classList.remove('hidden');
     adminOrderScanPlatformIdButton.disabled = true;
     if (!html5QrCodeScannerPlatformOrderId) {
@@ -171,17 +171,17 @@ function startPlatformIdScan() {
                 (errorMessage) => { console.warn("Platform Order ID Scan failure:", errorMessage); beepError(); }
             ).catch(err => {
                 beepError();
-                alert("ไม่สามารถเปิดกล้องสแกน Platform Order ID ได้: " + (err?.message || err));
+                showToast("ไม่สามารถเปิดกล้องสแกน Platform Order ID ได้: " + (err?.message || err), "error");
                 stopPlatformIdScan();
             });
         } else {
             beepError();
-            alert("ไม่พบกล้องบนอุปกรณ์");
+            showToast("ไม่พบกล้องบนอุปกรณ์", "error");
             stopPlatformIdScan();
         }
     }).catch(err => {
         beepError();
-        alert("ไม่สามารถเข้าถึงกล้อง: " + (err?.message || err));
+        showToast("ไม่สามารถเข้าถึงกล้อง: " + (err?.message || err), "error");
         stopPlatformIdScan();
     });
 }
