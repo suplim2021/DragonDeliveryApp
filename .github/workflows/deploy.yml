@@ -1,0 +1,56 @@
+name: Deploy to Firebase
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📦 Checkout source code
+        uses: actions/checkout@v4
+
+      - name: 🛠 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: 🧾 Generate js/config.js from secrets
+        run: |
+          mkdir -p js
+          cat > js/config.js <<EOF
+          import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+          import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+          import { getDatabase } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+          import { getStorage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+          // !!!!!!!!!! ใส่ FIREBASE CONFIG ของคุณจริงๆ ตรงนี้ !!!!!!!!!! 
+          const firebaseConfig = {
+              apiKey: "${{ secrets.FIREBASE_API_KEY }}",
+              authDomain: "${{ secrets.FIREBASE_AUTH_DOMAIN }}",
+              databaseURL: "${{ secrets.FIREBASE_DATABASE_URL }}",
+              projectId: "${{ secrets.FIREBASE_PROJECT_ID }}",
+              storageBucket: "${{ secrets.FIREBASE_STORAGE_BUCKET }}",
+              messagingSenderId: "${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}",
+              appId: "${{ secrets.FIREBASE_APP_ID }}"
+              // measurementId: "YOUR_MEASUREMENT_ID" // Optional
+          };
+          // !!!!!!!!!! สิ้นสุด FIREBASE CONFIG !!!!!!!!!! 
+
+          const app = initializeApp(firebaseConfig);
+          const auth = getAuth(app);
+          const database = getDatabase(app);
+          const storage = getStorage(app);
+
+          export { auth, database, storage, app };
+          EOF
+
+      - name: 🚀 Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: 🚀 Deploy to Firebase Hosting
+        run: firebase deploy --only hosting
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
