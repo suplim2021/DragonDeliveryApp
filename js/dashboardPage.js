@@ -14,6 +14,7 @@ let el_appStatus, el_currentDateDisplay, el_refreshDashboardButton,
     el_summaryCardsContainer, el_dailyStatsCanvas, el_platformStatsCanvas,
     el_logFilterSelect, el_applyLogFilterButton, el_logSearchInput,
     el_ordersTableBody, el_noOrdersMessage;
+    el_dueTodayTableBody, el_noDueTodayMessage;
 
 export function initializeDashboardPageListeners() {
     // Query for elements specific to this page when listeners are set up
@@ -28,6 +29,8 @@ export function initializeDashboardPageListeners() {
     el_logSearchInput = document.getElementById('logSearchPackageCode');
     el_ordersTableBody = document.getElementById('ordersTableBody');
     el_noOrdersMessage = document.getElementById('noOrdersMessage');
+    el_dueTodayTableBody = document.getElementById("dueTodayTableBody");
+    el_noDueTodayMessage = document.getElementById("noDueTodayMessage");
 
     if (el_refreshDashboardButton) {
         el_refreshDashboardButton.addEventListener('click', () => loadDashboardData(el_logFilterSelect ? el_logFilterSelect.value : 'all', el_logSearchInput ? el_logSearchInput.value.trim() : ''));
@@ -52,6 +55,17 @@ export function initializeDashboardPageListeners() {
                 const key = e.target.dataset.orderkey;
                 if (key) handleEditOrder(key);
             } else if (e.target.classList.contains('delete-order-btn')) {
+                const key = e.target.dataset.orderkey;
+                if (key) handleDeleteOrder(key);
+            }
+        });
+    }
+    if (el_dueTodayTableBody) {
+        el_dueTodayTableBody.addEventListener("click", (e) => {
+            if (e.target.classList.contains("edit-order-btn")) {
+                const key = e.target.dataset.orderkey;
+                if (key) handleEditOrder(key);
+            } else if (e.target.classList.contains("delete-order-btn")) {
                 const key = e.target.dataset.orderkey;
                 if (key) handleDeleteOrder(key);
             }
@@ -87,6 +101,7 @@ export async function loadDashboardData(filterStatus = 'all', searchCode = '') {
         }
 
         updateSummaryCards(allOrders);
+        updateDueTodayTable(allOrders);
         updateOrdersLogTable(allOrders, filterStatus, searchCode);
         renderCharts(allOrders);
 
@@ -139,6 +154,51 @@ function createSummaryCard(title, value, subValue, icon, pageId = null) {
     }
     card.innerHTML = `<div class="summary-card-icon material-icons">${icon}</div><h4 class="summary-card-value">${value}</h4><p class="summary-card-title">${title}</p><p class="summary-card-subvalue">${subValue}</p>`;
     el_summaryCardsContainer.appendChild(card);
+}
+
+function updateDueTodayTable(orders) {
+    if (!el_dueTodayTableBody) return;
+    el_dueTodayTableBody.innerHTML = '';
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const dueToday = orders.filter(o => o.dueDate && new Date(o.dueDate).toISOString().slice(0, 10) === todayStr);
+    if (dueToday.length === 0) {
+        const r = el_dueTodayTableBody.insertRow();
+        const c = r.insertCell();
+        c.colSpan = 7;
+        c.textContent = 'ไม่พบข้อมูล';
+        c.style.textAlign = 'center';
+        c.style.padding = '20px';
+        if (el_noDueTodayMessage) el_noDueTodayMessage.classList.remove('hidden');
+        return;
+    }
+    if (el_noDueTodayMessage) el_noDueTodayMessage.classList.add('hidden');
+    const role = getCurrentUserRole();
+    dueToday.forEach(o => {
+        const r = el_dueTodayTableBody.insertRow();
+        r.classList.add('due-today-row');
+        r.dataset.orderkey = o.key;
+        r.insertCell().textContent = o.packageCode || 'N/A';
+        r.insertCell().textContent = o.platformOrderId || '-';
+        r.insertCell().textContent = o.platform || 'N/A';
+        r.insertCell().textContent = translateStatusToThai(o.status);
+        r.insertCell().textContent = formatDateTimeDDMMYYYYHHMM(o.createdAt);
+        r.insertCell().textContent = formatDateDDMMYYYY(o.dueDate);
+        const actCell = r.insertCell();
+        if (role === 'administrator' || role === 'supervisor') {
+            const btn = document.createElement('button');
+            btn.textContent = 'แก้ไข';
+            btn.className = 'edit-order-btn';
+            btn.dataset.orderkey = o.key;
+            actCell.appendChild(btn);
+            const delBtn = document.createElement('button');
+            delBtn.textContent = 'ลบ';
+            delBtn.className = 'delete-order-btn';
+            delBtn.dataset.orderkey = o.key;
+            actCell.appendChild(delBtn);
+        } else {
+            actCell.textContent = '-';
+        }
+    });
 }
 
 function updateOrdersLogTable(orders, filterStatus = 'all', searchCode = '') {
