@@ -126,6 +126,24 @@ export function formatDateYYYYMMDD(dateInput) {
 }
 
 /**
+ * Formats a date value as DD/MM/YYYY HH:mm in local time.
+ * Useful for displaying order creation timestamps.
+ * @param {number|string|Date} dateInput - The date to format.
+ * @returns {string} - Formatted date+time string or 'N/A' if invalid.
+ */
+export function formatDateTimeDDMMYYYYHHMM(dateInput) {
+    if (!dateInput) return 'N/A';
+    const d = new Date(dateInput);
+    if (isNaN(d)) return 'N/A';
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    const hour = String(d.getHours()).padStart(2, '0');
+    const minute = String(d.getMinutes()).padStart(2, '0');
+    return `${day}/${month}/${year} ${hour}:${minute}`;
+}
+
+/**
  * Translates an order status value to its Thai display label.
  * If the status is not recognised, the original value is returned.
  * @param {string} status - The status value stored in the database
@@ -144,4 +162,55 @@ export function translateStatusToThai(status) {
         'Shipment Approved': 'ตรวจส่งแล้ว'
     };
     return map[status] || status || 'N/A';
+}
+
+// ----- Additional Utilities -----
+
+/**
+ * Generates a timestamp string suitable for filenames.
+ * Format: YYYYMMDD_HHmmssSSS (local time)
+ * @param {Date} [date=new Date()] - Date object to format.
+ * @returns {string} - Formatted timestamp string.
+ */
+export function getTimestampForFilename(date = new Date()) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hour = String(date.getHours()).padStart(2, '0');
+    const minute = String(date.getMinutes()).padStart(2, '0');
+    const second = String(date.getSeconds()).padStart(2, '0');
+    const ms = String(date.getMilliseconds()).padStart(3, '0');
+    return `${year}${month}${day}_${hour}${minute}${second}${ms}`;
+}
+
+/**
+ * Resizes an image file if its width or height exceeds the given max dimension.
+ * Returns the original file if no resizing is needed or resizing fails.
+ *
+ * @param {File} file - Image file to resize.
+ * @param {number} [maxDim=1500] - Maximum width or height in pixels.
+ * @returns {Promise<File>} - Promise resolving to the resized File object.
+ */
+export function resizeImageFileIfNeeded(file, maxDim = 1500) {
+    return new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => {
+            let { width, height } = img;
+            if (width <= maxDim && height <= maxDim) {
+                resolve(file);
+                return;
+            }
+            const scale = Math.min(maxDim / width, maxDim / height);
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(width * scale);
+            canvas.height = Math.round(height * scale);
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob(blob => {
+                resolve(new File([blob], file.name, { type: file.type || 'image/jpeg' }));
+            }, file.type || 'image/jpeg', 0.9);
+        };
+        img.onerror = () => resolve(file);
+        img.src = URL.createObjectURL(file);
+    });
 }
