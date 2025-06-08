@@ -1,7 +1,6 @@
 // js/adminOrderPage.js
 import { auth, database } from './config.js';
 import { ref, set, serverTimestamp, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-// import { uiElements, showPage } from './ui.js'; // <<<--- ลบออก
 import { detectPlatformFromPackageCode, setDefaultDueDate, showAppStatus, showToast, beepSuccess, beepError } from './utils.js';
 import { getCurrentUser, getCurrentUserRole } from './auth.js';
 import { loadOrderForAddingItems } from './adminItemsPage.js'; // This should also not rely on global uiElements from ui.js
