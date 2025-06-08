@@ -5,21 +5,18 @@ html, body, button, input, select, textarea {
 }
 
 :root {
-    --primary-blue: #2A3386;
+    --primary-blue: #2C368B;
     --primary-green: #BAD71D;
 }
 
 body {
     margin: 0;
     padding: 10px;
-    background-color: #f4f7f6;
-    color: #333;
+    background-color: var(--primary-blue);
+    color: #f4f7f6;
 }
 
-body.home-page {
-    background-color: var(--primary-blue);
-}
-.container { background-color: white; padding: 20px; border-radius: 12px; margin-bottom:15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+.container { background-color: white; color:#333; padding: 20px; border-radius: 12px; margin-bottom:15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
 h1, h2, h3 { color: var(--primary-blue); margin-top:0; }
 h2 { font-size: 1.5em; margin-bottom: 20px; }
 h3 { font-size: 1.2em; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 8px;}
@@ -33,12 +30,12 @@ button:disabled { background-color: #bdc3c7; cursor: not-allowed; }
 input[type="text"], input[type="email"], input[type="password"], input[type="date"], input[type="number"], select, textarea {
     width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #dce4ec; border-radius: 8px; box-sizing: border-box; font-size: 1em;
 }
-input:focus, select:focus, textarea:focus { border-color: var(--primary-blue); outline: none; box-shadow: 0 0 0 2px rgba(42, 51, 134, 0.2); }
+input:focus, select:focus, textarea:focus { border-color: var(--primary-blue); outline: none; box-shadow: 0 0 0 2px rgba(44, 54, 139, 0.2); }
 label { display: block; margin-bottom: 8px; font-weight: 600; color: #555; font-size: 0.9em;}
 .hidden { display: none !important; }
 
-.user-info { text-align: right; margin-bottom:20px; font-size:0.9em; color: #555;}
-.user-info span { font-weight: bold; color: var(--primary-blue);}
+.user-info { text-align: right; margin-bottom:20px; font-size:0.9em; color: #fff;}
+.user-info span { font-weight: bold; color: var(--primary-green);}
 .user-info button { width:auto; font-size:0.8em; padding:6px 10px; margin-left:10px; background-color: #e74c3c;}
 .user-info button:hover { background-color: #c0392b;}
 .user-info a.home-link { display:inline-block; margin-left:10px; font-size:0.8em; padding:6px 10px; background-color: var(--primary-green); color:#fff; text-decoration:none; border-radius:8px; }
@@ -200,4 +197,14 @@ tbody tr:hover { background-color: #f1f8ff; }
 }
 .app-item .app-label {
     font-size: 0.85em;
+}
+
+.logo {
+    display: block;
+    margin: 10px auto;
+    max-width: 160px;
+}
+
+.app-header {
+    text-align: center;
 }
