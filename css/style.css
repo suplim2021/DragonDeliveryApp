@@ -229,3 +229,8 @@ tbody tr:hover { background-color: #f1f8ff; }
 .toast.success { background-color: var(--primary-green); }
 .toast.error { background-color: #e74c3c; }
 
+
+/* Urgent due today table styles */
+#dueTodayTableContainer thead tr { background-color: #ffe5e5; }
+.due-today-row { background-color: #fff0f0; }
+
