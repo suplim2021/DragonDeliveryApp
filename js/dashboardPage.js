@@ -1,7 +1,7 @@
 // js/dashboardPage.js
 import { database } from './config.js';
 import { ref, get, update, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-import { showAppStatus, formatDateDDMMYYYY, formatDateYYYYMMDD, translateStatusToThai } from './utils.js';
+import { showAppStatus, formatDateDDMMYYYY, formatDateYYYYMMDD, formatDateTimeDDMMYYYYHHMM, translateStatusToThai } from './utils.js';
 import { getCurrentUser, getCurrentUserRole } from './auth.js';
 import { showPage } from './ui.js';
 // ไม่ต้อง import uiElements จาก ui.js แล้ว
@@ -150,7 +150,7 @@ function updateOrdersLogTable(orders, filterStatus = 'all', searchCode = '') {
         filtered = filtered.filter(o => (o.packageCode || '').toLowerCase().includes(scLower));
     }
     if (filtered.length === 0) {
-        const r = el_ordersTableBody.insertRow(); const c = r.insertCell(); c.colSpan = 6; c.textContent = "ไม่พบข้อมูล"; c.style.textAlign = "center"; c.style.padding="20px"; return;
+        const r = el_ordersTableBody.insertRow(); const c = r.insertCell(); c.colSpan = 7; c.textContent = "ไม่พบข้อมูล"; c.style.textAlign = "center"; c.style.padding="20px"; return;
     }
     const role = getCurrentUserRole();
     filtered.forEach(o => {
@@ -162,6 +162,7 @@ function updateOrdersLogTable(orders, filterStatus = 'all', searchCode = '') {
         r.insertCell().textContent = o.platformOrderId || '-';
         r.insertCell().textContent = o.platform || 'N/A';
         r.insertCell().textContent = translateStatusToThai(o.status);
+        r.insertCell().textContent = formatDateTimeDDMMYYYYHHMM(o.createdAt);
         r.insertCell().textContent = formatDateDDMMYYYY(o.dueDate);
         const actCell = r.insertCell();
         if(role === 'administrator' || role === 'supervisor') {
@@ -198,8 +199,8 @@ async function handleEditOrder(orderKey) {
     const packageCodeCell = cells[0];
     const platformOrderCell = cells[1];
     const statusCell = cells[3];
-    const dueDateCell = cells[4];
-    const actionsCell = cells[5];
+    const dueDateCell = cells[5];
+    const actionsCell = cells[6];
 
     const platformOrderInput = document.createElement('input');
     platformOrderInput.type = 'text';

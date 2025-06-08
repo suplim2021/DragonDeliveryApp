@@ -3,7 +3,7 @@ import { database, storage, auth } from './config.js';
 import { ref, get, update, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { ref as storageRefFirebase, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 import { showPage } from './ui.js'; // Import showPage
-import { showAppStatus, formatDateDDMMYYYY } from './utils.js';
+import { showAppStatus, formatDateDDMMYYYY, getTimestampForFilename, resizeImageFileIfNeeded } from './utils.js';
 import { getCurrentUser, getCurrentUserRole } from './auth.js';
 
 let currentOrderKeyForPacking = null;
@@ -165,10 +165,13 @@ async function confirmPacking() {
     showAppStatus("กำลังอัปโหลดรูปและบันทึกข้อมูลการแพ็ก...", "info", opPacking_appStatus);
 
     try {
-        const photoFileName = `packing_${currentOrderKeyForPacking}_${Date.now()}_${packingPhotoFile.name}`;
+        const timestamp = getTimestampForFilename();
+        const extension = packingPhotoFile.name.split('.').pop();
+        const photoFileName = `${currentOrderKeyForPacking}_${timestamp}.${extension}`;
         const photoStoragePath = `packingPhotos/${currentOrderKeyForPacking}/${photoFileName}`;
         const imageRef = storageRefFirebase(storage, photoStoragePath);
-        await uploadBytes(imageRef, packingPhotoFile);
+        const resized = await resizeImageFileIfNeeded(packingPhotoFile, 1500);
+        await uploadBytes(imageRef, resized);
         const photoDownloadURL = await getDownloadURL(imageRef);
 
         const packingInfoData = {
