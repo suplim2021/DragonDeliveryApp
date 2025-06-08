@@ -2,7 +2,7 @@
 import { showPage, uiElements } from './ui.js'; // uiElements for DOM, showPage for navigation
 import { database } from './config.js';        // Firebase database service
 import { ref, query, orderByChild, equalTo, get, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-import { showAppStatus, formatDateDDMMYYYY } from './utils.js';
+import { showAppStatus, showToast, formatDateDDMMYYYY } from './utils.js';
 import { getCurrentUserRole } from './auth.js';
 
 
@@ -91,7 +91,7 @@ export async function loadOperatorPendingTasks() {
                         window.loadOrderForPacking(orderKeyToPack);
                     } else {
                         console.error("loadOrderForPacking function is not available globally.");
-                        alert("เกิดข้อผิดพลาด: ไม่สามารถโหลดรายละเอียดออเดอร์ได้");
+                        showToast('เกิดข้อผิดพลาด: ไม่สามารถโหลดรายละเอียดออเดอร์ได้', 'error');
                     }
                 });
             });
@@ -104,7 +104,7 @@ export async function loadOperatorPendingTasks() {
                         window.loadOrderForAddingItems(orderKeyToEdit);
                     } else {
                         console.error('loadOrderForAddingItems function is not available globally.');
-                        alert('เกิดข้อผิดพลาด: ไม่สามารถโหลดหน้าปรับรายการสินค้าได้');
+                        showToast('เกิดข้อผิดพลาด: ไม่สามารถโหลดหน้าปรับรายการสินค้าได้', 'error');
                     }
                 });
             });

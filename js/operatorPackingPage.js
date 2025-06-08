@@ -3,7 +3,7 @@ import { database, storage, auth } from './config.js';
 import { ref, get, update, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { ref as storageRefFirebase, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 import { showPage } from './ui.js'; // Import showPage
-import { showAppStatus, formatDateDDMMYYYY, getTimestampForFilename, resizeImageFileIfNeeded } from './utils.js';
+import { showAppStatus, showToast, formatDateDDMMYYYY, getTimestampForFilename, resizeImageFileIfNeeded } from './utils.js';
 import { getCurrentUser, getCurrentUserRole } from './auth.js';
 
 let currentOrderKeyForPacking = null;
@@ -67,7 +67,7 @@ export async function loadOrderForPacking(orderKey) {
         if (snapshot.exists()) {
             const orderData = snapshot.val();
             if (orderData.status !== "Ready to Pack" && orderData.status !== "Pack Rejected") {
-                alert(`พัสดุนี้ไม่พร้อมสำหรับการแพ็ก (สถานะ: ${orderData.status})`);
+                showToast(`พัสดุนี้ไม่พร้อมสำหรับการแพ็ก (สถานะ: ${orderData.status})`, "error");
                 showAppStatus(`พัสดุสถานะ: ${orderData.status}`, 'info', opPacking_appStatus);
                 showPage('dashboardPage'); // Or back to operator's task list
                 return;
@@ -118,7 +118,7 @@ export async function loadOrderForPacking(orderKey) {
             showPage('operatorPackingPage');
             showAppStatus('โหลดพัสดุสำหรับแพ็กแล้ว', 'success', opPacking_appStatus);
         } else {
-            alert('ไม่พบข้อมูลพัสดุนี้');
+            showToast("ไม่พบข้อมูลพัสดุนี้", "error");
             showAppStatus('ไม่พบข้อมูลพัสดุนี้', 'error', opPacking_appStatus);
             showPage('dashboardPage'); // Or back to operator's task list
         }
