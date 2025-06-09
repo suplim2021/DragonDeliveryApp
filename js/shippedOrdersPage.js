@@ -2,7 +2,7 @@
 import { database } from './config.js';
 import { ref, query, orderByChild, equalTo, get, update, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { showPage } from './ui.js';
-import { showAppStatus, formatDateDDMMYYYY, formatDateTimeDDMMYYYYHHMM } from './utils.js';
+import { showAppStatus, formatDateTimeDDMMYYYYHHMM } from './utils.js';
 import { getCurrentUser, getCurrentUserRole } from './auth.js';
 
 let currentDetailOrderKey = null;
@@ -53,6 +53,7 @@ export async function loadShippedOrders() {
             }
         }));
 
+        const role = getCurrentUserRole();
         const batchArr = Object.values(batchMap).sort((a, b) => (b.shippedAt || 0) - (a.shippedAt || 0));
         let totalCount = 0;
         batchArr.forEach(batch => {
@@ -64,9 +65,14 @@ export async function loadShippedOrders() {
             div.style.border = '1px solid #ccc';
             div.style.borderRadius = '8px';
 
-            let html = `<h3 style="margin-top:0">Batch ID: ${batch.batchId}</h3>`;
-            if (batch.courierShop) html += `<p style="font-size:0.9em;margin:2px 0;"><strong>Courier:</strong> ${batch.courierShop}</p>`;
-            if (batch.shippedAt) html += `<p style="font-size:0.9em;margin:2px 0;"><strong>ส่งเมื่อ:</strong> ${formatDateTimeDDMMYYYYHHMM(batch.shippedAt)}</p>`;
+            let heading = '';
+            if (batch.courierShop) heading += batch.courierShop;
+            if (batch.shippedAt) heading += (heading ? ' - ' : '') + formatDateTimeDDMMYYYYHHMM(batch.shippedAt);
+            if (!heading) heading = 'การส่ง';
+            let html = `<h3 style="margin-top:0">${heading}</h3>`;
+            if (role === 'administrator') {
+                html += `<p style="font-size:0.9em;margin:2px 0;"><strong>Batch ID:</strong> ${batch.batchId}</p>`;
+            }
             if (batch.groupPhotoUrl) html += `<img src="${batch.groupPhotoUrl}" alt="Batch Photo" style="max-width:100%; margin:10px 0;border:1px solid #dce4ec;border-radius:8px;" />`;
             html += '<ul style="list-style-type:none;padding-left:0;">';
             batch.orders.forEach(o => {
@@ -121,14 +127,19 @@ async function loadShippedOrderDetail(orderKey) {
                     if (photoImg && groupPhotoUrl) { photoImg.src = groupPhotoUrl; photoImg.classList.remove('hidden'); }
                 }
             }
-            infoDiv.innerHTML = `
+            const role = getCurrentUserRole();
+            let html = `
                 <p><strong>Platform:</strong> ${data.platform || 'N/A'}</p>
                 <p><strong>ส่งจริงเมื่อ:</strong> ${data.shipmentInfo?.shippedAt_actual ? formatDateTimeDDMMYYYYHHMM(data.shipmentInfo.shippedAt_actual) : '-'}</p>
-                <p><strong>Batch ID:</strong> ${data.shipmentInfo?.batchId || '-'}</p>
+            `;
+            if (role === 'administrator') {
+                html += `<p><strong>Batch ID:</strong> ${data.shipmentInfo?.batchId || '-'}</p>`;
+            }
+            html += `
                 <p><strong>Courier:</strong> ${courier}</p>
                 <p><strong>ยืนยันโดยผู้ดูแล:</strong> ${data.shipmentInfo?.adminVerifiedBy ? '✓' : 'ยังไม่ได้ยืนยัน'}</p>
             `;
-            const role = getCurrentUserRole();
+            infoDiv.innerHTML = html;
             if (role === 'administrator' || role === 'supervisor') {
                 confirmBtn.classList.remove('hidden');
             } else {
