@@ -110,7 +110,7 @@ async function loadIndividualOrderForSupervisorCheck(orderKey) {
 
     // Ensure all relevant DOM elements for the individual check page are available
     if (!uiElements.checkOrderPackageCodeDisplay || !uiElements.checkOrderPlatformDisplay ||
-        !uiElements.checkOrderItemListDisplay || !uiElements.checkOrderPackingPhotoDisplay ||
+        !uiElements.checkOrderItemListDisplay || !uiElements.checkOrderPackingPhotoContainer ||
         !uiElements.checkOrderOperatorNotesDisplay || !uiElements.supervisorPackCheckNotes ||
         !uiElements.approvePackButton || !uiElements.rejectPackButton) {
         console.error("One or more DOM elements for supervisor individual check page are missing.");
@@ -137,8 +137,13 @@ async function loadIndividualOrderForSupervisorCheck(orderKey) {
                 }
             }
 
-            uiElements.checkOrderPackingPhotoDisplay.src = orderData.packingInfo?.packingPhotoUrl || '#';
-            uiElements.checkOrderPackingPhotoDisplay.alt = orderData.packingInfo?.packingPhotoUrl ? 'รูปภาพการแพ็กจาก Operator' : 'ไม่มีรูปภาพการแพ็ก';
+            uiElements.checkOrderPackingPhotoContainer.innerHTML = '';
+            const urls = orderData.packingInfo?.packingPhotoUrls || (orderData.packingInfo?.packingPhotoUrl ? [orderData.packingInfo.packingPhotoUrl] : []);
+            urls.forEach(url => {
+                const img = document.createElement('img');
+                img.src = url;
+                uiElements.checkOrderPackingPhotoContainer.appendChild(img);
+            });
             uiElements.checkOrderOperatorNotesDisplay.textContent = orderData.packingInfo?.operatorNotes || 'ไม่มีหมายเหตุจาก Operator';
             
             uiElements.supervisorPackCheckNotes.value = ''; // Clear supervisor's previous notes for this new check

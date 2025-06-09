@@ -129,8 +129,8 @@
                 <h3>Checklist รายการสินค้า:</h3>
                 <ul id="packOrderItemList" class="item-checklist packing-checklist"></ul>
                 <label for="packingPhoto">ถ่ายหรือเลือกรูปสินค้าที่เตรียม:</label>
-                <input type="file" id="packingPhoto" accept="image/*" >
-                <img id="packingPhotoPreview" src="#" alt="Preview" class="hidden">
+                <input type="file" id="packingPhoto" accept="image/*" multiple>
+                <div id="packingPhotoPreviewContainer" class="hidden" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
                 <button id="removePackingPhotoButton" type="button" class="secondary hidden" style="width:auto; margin-top:10px;">ลบรูป / ถ่ายใหม่</button>
                 <label for="operatorPackNotes">หมายเหตุ (ถ้ามี):</label>
                 <textarea id="operatorPackNotes"></textarea>
@@ -146,7 +146,12 @@
             <!-- ***** หน้าใหม่สำหรับ Operator: รายการรอแพ็ก ***** -->
             <div id="operatorTaskListPage" class="container page hidden">
                 <h2>รายการรอแพ็ก</h2>
-                <button id="refreshOperatorTaskList" type="button" class="secondary" style="width:auto; margin-bottom:15px;">รีเฟรชรายการ</button>
+                <button id="refreshOperatorTaskList" type="button" class="secondary" style="width:auto; margin-bottom:10px;">รีเฟรชรายการ</button>
+                <button id="startScanForPackingButton" type="button" style="width:auto; margin-bottom:15px;">สแกน QR เลือกพัสดุ</button>
+                <div id="qrScannerContainer_OperatorTask" class="hidden" style="margin-bottom:10px;">
+                    <div id="qrScanner_OperatorTask" class="qr-scanner-area"></div>
+                    <button id="stopScanForPackingButton" type="button" class="secondary hidden" style="margin-top:5px;">หยุดสแกน</button>
+                </div>
                 <div id="operatorOrderListContainer">
                     <!-- รายการออเดอร์จะถูกสร้างด้วย JavaScript -->
                     <p>กำลังโหลดรายการออเดอร์ที่รอแพ็ก...</p>
@@ -239,7 +244,7 @@
                 </div>
                 <div style="margin-top:20px;">
                     <h3>รูปภาพจาก Operator:</h3>
-                    <img id="checkOrderPackingPhotoDisplay" src="#" alt="รูปภาพการแพ็ก" style="max-width:100%; border:1px solid #ccc; border-radius:8px;">
+                    <div id="checkOrderPackingPhotoContainer" class="photo-preview-container"></div>
                     <p><strong>หมายเหตุจาก Operator:</strong> <span id="checkOrderOperatorNotesDisplay"></span></p>
                 </div>
                 <div style="margin-top:20px;">

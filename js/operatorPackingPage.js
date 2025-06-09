@@ -7,11 +7,11 @@ import { showAppStatus, showToast, formatDateDDMMYYYY, getTimestampForFilename, 
 import { getCurrentUser, getCurrentUserRole } from './auth.js';
 
 let currentOrderKeyForPacking = null;
-let packingPhotoFile = null;
+let packingPhotoFiles = [];
 
 // DOM Elements for this page - to be initialized
 let opPacking_pageElement, opPacking_currentOrderIdSpan, opPacking_platformSpan, opPacking_dueDateSpan,
-    opPacking_itemListUL, opPacking_photoInput, opPacking_photoPreviewImg,
+    opPacking_itemListUL, opPacking_photoInput, opPacking_photoPreviewContainer,
     opPacking_removePhotoButton, opPacking_notesTextarea, opPacking_confirmButton, opPacking_supervisorCheckResultDiv,
     opPacking_packCheckStatusSpan, opPacking_packCheckSupervisorSpan, opPacking_packCheckNotesSpan,
     opPacking_appStatus;
@@ -24,7 +24,7 @@ export function initializeOperatorPackingPageListeners() {
     opPacking_dueDateSpan = document.getElementById('packOrderDueDate');
     opPacking_itemListUL = document.getElementById('packOrderItemList');
     opPacking_photoInput = document.getElementById('packingPhoto');
-    opPacking_photoPreviewImg = document.getElementById('packingPhotoPreview');
+    opPacking_photoPreviewContainer = document.getElementById('packingPhotoPreviewContainer');
     opPacking_removePhotoButton = document.getElementById('removePackingPhotoButton');
     opPacking_notesTextarea = document.getElementById('operatorPackNotes');
     opPacking_confirmButton = document.getElementById('confirmPackingButton');
@@ -57,7 +57,7 @@ export async function loadOrderForPacking(orderKey) {
         return;
     }
     currentOrderKeyForPacking = orderKey;
-    packingPhotoFile = null;
+    packingPhotoFiles = [];
 
     showAppStatus('กำลังโหลดข้อมูลพัสดุ...', 'info', opPacking_appStatus);
 
@@ -111,7 +111,7 @@ export async function loadOrderForPacking(orderKey) {
             }
 
             if(opPacking_photoInput) opPacking_photoInput.value = '';
-            if(opPacking_photoPreviewImg) { opPacking_photoPreviewImg.classList.add('hidden'); opPacking_photoPreviewImg.src = '#'; }
+            if(opPacking_photoPreviewContainer) { opPacking_photoPreviewContainer.innerHTML = ''; opPacking_photoPreviewContainer.classList.add('hidden'); }
             if(opPacking_removePhotoButton) opPacking_removePhotoButton.classList.add('hidden');
             if(opPacking_notesTextarea) opPacking_notesTextarea.value = orderData.packingInfo?.operatorNotes || '';
             
@@ -130,28 +130,38 @@ export async function loadOrderForPacking(orderKey) {
 }
 
 function handlePackingPhotoSelect(event) {
-    if (!opPacking_photoPreviewImg) return;
-    const file = event.target.files[0];
-    if (file) {
-        packingPhotoFile = file;
-        const reader = new FileReader();
-        reader.onload = (e) => { opPacking_photoPreviewImg.src = e.target.result; opPacking_photoPreviewImg.classList.remove('hidden'); };
-        reader.readAsDataURL(file);
+    if (!opPacking_photoPreviewContainer) return;
+    const files = Array.from(event.target.files || []);
+    if (files.length) {
+        packingPhotoFiles = packingPhotoFiles.concat(files);
+        displayPackingPhotoPreviews();
         if (opPacking_removePhotoButton) opPacking_removePhotoButton.classList.remove('hidden');
-    } else {
-        packingPhotoFile = null;
-        opPacking_photoPreviewImg.classList.add('hidden'); opPacking_photoPreviewImg.src = '#';
-        if (opPacking_removePhotoButton) opPacking_removePhotoButton.classList.add('hidden');
+        opPacking_photoInput.value = '';
     }
 }
 
 function resetPackingPhoto() {
-    if (!opPacking_photoInput || !opPacking_photoPreviewImg) return;
+    if (!opPacking_photoInput || !opPacking_photoPreviewContainer) return;
     opPacking_photoInput.value = '';
-    packingPhotoFile = null;
-    opPacking_photoPreviewImg.src = '#';
-    opPacking_photoPreviewImg.classList.add('hidden');
+    packingPhotoFiles = [];
+    opPacking_photoPreviewContainer.innerHTML = '';
+    opPacking_photoPreviewContainer.classList.add('hidden');
     if (opPacking_removePhotoButton) opPacking_removePhotoButton.classList.add('hidden');
+}
+
+function displayPackingPhotoPreviews() {
+    if (!opPacking_photoPreviewContainer) return;
+    opPacking_photoPreviewContainer.innerHTML = '';
+    packingPhotoFiles.forEach((file, idx) => {
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        opPacking_photoPreviewContainer.appendChild(img);
+    });
+    if (packingPhotoFiles.length > 0) {
+        opPacking_photoPreviewContainer.classList.remove('hidden');
+    } else {
+        opPacking_photoPreviewContainer.classList.add('hidden');
+    }
 }
 
 async function confirmPacking() {
@@ -159,30 +169,35 @@ async function confirmPacking() {
     if (!opPacking_appStatus) {console.error("App status element not found in confirmPacking"); return;}
     if (!['operator','administrator','supervisor'].includes(currentUserRole) || !currentOrderKeyForPacking) {
         showAppStatus('ไม่มีสิทธิ์หรือไม่ได้เลือกพัสดุ', 'error', opPacking_appStatus); return; }
-    if (!packingPhotoFile) { showAppStatus("กรุณาถ่ายรูปสินค้าก่อนยืนยัน", "error", opPacking_appStatus); return; }
+    if (packingPhotoFiles.length === 0) { showAppStatus("กรุณาถ่ายรูปสินค้าก่อนยืนยัน", "error", opPacking_appStatus); return; }
 
     if(opPacking_confirmButton) opPacking_confirmButton.disabled = true;
     showAppStatus("กำลังอัปโหลดรูปและบันทึกข้อมูลการแพ็ก...", "info", opPacking_appStatus);
 
     try {
-        const timestamp = getTimestampForFilename();
-        const extension = packingPhotoFile.name.split('.').pop();
-        const photoFileName = `${currentOrderKeyForPacking}_${timestamp}.${extension}`;
-        const photoStoragePath = `packingPhotos/${currentOrderKeyForPacking}/${photoFileName}`;
-        const imageRef = storageRefFirebase(storage, photoStoragePath);
-        const resized = await resizeImageFileIfNeeded(packingPhotoFile, 1500);
-        await uploadBytes(imageRef, resized);
-        const photoDownloadURL = await getDownloadURL(imageRef);
+        const photoUrls = [];
+        for (const file of packingPhotoFiles) {
+            const ts = getTimestampForFilename();
+            const ext = file.name.split('.').pop();
+            const fname = `${currentOrderKeyForPacking}_${ts}_${Math.random().toString(36).substring(2,6)}.${ext}`;
+            const storagePath = `packingPhotos/${currentOrderKeyForPacking}/${fname}`;
+            const imageRef = storageRefFirebase(storage, storagePath);
+            const resized = await resizeImageFileIfNeeded(file, 1500);
+            await uploadBytes(imageRef, resized);
+            photoUrls.push(await getDownloadURL(imageRef));
+        }
 
         const packingInfoData = {
-            packedBy_operatorUid: currentUser.uid, packedAt: serverTimestamp(),
-            packingPhotoUrl: photoDownloadURL, operatorNotes: opPacking_notesTextarea ? opPacking_notesTextarea.value.trim() : null
+            packedBy_operatorUid: currentUser.uid,
+            packedAt: serverTimestamp(),
+            packingPhotoUrls: photoUrls,
+            operatorNotes: opPacking_notesTextarea ? opPacking_notesTextarea.value.trim() : null
         };
         await update(ref(database, 'orders/' + currentOrderKeyForPacking), {
             packingInfo: packingInfoData, status: "Pending Supervisor Pack Check", lastUpdatedAt: serverTimestamp()
         });
         showAppStatus("บันทึกการแพ็กและอัปโหลดรูปสำเร็จ!", "success", opPacking_appStatus);
-        showPage('dashboardPage'); // Or operator's task list
+        showPage('operatorTaskListPage');
     } catch (error) {
         console.error("Error confirming packing:", error);
         showAppStatus("เกิดข้อผิดพลาดในการยืนยันการแพ็ก: " + error.message, "error", opPacking_appStatus);

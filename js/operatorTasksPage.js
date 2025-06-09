@@ -2,8 +2,11 @@
 import { showPage, uiElements } from './ui.js'; // uiElements for DOM, showPage for navigation
 import { database } from './config.js';        // Firebase database service
 import { ref, query, orderByChild, equalTo, get, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-import { showAppStatus, showToast, formatDateDDMMYYYY } from './utils.js';
+import { showAppStatus, showToast, formatDateDDMMYYYY, beepSuccess, beepError } from './utils.js';
 import { getCurrentUserRole } from './auth.js';
+
+let html5QrScannerForPacking = null;
+let isPackingScannerStopping = false;
 
 
 export function initializeOperatorTasksPageListeners() {
@@ -12,7 +15,12 @@ export function initializeOperatorTasksPageListeners() {
     } else {
         console.warn("Refresh button for Operator Task List not found.");
     }
-    // Add other listeners if needed for this page (e.g., sorting, filtering within the list)
+    if (uiElements.startScanForPackingButton) {
+        uiElements.startScanForPackingButton.addEventListener('click', startScanForPacking);
+    }
+    if (uiElements.stopScanForPackingButton) {
+        uiElements.stopScanForPackingButton.addEventListener('click', stopScanForPacking);
+    }
 }
 
 export async function loadOperatorPendingTasks() {
@@ -44,13 +52,28 @@ export async function loadOperatorPendingTasks() {
         let tasksFound = 0;
 
         if (snapshot.exists()) {
+            const tasksArray = [];
             snapshot.forEach(childSnapshot => {
                 tasksFound++;
-                const orderKey = childSnapshot.key;
-                const orderData = childSnapshot.val();
-                
+                tasksArray.push({ key: childSnapshot.key, ...childSnapshot.val() });
+            });
+
+            const now = Date.now();
+            tasksArray.sort((a, b) => {
+                const aOver = a.dueDate <= now;
+                const bOver = b.dueDate <= now;
+                if (aOver && !bOver) return -1;
+                if (!aOver && bOver) return 1;
+                if (a.dueDate !== b.dueDate) return a.dueDate - b.dueDate;
+                return (a.createdAt || 0) - (b.createdAt || 0);
+            });
+
+            tasksArray.forEach(task => {
+                const orderKey = task.key;
+                const orderData = task;
+
                 const orderItemDiv = document.createElement('div');
-                orderItemDiv.className = 'order-item'; // You can style this class
+                orderItemDiv.className = 'order-item';
                 orderItemDiv.style.marginBottom = '10px';
                 orderItemDiv.style.padding = '10px';
                 orderItemDiv.style.border = '1px solid #eee';
@@ -138,5 +161,93 @@ async function deleteOrder(orderKey) {
     } catch (err) {
         console.error('Delete order error', err);
         showAppStatus('เกิดข้อผิดพลาดในการลบ: ' + err.message, 'error', uiElements.appStatus);
+    }
+}
+
+function startScanForPacking() {
+    if (!uiElements.qrScanner_OperatorTask_div) { showToast('QR Scanner element not found!', 'error'); return; }
+
+    uiElements.qrScannerContainer_OperatorTask.classList.remove('hidden');
+    uiElements.stopScanForPackingButton.classList.remove('hidden');
+    uiElements.startScanForPackingButton.disabled = true;
+
+    if (!html5QrScannerForPacking) {
+        html5QrScannerForPacking = new Html5Qrcode(uiElements.qrScanner_OperatorTask_div.id, false);
+    }
+    Html5Qrcode.getCameras().then(cameras => {
+        if (cameras && cameras.length) {
+            const camId = cameras[0].id;
+            html5QrScannerForPacking.start(
+                { deviceId: { exact: camId } }, { fps: 10, qrbox: { width: 250, height: 250 } },
+                onPackingScanSuccess,
+                () => { beepError(); }
+            ).catch(err => {
+                beepError();
+                showToast('ไม่สามารถเปิดกล้องสแกน QR ได้: ' + (err?.message || err), 'error');
+                uiElements.qrScannerContainer_OperatorTask.classList.add('hidden');
+                uiElements.stopScanForPackingButton.classList.add('hidden');
+                uiElements.startScanForPackingButton.disabled = false;
+            });
+        } else {
+            beepError();
+            showToast('ไม่พบกล้องบนอุปกรณ์', 'error');
+            uiElements.qrScannerContainer_OperatorTask.classList.add('hidden');
+            uiElements.stopScanForPackingButton.classList.add('hidden');
+            uiElements.startScanForPackingButton.disabled = false;
+        }
+    }).catch(err => {
+        beepError();
+        showToast('ไม่สามารถเข้าถึงกล้อง: ' + (err?.message || err), 'error');
+        uiElements.qrScannerContainer_OperatorTask.classList.add('hidden');
+        uiElements.stopScanForPackingButton.classList.add('hidden');
+        uiElements.startScanForPackingButton.disabled = false;
+    });
+}
+
+async function stopScanForPacking() {
+    if (isPackingScannerStopping) return;
+    isPackingScannerStopping = true;
+    if (html5QrScannerForPacking) {
+        try {
+            if (html5QrScannerForPacking._isScanning) {
+                await html5QrScannerForPacking.stop();
+            }
+            await html5QrScannerForPacking.clear();
+        } catch (e) {
+            console.warn('Error stopping packing scanner:', e);
+        }
+        html5QrScannerForPacking = null;
+    }
+    uiElements.qrScannerContainer_OperatorTask.classList.add('hidden');
+    uiElements.stopScanForPackingButton.classList.add('hidden');
+    uiElements.startScanForPackingButton.disabled = false;
+    isPackingScannerStopping = false;
+}
+
+window.stopScanForPacking = stopScanForPacking;
+
+async function onPackingScanSuccess(decodedText) {
+    const code = decodedText.trim();
+    const ordersRef = ref(database, 'orders');
+    const ordersQuery = query(ordersRef, orderByChild('packageCode'), equalTo(code));
+    const snapshot = await get(ordersQuery);
+
+    let orderKeyFound = null;
+    if (snapshot.exists()) {
+        snapshot.forEach(child => {
+            if (child.val().status === 'Ready to Pack') {
+                orderKeyFound = child.key;
+            }
+        });
+    }
+
+    if (orderKeyFound) {
+        beepSuccess();
+        stopScanForPacking();
+        if (typeof window.loadOrderForPacking === 'function') {
+            window.loadOrderForPacking(orderKeyFound);
+        }
+    } else {
+        showAppStatus('ไม่พบออเดอร์พร้อมแพ็กสำหรับรหัสพัสดุ: ' + code, 'error', uiElements.appStatus);
     }
 }
