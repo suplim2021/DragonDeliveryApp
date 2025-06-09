@@ -72,6 +72,7 @@ export async function loadOrdersForPackCheck() {
                     <p style="font-size:0.9em; margin:3px 0;"><strong>Platform:</strong> ${orderData.platform || 'N/A'}</p>
                     <p style="font-size:0.9em; margin:3px 0;"><strong>Packed by (Operator UID):</strong> ${orderData.packingInfo?.packedBy_operatorUid?.substring(0,8) || 'N/A'}...</p>
                     <button type="button" class="supervisor-check-btn" data-orderkey="${orderKey}" style="width:auto; padding:8px 15px; margin-top:10px; font-size:0.9em;">ตรวจสอบรายการนี้</button>
+                    <button type="button" class="return-to-pack-btn" data-orderkey="${orderKey}" style="width:auto; padding:8px 15px; margin-top:10px; margin-left:5px; font-size:0.9em; background-color:#f39c12;">แพ็คใหม่</button>
                 `;
                 uiElements.packCheckListContainer.appendChild(orderItemDiv);
             });
@@ -89,6 +90,15 @@ export async function loadOrdersForPackCheck() {
                     const orderKeyToLoad = e.target.dataset.orderkey;
                     console.log(`Supervisor wants to check order: ${orderKeyToLoad}`);
                     loadIndividualOrderForSupervisorCheck(orderKeyToLoad);
+                });
+            });
+
+            // Add event listeners to the "แพ็คใหม่" buttons
+            uiElements.packCheckListContainer.querySelectorAll('.return-to-pack-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const orderKeyToReturn = e.target.dataset.orderkey;
+                    console.log(`Return order ${orderKeyToReturn} to packing stage`);
+                    returnOrderToPacking(orderKeyToReturn);
                 });
             });
 
@@ -157,6 +167,22 @@ async function loadIndividualOrderForSupervisorCheck(orderKey) {
     } catch (error) {
         console.error("Error loading individual order for supervisor check:", error);
         showAppStatus("เกิดข้อผิดพลาดในการโหลดรายละเอียดพัสดุ: " + error.message, 'error', uiElements.appStatus);
+    }
+}
+
+async function returnOrderToPacking(orderKey) {
+    if (!orderKey) return;
+    showAppStatus('กำลังส่งกลับไปแพ็ก...', 'info', uiElements.appStatus);
+    try {
+        const updates = {};
+        updates[`/orders/${orderKey}/status`] = 'Ready to Pack';
+        updates[`/orders/${orderKey}/lastUpdatedAt`] = serverTimestamp();
+        await update(ref(database), updates);
+        showAppStatus('ส่งกลับไปแพ็กแล้ว', 'success', uiElements.appStatus);
+        loadOrdersForPackCheck();
+    } catch (error) {
+        console.error('Error returning order to packing:', error);
+        showAppStatus('เกิดข้อผิดพลาดในการส่งกลับไปแพ็ก: ' + error.message, 'error', uiElements.appStatus);
     }
 }
 
