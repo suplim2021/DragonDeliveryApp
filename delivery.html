@@ -263,6 +263,7 @@
             <div id="shippedOrdersPage" class="container page hidden">
                 <h2>รายการที่ส่งแล้ว</h2>
                 <button id="refreshShippedOrders" type="button" class="secondary" style="width:auto; margin-bottom:15px;">รีเฟรช</button>
+                <button id="confirmSelectedShipmentsButton" type="button" class="secondary" style="width:auto; margin-left:10px;">ยืนยันที่เลือก</button>
                 <div id="shippedOrdersListContainer">
                     <p>กำลังโหลด...</p>
                 </div>
@@ -273,6 +274,7 @@
             <div id="shippedOrderDetailPage" class="container page hidden">
                 <h2>รายละเอียดพัสดุที่ส่งแล้ว (Package Code: <span id="detailPackageCode"></span>)</h2>
                 <div id="shippedOrderDetailInfo"></div>
+                <img id="shippedOrderBatchPhoto" class="hidden" alt="Shipment Photo" style="max-width:100%; margin-top:10px; border:1px solid #dce4ec; border-radius:8px;" />
                 <button id="confirmShipmentButton" type="button" style="margin-top:15px;">ยืนยันความถูกต้อง</button>
                 <button id="backToShippedListButton" type="button" class="secondary" style="margin-top:10px;">กลับ</button>
             </div>
