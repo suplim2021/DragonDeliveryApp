@@ -8,11 +8,12 @@ import { getCurrentUser, getCurrentUserRole } from './auth.js';
 
 let currentOrderKeyForPacking = null;
 let packingPhotoFiles = [];
+let existingPackingPhotoUrls = [];
 
 // DOM Elements for this page - to be initialized
 let opPacking_pageElement, opPacking_currentOrderIdSpan, opPacking_platformSpan, opPacking_dueDateSpan,
     opPacking_itemListUL, opPacking_photoInput, opPacking_photoPreviewContainer,
-    opPacking_removePhotoButton, opPacking_notesTextarea, opPacking_confirmButton, opPacking_supervisorCheckResultDiv,
+    opPacking_notesTextarea, opPacking_confirmButton, opPacking_supervisorCheckResultDiv,
     opPacking_packCheckStatusSpan, opPacking_packCheckSupervisorSpan, opPacking_packCheckNotesSpan,
     opPacking_appStatus;
 
@@ -25,7 +26,6 @@ export function initializeOperatorPackingPageListeners() {
     opPacking_itemListUL = document.getElementById('packOrderItemList');
     opPacking_photoInput = document.getElementById('packingPhoto');
     opPacking_photoPreviewContainer = document.getElementById('packingPhotoPreviewContainer');
-    opPacking_removePhotoButton = document.getElementById('removePackingPhotoButton');
     opPacking_notesTextarea = document.getElementById('operatorPackNotes');
     opPacking_confirmButton = document.getElementById('confirmPackingButton');
     opPacking_supervisorCheckResultDiv = document.getElementById('supervisorPackCheckResult');
@@ -40,7 +40,6 @@ export function initializeOperatorPackingPageListeners() {
     }
 
     opPacking_photoInput.addEventListener('change', handlePackingPhotoSelect);
-    if (opPacking_removePhotoButton) opPacking_removePhotoButton.addEventListener('click', resetPackingPhoto);
     opPacking_confirmButton.addEventListener('click', confirmPacking);
 
     // Make navigateToOperatorScanToPack globally accessible for the nav button (if called from HTML onclick)
@@ -111,8 +110,9 @@ export async function loadOrderForPacking(orderKey) {
             }
 
             if(opPacking_photoInput) opPacking_photoInput.value = '';
-            if(opPacking_photoPreviewContainer) { opPacking_photoPreviewContainer.innerHTML = ''; opPacking_photoPreviewContainer.classList.add('hidden'); }
-            if(opPacking_removePhotoButton) opPacking_removePhotoButton.classList.add('hidden');
+            existingPackingPhotoUrls = orderData.packingInfo?.packingPhotoUrls ? [...orderData.packingInfo.packingPhotoUrls] : [];
+            packingPhotoFiles = [];
+            displayPackingPhotoPreviews();
             if(opPacking_notesTextarea) opPacking_notesTextarea.value = orderData.packingInfo?.operatorNotes || '';
             
             showPage('operatorPackingPage');
@@ -135,23 +135,35 @@ function handlePackingPhotoSelect(event) {
     if (files.length) {
         packingPhotoFiles = packingPhotoFiles.concat(files);
         displayPackingPhotoPreviews();
-        if (opPacking_removePhotoButton) opPacking_removePhotoButton.classList.remove('hidden');
         opPacking_photoInput.value = '';
     }
-}
-
-function resetPackingPhoto() {
-    if (!opPacking_photoInput || !opPacking_photoPreviewContainer) return;
-    opPacking_photoInput.value = '';
-    packingPhotoFiles = [];
-    opPacking_photoPreviewContainer.innerHTML = '';
-    opPacking_photoPreviewContainer.classList.add('hidden');
-    if (opPacking_removePhotoButton) opPacking_removePhotoButton.classList.add('hidden');
 }
 
 function displayPackingPhotoPreviews() {
     if (!opPacking_photoPreviewContainer) return;
     opPacking_photoPreviewContainer.innerHTML = '';
+
+    existingPackingPhotoUrls.forEach((url, idx) => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'photo-thumb';
+
+        const img = document.createElement('img');
+        img.src = url;
+        wrapper.appendChild(img);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'remove-photo-btn';
+        removeBtn.textContent = '×';
+        removeBtn.addEventListener('click', () => {
+            existingPackingPhotoUrls.splice(idx, 1);
+            displayPackingPhotoPreviews();
+        });
+        wrapper.appendChild(removeBtn);
+
+        opPacking_photoPreviewContainer.appendChild(wrapper);
+    });
+
     packingPhotoFiles.forEach((file, idx) => {
         const wrapper = document.createElement('div');
         wrapper.className = 'photo-thumb';
@@ -168,14 +180,13 @@ function displayPackingPhotoPreviews() {
         removeBtn.addEventListener('click', () => {
             packingPhotoFiles.splice(idx, 1);
             displayPackingPhotoPreviews();
-            if (packingPhotoFiles.length === 0 && opPacking_removePhotoButton)
-                opPacking_removePhotoButton.classList.add('hidden');
         });
         wrapper.appendChild(removeBtn);
 
         opPacking_photoPreviewContainer.appendChild(wrapper);
     });
-    if (packingPhotoFiles.length > 0) {
+
+    if (existingPackingPhotoUrls.length + packingPhotoFiles.length > 0) {
         opPacking_photoPreviewContainer.classList.remove('hidden');
     } else {
         opPacking_photoPreviewContainer.classList.add('hidden');
@@ -187,13 +198,13 @@ async function confirmPacking() {
     if (!opPacking_appStatus) {console.error("App status element not found in confirmPacking"); return;}
     if (!['operator','administrator','supervisor'].includes(currentUserRole) || !currentOrderKeyForPacking) {
         showAppStatus('ไม่มีสิทธิ์หรือไม่ได้เลือกพัสดุ', 'error', opPacking_appStatus); return; }
-    if (packingPhotoFiles.length === 0) { showAppStatus("กรุณาถ่ายรูปสินค้าก่อนยืนยัน", "error", opPacking_appStatus); return; }
+    if (existingPackingPhotoUrls.length + packingPhotoFiles.length === 0) { showAppStatus("กรุณาถ่ายรูปสินค้าก่อนยืนยัน", "error", opPacking_appStatus); return; }
 
     if(opPacking_confirmButton) opPacking_confirmButton.disabled = true;
     showAppStatus("กำลังอัปโหลดรูปและบันทึกข้อมูลการแพ็ก...", "info", opPacking_appStatus);
 
     try {
-        const photoUrls = [];
+        const photoUrls = [...existingPackingPhotoUrls];
         for (const file of packingPhotoFiles) {
             const ts = getTimestampForFilename();
             const ext = file.name.split('.').pop();
