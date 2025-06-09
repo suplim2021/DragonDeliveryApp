@@ -153,9 +153,27 @@ function displayPackingPhotoPreviews() {
     if (!opPacking_photoPreviewContainer) return;
     opPacking_photoPreviewContainer.innerHTML = '';
     packingPhotoFiles.forEach((file, idx) => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'photo-thumb';
+
         const img = document.createElement('img');
         img.src = URL.createObjectURL(file);
-        opPacking_photoPreviewContainer.appendChild(img);
+        img.onload = () => URL.revokeObjectURL(img.src);
+        wrapper.appendChild(img);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'remove-photo-btn';
+        removeBtn.textContent = '×';
+        removeBtn.addEventListener('click', () => {
+            packingPhotoFiles.splice(idx, 1);
+            displayPackingPhotoPreviews();
+            if (packingPhotoFiles.length === 0 && opPacking_removePhotoButton)
+                opPacking_removePhotoButton.classList.add('hidden');
+        });
+        wrapper.appendChild(removeBtn);
+
+        opPacking_photoPreviewContainer.appendChild(wrapper);
     });
     if (packingPhotoFiles.length > 0) {
         opPacking_photoPreviewContainer.classList.remove('hidden');
