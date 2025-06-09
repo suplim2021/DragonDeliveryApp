@@ -226,6 +226,8 @@ function updateOrdersLogTable(orders, filterStatus = 'all', searchCode = '') {
         r.dataset.orderkey = o.key;
         r.dataset.duedate = o.dueDate || '';
         r.dataset.status = o.status || '';
+        const isCompleted = (o.status === 'Shipment Approved') || (o.status === 'Shipped' && o.shipmentInfo?.adminVerifiedBy);
+        if (isCompleted) r.classList.add('completed-row');
         r.insertCell().textContent = o.packageCode || 'N/A';
         r.insertCell().textContent = o.platformOrderId || '-';
         r.insertCell().textContent = o.platform || 'N/A';

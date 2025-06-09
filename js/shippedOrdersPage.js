@@ -80,7 +80,11 @@ export async function loadShippedOrders() {
             if (role === 'administrator') {
                 html += `<p style="font-size:0.9em;margin:2px 0;"><strong>Batch ID:</strong> ${batch.batchId}</p>`;
             }
-            if (batch.groupPhotoUrl) html += `<img src="${batch.groupPhotoUrl}" alt="Batch Photo" style="max-width:100%; margin:10px 0;border:1px solid #dce4ec;border-radius:8px;" />`;
+            if (batch.groupPhotoUrl) {
+                const photoId = `batch_photo_${batch.batchId}`;
+                html += `<button type="button" class="toggle-batch-photo-btn" data-target="${photoId}" style="width:auto;margin:5px 0;">ดูรูปการส่ง</button>`;
+                html += `<img id="${photoId}" src="${batch.groupPhotoUrl}" class="batch-photo hidden" alt="Batch Photo" />`;
+            }
             html += '<ul style="list-style-type:none;padding-left:0;">';
             batch.orders.forEach(o => {
                 if (!o.data.shipmentInfo?.adminVerifiedBy) pendingCount++;
@@ -92,6 +96,13 @@ export async function loadShippedOrders() {
             html += '</ul>';
             div.innerHTML = html;
             listContainer.appendChild(div);
+            const toggleBtn = div.querySelector('.toggle-batch-photo-btn');
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', () => {
+                    const img = div.querySelector(`#${toggleBtn.dataset.target}`);
+                    if (img) img.classList.toggle('hidden');
+                });
+            }
         });
 
         if (totalCount === 0) {

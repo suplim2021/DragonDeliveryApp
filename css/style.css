@@ -237,3 +237,32 @@ tbody tr:hover { background-color: #f1f8ff; }
 #dueTodayTableContainer thead tr { background-color: #ffe5e5; }
 .due-today-row { background-color: #fff0f0; }
 
+/* Completed order row highlight */
+.completed-row { background-color: #e6ffe6; }
+
+/* Summary cards container responsive styles */
+#summaryCardsContainer {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+#summaryCardsContainer::-webkit-scrollbar {
+    height: 8px;
+}
+#summaryCardsContainer::-webkit-scrollbar-thumb {
+    background-color: rgba(0,0,0,0.3);
+    border-radius: 4px;
+}
+@media (min-width: 768px) {
+    #summaryCardsContainer {
+        flex-wrap: wrap;
+        overflow-x: visible;
+        justify-content: center;
+    }
+}
+
+/* Batch photo toggle */
+.batch-photo { max-width:100%; margin:10px 0; border:1px solid #dce4ec; border-radius:8px; }
+
