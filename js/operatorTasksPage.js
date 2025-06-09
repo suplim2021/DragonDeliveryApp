@@ -176,7 +176,9 @@ function startScanForPacking() {
     }
     Html5Qrcode.getCameras().then(cameras => {
         if (cameras && cameras.length) {
-            const camId = cameras[0].id;
+            let cam = cameras.find(c => /back|rear|environment/i.test(c.label));
+            if (!cam) cam = cameras[cameras.length - 1];
+            const camId = cam.id;
             html5QrScannerForPacking.start(
                 { deviceId: { exact: camId } }, { fps: 10, qrbox: { width: 250, height: 250 } },
                 onPackingScanSuccess,

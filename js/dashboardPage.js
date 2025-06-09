@@ -137,7 +137,7 @@ function updateSummaryCards(orders) {
     createSummaryCard('รายการรอแพ็ก', readyToPack, total > 0 ? `${Math.round((readyToPack/total)*100)}%` : '0%', 'list_alt', 'operatorTaskListPage');
     createSummaryCard('รอตรวจเช็ค', pendingCheck, total > 0 ? `${Math.round((pendingCheck/total)*100)}%` : '0%', 'fact_check', 'supervisorPackCheckListPage');
     createSummaryCard('เตรียมส่ง', readyToShip, total > 0 ? `${Math.round((readyToShip/total)*100)}%` : '0%', 'local_shipping', 'operatorShippingBatchPage');
-    createSummaryCard('ส่งแล้ว', shipped, total > 0 ? `${Math.round((shipped/total)*100)}%` : '0%', 'check_circle');
+    createSummaryCard('ส่งแล้ว', shipped, total > 0 ? `${Math.round((shipped/total)*100)}%` : '0%', 'check_circle', 'shippedOrdersPage');
     if (typeof window.setNavBadgeCount === 'function') {
         window.setNavBadgeCount('operatorTaskListPage', readyToPack);
         window.setNavBadgeCount('supervisorPackCheckListPage', pendingCheck);
