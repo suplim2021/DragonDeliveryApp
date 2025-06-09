@@ -2,11 +2,9 @@
 import { showPage, uiElements } from './ui.js'; // uiElements for DOM, showPage for navigation
 import { database } from './config.js';        // Firebase database service
 import { ref, query, orderByChild, equalTo, get, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-import { showAppStatus, showToast, formatDateDDMMYYYY, beepSuccess, beepError } from './utils.js';
+import { showAppStatus, showToast, formatDateDDMMYYYY } from './utils.js';
 import { getCurrentUserRole } from './auth.js';
 
-let taskScanStartBtn, taskScanStopBtn, taskScanContainer, taskScanDiv;
-let html5QrScannerForTask = null;
 
 export function initializeOperatorTasksPageListeners() {
     if (uiElements.refreshOperatorTaskList) {
@@ -14,17 +12,7 @@ export function initializeOperatorTasksPageListeners() {
     } else {
         console.warn("Refresh button for Operator Task List not found.");
     }
-    // QR scan elements
-    taskScanStartBtn = document.getElementById('startScanForTaskButton');
-    taskScanStopBtn = document.getElementById('stopScanForTaskButton');
-    taskScanContainer = document.getElementById('qrScannerContainer_OperatorTask');
-    taskScanDiv = document.getElementById('qrScanner_OperatorTask');
-    if (taskScanStartBtn && taskScanStopBtn && taskScanContainer && taskScanDiv) {
-        taskScanStartBtn.addEventListener('click', startScanForTask);
-        taskScanStopBtn.addEventListener('click', stopScanForTask);
-    } else {
-        console.warn('QR scan elements for operator task list not found.');
-    }
+    // Add other listeners if needed for this page (e.g., sorting, filtering within the list)
 }
 
 export async function loadOperatorPendingTasks() {
@@ -55,23 +43,14 @@ export async function loadOperatorPendingTasks() {
         uiElements.operatorOrderListContainer.innerHTML = ''; // Clear loading message
         let tasksFound = 0;
 
-        const tasksArray = [];
         if (snapshot.exists()) {
             snapshot.forEach(childSnapshot => {
-                tasksArray.push({ key: childSnapshot.key, data: childSnapshot.val() });
-            });
-            tasksArray.sort((a, b) => {
-                const dueA = a.data.dueDate || 0;
-                const dueB = b.data.dueDate || 0;
-                if (dueA !== dueB) return dueA - dueB;
-                const createdA = a.data.createdAt || 0;
-                const createdB = b.data.createdAt || 0;
-                return createdA - createdB;
-            });
-            tasksFound = tasksArray.length;
-            tasksArray.forEach(({ key: orderKey, data: orderData }) => {
+                tasksFound++;
+                const orderKey = childSnapshot.key;
+                const orderData = childSnapshot.val();
+                
                 const orderItemDiv = document.createElement('div');
-                orderItemDiv.className = 'order-item';
+                orderItemDiv.className = 'order-item'; // You can style this class
                 orderItemDiv.style.marginBottom = '10px';
                 orderItemDiv.style.padding = '10px';
                 orderItemDiv.style.border = '1px solid #eee';
@@ -93,7 +72,6 @@ export async function loadOperatorPendingTasks() {
                 `;
                 uiElements.operatorOrderListContainer.appendChild(orderItemDiv);
             });
-        }
 
             if (tasksFound === 0) {
                 uiElements.noOperatorTasksMessage.classList.remove('hidden');
@@ -162,80 +140,3 @@ async function deleteOrder(orderKey) {
         showAppStatus('เกิดข้อผิดพลาดในการลบ: ' + err.message, 'error', uiElements.appStatus);
     }
 }
-
-function startScanForTask() {
-    if (!taskScanDiv || !taskScanContainer || !taskScanStartBtn || !taskScanStopBtn) return;
-    taskScanContainer.classList.remove('hidden');
-    taskScanStopBtn.classList.remove('hidden');
-    taskScanStartBtn.disabled = true;
-    if (!html5QrScannerForTask) {
-        html5QrScannerForTask = new Html5Qrcode(taskScanDiv.id, false);
-    }
-    Html5Qrcode.getCameras().then(cams => {
-        if (cams && cams.length) {
-            const camId = cams[0].id;
-            html5QrScannerForTask.start(
-                { deviceId: { exact: camId } },
-                { fps: 10, qrbox: { width: 250, height: 250 } },
-                onTaskScanSuccess,
-                () => { beepError(); }
-            ).catch(err => {
-                beepError();
-                showToast('ไม่สามารถเปิดกล้องสแกน QR ได้: ' + (err?.message || err), 'error');
-                stopScanForTask();
-            });
-        } else {
-            beepError();
-            showToast('ไม่พบกล้องบนอุปกรณ์', 'error');
-            stopScanForTask();
-        }
-    }).catch(err => {
-        beepError();
-        showToast('ไม่สามารถเข้าถึงกล้อง: ' + (err?.message || err), 'error');
-        stopScanForTask();
-    });
-}
-
-async function stopScanForTask() {
-    if (html5QrScannerForTask) {
-        try {
-            if (html5QrScannerForTask._isScanning) {
-                await html5QrScannerForTask.stop();
-            }
-            await html5QrScannerForTask.clear();
-        } catch (e) {
-            console.warn('Error stopping task scanner:', e);
-        }
-        html5QrScannerForTask = null;
-    }
-    if (taskScanContainer) taskScanContainer.classList.add('hidden');
-    if (taskScanStopBtn) taskScanStopBtn.classList.add('hidden');
-    if (taskScanStartBtn) taskScanStartBtn.disabled = false;
-}
-
-async function onTaskScanSuccess(decodedText, decodedResult) {
-    const code = decodedText.trim();
-    const ordersRef = ref(database, 'orders');
-    const q = query(ordersRef, orderByChild('packageCode'), equalTo(code));
-    const snap = await get(q);
-    let foundKey = null;
-    if (snap.exists()) {
-        snap.forEach(child => {
-            if (!foundKey && child.val().status === 'Ready to Pack') {
-                foundKey = child.key;
-            }
-        });
-    }
-    if (foundKey) {
-        beepSuccess();
-        stopScanForTask();
-        if (typeof window.loadOrderForPacking === 'function') {
-            window.loadOrderForPacking(foundKey);
-        }
-    } else {
-        beepError();
-        showAppStatus('ไม่พบออเดอร์ที่รอแพ็กสำหรับรหัสพัสดุ: ' + code, 'error', uiElements.appStatus);
-    }
-}
-
-window.stopScanForTask = stopScanForTask;
