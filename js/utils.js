@@ -167,7 +167,10 @@ export function formatDateTimeDDMMYYYYHHMM(dateInput) {
  * @param {string} status - The status value stored in the database
  * @returns {string} - Thai label for the status
  */
-export function translateStatusToThai(status) {
+export function translateStatusToThai(status, adminVerified = false) {
+    if (status === 'Shipped' && adminVerified) {
+        return 'เสร็จสิ้น';
+    }
     const map = {
         'Adding Items': 'รอเพิ่มสินค้า',
         'Ready to Pack': 'รอแพ็ก',
@@ -177,7 +180,7 @@ export function translateStatusToThai(status) {
         'Ready for Shipment': 'รอส่ง',
         'Shipped - Pending Supervisor Check': 'ส่งแล้ว-รอตรวจ',
         'Shipped': 'ส่งแล้ว',
-        'Shipment Approved': 'ตรวจส่งแล้ว'
+        'Shipment Approved': 'เสร็จสิ้น'
     };
     return map[status] || status || 'N/A';
 }

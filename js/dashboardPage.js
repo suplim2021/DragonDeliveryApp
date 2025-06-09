@@ -129,6 +129,10 @@ function updateSummaryCards(orders) {
     const pendingCheck = orders.filter(o => o.status === 'Pending Supervisor Pack Check').length;
     const readyToShip = orders.filter(o => (o.status === 'Ready for Shipment' || o.status === 'Pack Approved')).length;
     const shipped = orders.filter(o => (o.status === 'Shipped' || o.status === 'Shipment Approved') && !o.shipmentInfo?.adminVerifiedBy).length;
+    const completed = orders.filter(o => (
+        o.status === 'Shipment Approved' ||
+        (o.status === 'Shipped' && o.shipmentInfo?.adminVerifiedBy)
+    )).length;
     const shippedAwaitingVerify = shipped;
 
     const todayStr = new Date().toISOString().slice(0, 10);
@@ -139,6 +143,7 @@ function updateSummaryCards(orders) {
     createSummaryCard('รอตรวจเช็ค', pendingCheck, total > 0 ? `${Math.round((pendingCheck/total)*100)}%` : '0%', 'fact_check', 'supervisorPackCheckListPage');
     createSummaryCard('เตรียมส่ง', readyToShip, total > 0 ? `${Math.round((readyToShip/total)*100)}%` : '0%', 'local_shipping', 'operatorShippingBatchPage');
     createSummaryCard('ส่งแล้ว', shipped, total > 0 ? `${Math.round((shipped/total)*100)}%` : '0%', 'check_circle', 'shippedOrdersPage');
+    createSummaryCard('เสร็จสิ้น', completed, total > 0 ? `${Math.round((completed/total)*100)}%` : '0%', 'done_all');
     if (typeof window.setNavBadgeCount === 'function') {
         window.setNavBadgeCount('operatorTaskListPage', readyToPack);
         window.setNavBadgeCount('supervisorPackCheckListPage', pendingCheck);
@@ -183,7 +188,7 @@ function updateDueTodayTable(orders) {
         r.insertCell().textContent = o.packageCode || 'N/A';
         r.insertCell().textContent = o.platformOrderId || '-';
         r.insertCell().textContent = o.platform || 'N/A';
-        r.insertCell().textContent = translateStatusToThai(o.status);
+        r.insertCell().textContent = translateStatusToThai(o.status, !!o.shipmentInfo?.adminVerifiedBy);
         r.insertCell().textContent = formatDateTimeDDMMYYYYHHMM(o.createdAt);
         r.insertCell().textContent = formatDateDDMMYYYY(o.dueDate);
         const actCell = r.insertCell();
@@ -224,7 +229,7 @@ function updateOrdersLogTable(orders, filterStatus = 'all', searchCode = '') {
         r.insertCell().textContent = o.packageCode || 'N/A';
         r.insertCell().textContent = o.platformOrderId || '-';
         r.insertCell().textContent = o.platform || 'N/A';
-        r.insertCell().textContent = translateStatusToThai(o.status);
+        r.insertCell().textContent = translateStatusToThai(o.status, !!o.shipmentInfo?.adminVerifiedBy);
         r.insertCell().textContent = formatDateTimeDDMMYYYYHHMM(o.createdAt);
         r.insertCell().textContent = formatDateDDMMYYYY(o.dueDate);
         const actCell = r.insertCell();
@@ -278,7 +283,8 @@ async function handleEditOrder(orderKey) {
         'Ready to Pack': 'รอแพ็ก',
         'Pending Supervisor Pack Check': 'รอตรวจแพ็ค',
         'Ready for Shipment': 'รอส่ง',
-        'Shipped': 'ส่งแล้ว'
+        'Shipped': 'ส่งแล้ว',
+        'Shipment Approved': 'เสร็จสิ้น'
     };
     Object.entries(statusOptions).forEach(([val, text]) => {
         const opt = document.createElement('option');
