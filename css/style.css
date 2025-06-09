@@ -94,8 +94,9 @@ label { display: block; margin-bottom: 8px; font-weight: 600; color: #555; font-
 .item-checklist input[type="checkbox"] { transform: scale(1.5); margin-right: 12px; }
 .item-checklist li.checked label { text-decoration: line-through; color: #888; }
 
-.qr-scanner-area { width: 100%; max-width:350px; border:2px dashed var(--primary-blue); margin:10px auto; padding:5px; background-color: #f9f9f9; border-radius: 8px;}
-#photoPreview, #packingPhotoPreview { max-width:100%; max-height:250px; margin-top:10px; border:1px solid #dce4ec; display:block; border-radius: 8px; }
+.qr-scanner-area { width: 100%; max-width:350px; border:2px dashed var(--primary-blue); margin:10px auto; padding:5px; background-color: #f9f9f9; border-radius: 8px; }
+#photoPreview, #packingPhotoPreviewContainer img, #checkOrderPackingPhotoContainer img { max-width:100%; max-height:250px; margin-top:10px; border:1px solid #dce4ec; display:block; border-radius: 8px; }
+#packingPhotoPreviewContainer, #checkOrderPackingPhotoContainer { display:flex; flex-wrap:wrap; gap:10px; }
 #shipmentGroupPhotoPreview { max-width:100%; max-height:250px; margin-top:10px; border:1px solid #dce4ec; display:block; border-radius: 8px; }
 
 .summary-card { background-color:#fff; border-radius:12px; padding:20px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); flex: 1; min-width: 160px; text-align:left; border-left: 5px solid var(--primary-blue); }

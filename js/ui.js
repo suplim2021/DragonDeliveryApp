@@ -25,6 +25,10 @@ export function initializeCoreDOMElements() { // Renamed for clarity
     uiElements.refreshOperatorTaskList = document.getElementById('refreshOperatorTaskList');
     uiElements.operatorOrderListContainer = document.getElementById('operatorOrderListContainer');
     uiElements.noOperatorTasksMessage = document.getElementById('noOperatorTasksMessage');
+    uiElements.startScanForPackingButton = document.getElementById('startScanForPackingButton');
+    uiElements.stopScanForPackingButton = document.getElementById('stopScanForPackingButton');
+    uiElements.qrScanner_OperatorTask_div = document.getElementById('qrScanner_OperatorTask');
+    uiElements.qrScannerContainer_OperatorTask = document.getElementById('qrScannerContainer_OperatorTask');
 
     uiElements.createNewBatchButton = document.getElementById('createNewBatchButton');
     uiElements.startScanForBatchButton = document.getElementById('startScanForBatchButton');
@@ -57,7 +61,7 @@ export function initializeCoreDOMElements() { // Renamed for clarity
     uiElements.checkOrderPackageCodeDisplay = document.getElementById('checkOrderPackageCodeDisplay');
     uiElements.checkOrderPlatformDisplay = document.getElementById('checkOrderPlatformDisplay');
     uiElements.checkOrderItemListDisplay = document.getElementById('checkOrderItemListDisplay');
-    uiElements.checkOrderPackingPhotoDisplay = document.getElementById('checkOrderPackingPhotoDisplay');
+    uiElements.checkOrderPackingPhotoContainer = document.getElementById('checkOrderPackingPhotoContainer');
     uiElements.checkOrderOperatorNotesDisplay = document.getElementById('checkOrderOperatorNotesDisplay');
     uiElements.supervisorPackCheckNotes = document.getElementById('supervisorPackCheckNotes');
 
@@ -74,6 +78,8 @@ export function showPage(pageId) {
     if (typeof window.stopPackageCodeScan === 'function') window.stopPackageCodeScan();
     if (typeof window.stopPlatformIdScan === 'function') window.stopPlatformIdScan();
     if (typeof window.stopScanForBatch === 'function') window.stopScanForBatch();
+    if (typeof window.stopScanForPacking === 'function') window.stopScanForPacking();
+    window.scrollTo(0, 0);
     console.log(`UI: Attempting to show page: ${pageId}`);
 
     allPagesNodeList.forEach(page => {
