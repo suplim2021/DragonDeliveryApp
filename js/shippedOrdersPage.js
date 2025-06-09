@@ -32,29 +32,56 @@ export async function loadShippedOrders() {
         const q = query(ref(database, 'orders'), orderByChild('status'), equalTo('Shipped'));
         const snap = await get(q);
         listContainer.innerHTML = '';
-        let count = 0;
+        const batchMap = {};
         if (snap.exists()) {
             snap.forEach(child => {
-                count++;
                 const data = child.val();
-                const div = document.createElement('div');
-                div.className = 'order-item';
-                div.style.marginBottom = '10px';
-                div.style.padding = '10px';
-                div.style.border = '1px solid #eee';
-                div.style.borderRadius = '8px';
-                div.innerHTML = `
-                    <h4 style="margin-top:0;margin-bottom:8px;">Package Code: ${data.packageCode || 'N/A'}</h4>
-                    <p style="font-size:0.9em;margin:3px 0;"><strong>Platform:</strong> ${data.platform || 'N/A'}</p>
-                    <button type="button" class="shipped-detail-btn" data-orderkey="${child.key}" style="width:auto;padding:8px 15px;margin-top:10px;font-size:0.9em;">ดูรายละเอียด</button>`;
-                listContainer.appendChild(div);
+                const batchId = data.shipmentInfo?.batchId || 'NO_BATCH';
+                if (!batchMap[batchId]) batchMap[batchId] = { orders: [], batchId };
+                batchMap[batchId].orders.push({ key: child.key, data });
             });
         }
-        if (count === 0) {
+
+        // Fetch batch details
+        await Promise.all(Object.keys(batchMap).filter(id => id !== 'NO_BATCH').map(async id => {
+            const bsnap = await get(ref(database, `shipmentBatches/${id}`));
+            if (bsnap.exists()) {
+                const bdata = bsnap.val();
+                batchMap[id].courierShop = bdata.courierShop || '';
+                batchMap[id].groupPhotoUrl = bdata.groupPhotoUrl || '';
+                batchMap[id].shippedAt = bdata.shippedAt_actual || bdata.createdAt || null;
+            }
+        }));
+
+        const batchArr = Object.values(batchMap).sort((a, b) => (b.shippedAt || 0) - (a.shippedAt || 0));
+        let totalCount = 0;
+        batchArr.forEach(batch => {
+            totalCount += batch.orders.length;
+            const div = document.createElement('div');
+            div.className = 'batch-item';
+            div.style.marginBottom = '20px';
+            div.style.padding = '10px';
+            div.style.border = '1px solid #ccc';
+            div.style.borderRadius = '8px';
+
+            let html = `<h3 style="margin-top:0">Batch ID: ${batch.batchId}</h3>`;
+            if (batch.courierShop) html += `<p style="font-size:0.9em;margin:2px 0;"><strong>Courier:</strong> ${batch.courierShop}</p>`;
+            if (batch.shippedAt) html += `<p style="font-size:0.9em;margin:2px 0;"><strong>ส่งเมื่อ:</strong> ${formatDateTimeDDMMYYYYHHMM(batch.shippedAt)}</p>`;
+            if (batch.groupPhotoUrl) html += `<img src="${batch.groupPhotoUrl}" alt="Batch Photo" style="max-width:100%; margin:10px 0;border:1px solid #dce4ec;border-radius:8px;" />`;
+            html += '<ul style="list-style-type:none;padding-left:0;">';
+            batch.orders.forEach(o => {
+                html += `<li style="border-bottom:1px solid #eee;padding:5px 0;">${o.data.packageCode || o.key} (${o.data.platform || 'N/A'}) <button type="button" class="shipped-detail-btn" data-orderkey="${o.key}" style="width:auto;padding:4px 8px;font-size:0.8em;margin-left:5px;">ดูรายละเอียด</button></li>`;
+            });
+            html += '</ul>';
+            div.innerHTML = html;
+            listContainer.appendChild(div);
+        });
+
+        if (totalCount === 0) {
             noMsg.classList.remove('hidden');
             showAppStatus('ไม่พบพัสดุที่ส่งแล้ว', 'info', appStatus);
         } else {
-            showAppStatus(`พบ ${count} รายการที่ส่งแล้ว`, 'success', appStatus);
+            showAppStatus(`พบ ${totalCount} รายการที่ส่งแล้ว`, 'success', appStatus);
         }
 
         listContainer.querySelectorAll('.shipped-detail-btn').forEach(btn => {
@@ -78,13 +105,27 @@ async function loadShippedOrderDetail(orderKey) {
     showAppStatus('กำลังโหลดรายละเอียด...', 'info', appStatus);
     try {
         const snap = await get(ref(database, 'orders/' + orderKey));
+        const photoImg = document.getElementById('shippedOrderBatchPhoto');
+        if (photoImg) { photoImg.classList.add('hidden'); photoImg.src = '#'; }
         if (snap.exists()) {
             const data = snap.val();
             packageSpan.textContent = data.packageCode || orderKey;
+            let courier = '-';
+            let groupPhotoUrl = '';
+            if (data.shipmentInfo?.batchId) {
+                const bsnap = await get(ref(database, `shipmentBatches/${data.shipmentInfo.batchId}`));
+                if (bsnap.exists()) {
+                    const bdata = bsnap.val();
+                    courier = bdata.courierShop || '-';
+                    groupPhotoUrl = bdata.groupPhotoUrl || '';
+                    if (photoImg && groupPhotoUrl) { photoImg.src = groupPhotoUrl; photoImg.classList.remove('hidden'); }
+                }
+            }
             infoDiv.innerHTML = `
                 <p><strong>Platform:</strong> ${data.platform || 'N/A'}</p>
                 <p><strong>ส่งจริงเมื่อ:</strong> ${data.shipmentInfo?.shippedAt_actual ? formatDateTimeDDMMYYYYHHMM(data.shipmentInfo.shippedAt_actual) : '-'}</p>
                 <p><strong>Batch ID:</strong> ${data.shipmentInfo?.batchId || '-'}</p>
+                <p><strong>Courier:</strong> ${courier}</p>
                 <p><strong>ยืนยันโดยผู้ดูแล:</strong> ${data.shipmentInfo?.adminVerifiedBy ? '✓' : 'ยังไม่ได้ยืนยัน'}</p>
             `;
             const role = getCurrentUserRole();
