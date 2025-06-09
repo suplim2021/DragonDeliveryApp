@@ -265,6 +265,10 @@ async function loadReadyToShipPackages() {
             li.appendChild(label);
             uiElements.readyToShipCheckboxList.appendChild(li);
         });
+
+        if (typeof window.setNavBadgeCount === 'function') {
+            window.setNavBadgeCount('operatorShippingBatchPage', readyToShipPackages.length);
+        }
     } catch (err) {
         console.error('Error loading ready to ship packages', err);
     }

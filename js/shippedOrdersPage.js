@@ -16,6 +16,9 @@ export function initializeShippedOrdersPageListeners() {
 
     const confirmBtn = document.getElementById('confirmShipmentButton');
     if (confirmBtn) confirmBtn.addEventListener('click', confirmShipmentAdmin);
+
+    const confirmSelectedBtn = document.getElementById('confirmSelectedShipmentsButton');
+    if (confirmSelectedBtn) confirmSelectedBtn.addEventListener('click', confirmSelectedShipments);
 }
 
 export async function loadShippedOrders() {
@@ -29,17 +32,20 @@ export async function loadShippedOrders() {
     noMsg.classList.add('hidden');
 
     try {
-        const q = query(ref(database, 'orders'), orderByChild('status'), equalTo('Shipped'));
-        const snap = await get(q);
         listContainer.innerHTML = '';
         const batchMap = {};
-        if (snap.exists()) {
-            snap.forEach(child => {
-                const data = child.val();
-                const batchId = data.shipmentInfo?.batchId || 'NO_BATCH';
-                if (!batchMap[batchId]) batchMap[batchId] = { orders: [], batchId };
-                batchMap[batchId].orders.push({ key: child.key, data });
-            });
+        const statuses = ['Shipped', 'Shipment Approved'];
+        for (const status of statuses) {
+            const q = query(ref(database, 'orders'), orderByChild('status'), equalTo(status));
+            const snap = await get(q);
+            if (snap.exists()) {
+                snap.forEach(child => {
+                    const data = child.val();
+                    const batchId = data.shipmentInfo?.batchId || 'NO_BATCH';
+                    if (!batchMap[batchId]) batchMap[batchId] = { orders: [], batchId };
+                    batchMap[batchId].orders.push({ key: child.key, data });
+                });
+            }
         }
 
         // Fetch batch details
@@ -56,6 +62,7 @@ export async function loadShippedOrders() {
         const role = getCurrentUserRole();
         const batchArr = Object.values(batchMap).sort((a, b) => (b.shippedAt || 0) - (a.shippedAt || 0));
         let totalCount = 0;
+        let pendingCount = 0;
         batchArr.forEach(batch => {
             totalCount += batch.orders.length;
             const div = document.createElement('div');
@@ -76,7 +83,11 @@ export async function loadShippedOrders() {
             if (batch.groupPhotoUrl) html += `<img src="${batch.groupPhotoUrl}" alt="Batch Photo" style="max-width:100%; margin:10px 0;border:1px solid #dce4ec;border-radius:8px;" />`;
             html += '<ul style="list-style-type:none;padding-left:0;">';
             batch.orders.forEach(o => {
-                html += `<li style="border-bottom:1px solid #eee;padding:5px 0;">${o.data.packageCode || o.key} (${o.data.platform || 'N/A'}) <button type="button" class="shipped-detail-btn" data-orderkey="${o.key}" style="width:auto;padding:4px 8px;font-size:0.8em;margin-left:5px;">ดูรายละเอียด</button></li>`;
+                if (!o.data.shipmentInfo?.adminVerifiedBy) pendingCount++;
+                const checked = o.data.shipmentInfo?.adminVerifiedBy ? 'disabled checked' : '';
+                const cb = `<input type="checkbox" class="admin-verify-checkbox" data-orderkey="${o.key}" ${checked}>`;
+                const detailBtn = `<button type="button" class="shipped-detail-btn" data-orderkey="${o.key}" style="width:auto;padding:4px 8px;font-size:0.8em;margin-left:5px;">ดูรายละเอียด</button>`;
+                html += `<li style="border-bottom:1px solid #eee;padding:5px 0;">${cb} ${o.data.packageCode || o.key} (${o.data.platform || 'N/A'}) ${detailBtn}</li>`;
             });
             html += '</ul>';
             div.innerHTML = html;
@@ -93,6 +104,10 @@ export async function loadShippedOrders() {
         listContainer.querySelectorAll('.shipped-detail-btn').forEach(btn => {
             btn.addEventListener('click', e => loadShippedOrderDetail(e.target.dataset.orderkey));
         });
+
+        if (typeof window.setNavBadgeCount === 'function') {
+            window.setNavBadgeCount('shippedOrdersPage', pendingCount);
+        }
     } catch (err) {
         console.error('loadShippedOrders error', err);
         listContainer.innerHTML = '<p style="color:red;text-align:center;">เกิดข้อผิดพลาด</p>';
@@ -163,12 +178,48 @@ async function confirmShipmentAdmin() {
     const updates = {};
     updates[`/orders/${currentDetailOrderKey}/shipmentInfo/adminVerifiedBy`] = user.uid;
     updates[`/orders/${currentDetailOrderKey}/shipmentInfo/adminVerifiedAt`] = serverTimestamp();
+    updates[`/orders/${currentDetailOrderKey}/status`] = 'Shipment Approved';
     try {
         await update(ref(database), updates);
         showAppStatus('ยืนยันแล้ว', 'success', appStatus);
-        loadShippedOrderDetail(currentDetailOrderKey);
+        await loadShippedOrders();
+        showPage('shippedOrdersPage');
+        if (typeof window.loadDashboardDataGlobal === 'function') {
+            window.loadDashboardDataGlobal('all');
+        }
     } catch (err) {
         console.error('confirmShipmentAdmin error', err);
+        showAppStatus('เกิดข้อผิดพลาดในการยืนยัน', 'error', appStatus);
+    }
+}
+
+async function confirmSelectedShipments() {
+    const user = getCurrentUser();
+    const appStatus = document.getElementById('appStatus');
+    const listContainer = document.getElementById('shippedOrdersListContainer');
+    if (!user || !listContainer || !appStatus) return;
+    const checked = listContainer.querySelectorAll('.admin-verify-checkbox:checked');
+    if (checked.length === 0) {
+        showAppStatus('กรุณาเลือกอย่างน้อย 1 รายการ', 'info', appStatus);
+        return;
+    }
+    const updates = {};
+    checked.forEach(cb => {
+        const key = cb.dataset.orderkey;
+        updates[`/orders/${key}/shipmentInfo/adminVerifiedBy`] = user.uid;
+        updates[`/orders/${key}/shipmentInfo/adminVerifiedAt`] = serverTimestamp();
+        updates[`/orders/${key}/status`] = 'Shipment Approved';
+    });
+    try {
+        await update(ref(database), updates);
+        showAppStatus('ยืนยันหลายรายการเรียบร้อย', 'success', appStatus);
+        await loadShippedOrders();
+        showPage('shippedOrdersPage');
+        if (typeof window.loadDashboardDataGlobal === 'function') {
+            window.loadDashboardDataGlobal('all');
+        }
+    } catch (err) {
+        console.error('confirmSelectedShipments error', err);
         showAppStatus('เกิดข้อผิดพลาดในการยืนยัน', 'error', appStatus);
     }
 }

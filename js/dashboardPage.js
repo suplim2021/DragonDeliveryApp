@@ -127,8 +127,9 @@ function updateSummaryCards(orders) {
     const total = orders.length;
     const readyToPack = orders.filter(o => o.status === 'Ready to Pack').length;
     const pendingCheck = orders.filter(o => o.status === 'Pending Supervisor Pack Check').length;
-    const readyToShip = orders.filter(o => o.status === 'Ready for Shipment' || o.status === 'Pack Approved').length;
-    const shipped = orders.filter(o => o.status === 'Shipped' || o.status === 'Shipment Approved').length;
+    const readyToShip = orders.filter(o => (o.status === 'Ready for Shipment' || o.status === 'Pack Approved')).length;
+    const shipped = orders.filter(o => (o.status === 'Shipped' || o.status === 'Shipment Approved') && !o.shipmentInfo?.adminVerifiedBy).length;
+    const shippedAwaitingVerify = shipped;
 
     const todayStr = new Date().toISOString().slice(0, 10);
     const todayOrders = orders.filter(o => o.createdAt && typeof o.createdAt === 'number' && new Date(o.createdAt).toISOString().slice(0, 10) === todayStr).length;
@@ -141,6 +142,8 @@ function updateSummaryCards(orders) {
     if (typeof window.setNavBadgeCount === 'function') {
         window.setNavBadgeCount('operatorTaskListPage', readyToPack);
         window.setNavBadgeCount('supervisorPackCheckListPage', pendingCheck);
+        window.setNavBadgeCount('operatorShippingBatchPage', readyToShip);
+        window.setNavBadgeCount('shippedOrdersPage', shippedAwaitingVerify);
     }
 }
 
@@ -160,7 +163,7 @@ function updateDueTodayTable(orders) {
     if (!el_dueTodayTableBody) return;
     el_dueTodayTableBody.innerHTML = '';
     const todayStr = formatDateYYYYMMDD(new Date());
-    const dueToday = orders.filter(o => o.dueDate && formatDateYYYYMMDD(o.dueDate) === todayStr);
+    const dueToday = orders.filter(o => o.dueDate && formatDateYYYYMMDD(o.dueDate) === todayStr && !o.shipmentInfo?.adminVerifiedBy);
     if (dueToday.length === 0) {
         const r = el_dueTodayTableBody.insertRow();
         const c = r.insertCell();
