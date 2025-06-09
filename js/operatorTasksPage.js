@@ -245,7 +245,7 @@ async function onPackingScanSuccess(decodedText) {
 
     if (orderKeyFound) {
         beepSuccess();
-        stopScanForPacking();
+        await stopScanForPacking();
         if (typeof window.loadOrderForPacking === 'function') {
             window.loadOrderForPacking(orderKeyFound);
         }
