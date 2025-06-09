@@ -140,6 +140,9 @@ export function showPage(pageId) {
         } else if (pageId === 'operatorShippingBatchPage') {
             if (typeof window.setupShippingBatchPageGlobal === 'function') window.setupShippingBatchPageGlobal();
             else { console.error("setupShippingBatchPageGlobal function not found on window.");}
+        } else if (pageId === 'shippedOrdersPage') {
+            if (typeof window.loadShippedOrdersGlobal === 'function') window.loadShippedOrdersGlobal();
+            else { console.error("loadShippedOrdersGlobal function not found on window."); }
         }
     } else {
         console.error(`UI: Page with ID "${pageId}" not found in HTML. Defaulting to dashboard.`);
@@ -172,6 +175,7 @@ export function setupRoleBasedUI(currentUserRoleForNav) {
         { pageId: 'operatorTaskListPage', icon: 'inventory_2', label: 'รายการรอแพ็ก', roles: ['administrator','operator','supervisor'] },
         { pageId: 'supervisorPackCheckListPage', icon: 'checklist', label: 'รอตรวจแพ็ก', roles: ['administrator','supervisor'] },
         { pageId: 'operatorShippingBatchPage', icon: 'local_shipping', label: 'เตรียมส่งของ', roles: ['administrator','operator','supervisor'] },
+        { pageId: 'shippedOrdersPage', icon: 'check_circle', label: 'ส่งแล้ว', roles: ['administrator','operator','supervisor'] },
     ];
 
     const allowedItems = navItems.filter(item => item.roles.includes(currentUserRoleForNav));

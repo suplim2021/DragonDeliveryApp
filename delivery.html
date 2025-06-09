@@ -258,6 +258,24 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Shipped Orders List Page -->
+            <div id="shippedOrdersPage" class="container page hidden">
+                <h2>รายการที่ส่งแล้ว</h2>
+                <button id="refreshShippedOrders" type="button" class="secondary" style="width:auto; margin-bottom:15px;">รีเฟรช</button>
+                <div id="shippedOrdersListContainer">
+                    <p>กำลังโหลด...</p>
+                </div>
+                <p id="noShippedOrdersMessage" class="hidden">ไม่พบพัสดุที่ส่งแล้ว</p>
+            </div>
+
+            <!-- Shipped Order Detail Page -->
+            <div id="shippedOrderDetailPage" class="container page hidden">
+                <h2>รายละเอียดพัสดุที่ส่งแล้ว (Package Code: <span id="detailPackageCode"></span>)</h2>
+                <div id="shippedOrderDetailInfo"></div>
+                <button id="confirmShipmentButton" type="button" style="margin-top:15px;">ยืนยันความถูกต้อง</button>
+                <button id="backToShippedListButton" type="button" class="secondary" style="margin-top:10px;">กลับ</button>
+            </div>
             
             <p id="appStatus" style="text-align:center; padding:10px; font-size:0.9em;"></p>
         </div>

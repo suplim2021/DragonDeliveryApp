@@ -11,7 +11,8 @@ import { initializeOperatorPackingPageListeners, loadOrderForPacking as operator
 import { initializeDashboardPageListeners, updateCurrentDateOnDashboard, loadDashboardData } from './dashboardPage.js';
 import { initializeSupervisorPackCheckListeners, loadOrdersForPackCheck } from './supervisorPackCheckPage.js';
 import { initializeOperatorTasksPageListeners, loadOperatorPendingTasks } from './operatorTasksPage.js';
-import { initializeOperatorShippingPageListeners, setupShippingBatchPage } from './operatorShippingPage.js'; 
+import { initializeOperatorShippingPageListeners, setupShippingBatchPage } from './operatorShippingPage.js';
+import { initializeShippedOrdersPageListeners, loadShippedOrders } from './shippedOrdersPage.js';
 
 window.currentUserFromAuth = null; 
 window.currentUserRoleFromAuth = null;
@@ -80,6 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeSupervisorPackCheckListeners();
     initializeOperatorTasksPageListeners();
     initializeOperatorShippingPageListeners();
+    initializeShippedOrdersPageListeners();
     
     console.log("Initial event listeners set up (main.js)");
 
@@ -89,6 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.loadOrdersForPackCheckGlobal = loadOrdersForPackCheck;
     window.loadOperatorPendingTasksGlobal = loadOperatorPendingTasks;
     window.setupShippingBatchPageGlobal = setupShippingBatchPage;
+    window.loadShippedOrdersGlobal = loadShippedOrders;
     window.loadOrderForPacking = operatorLoadOrderForPacking;
     window.loadOrderForAddingItems = loadOrderForAddingItems;
 
