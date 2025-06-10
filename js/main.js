@@ -8,7 +8,7 @@ import { initializeCoreDOMElements, showPage, setupRoleBasedUI } from './ui.js';
 import { initializeAdminOrderPageListeners } from './adminOrderPage.js';
 import { initializeAdminItemsPageListeners, loadOrderForAddingItems } from './adminItemsPage.js';
 import { initializeOperatorPackingPageListeners, loadOrderForPacking as operatorLoadOrderForPacking } from './operatorPackingPage.js';
-import { initializeDashboardPageListeners, updateCurrentDateOnDashboard, loadDashboardData } from './dashboardPage.js';
+import { initializeDashboardPageListeners, updateCurrentDateOnDashboard, loadDashboardData, startDashboardRealtime, stopDashboardRealtime } from './dashboardPage.js';
 import { initializeSupervisorPackCheckListeners, loadOrdersForPackCheck } from './supervisorPackCheckPage.js';
 import { initializeOperatorTasksPageListeners, loadOperatorPendingTasks } from './operatorTasksPage.js';
 import { initializeOperatorShippingPageListeners, setupShippingBatchPage } from './operatorShippingPage.js';
@@ -42,6 +42,7 @@ function setCurrentUserAndUpdateUI(user, role, displayName) {
                 bottomNavContainerEl.classList.remove('hidden');
                 setupRoleBasedUI(role);
             }
+            startDashboardRealtime();
             showPage('dashboardPage');
         } else {
             userDisplayEmailEl.textContent = '';
@@ -52,6 +53,7 @@ function setCurrentUserAndUpdateUI(user, role, displayName) {
                 bottomNavContainerEl.classList.add('hidden');
                 bottomNavContainerEl.innerHTML = '';
             }
+            stopDashboardRealtime();
             if (loginPageEl) {
                 loginPageEl.classList.remove('hidden');
             } else {

@@ -1,6 +1,6 @@
 // js/dashboardPage.js
 import { database } from './config.js';
-import { ref, get, update, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { ref, get, update, remove, serverTimestamp, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { showAppStatus, showToast, formatDateDDMMYYYY, formatDateYYYYMMDD, formatDateTimeDDMMYYYYHHMM, translateStatusToThai } from './utils.js';
 import { getCurrentUser, getCurrentUserRole } from './auth.js';
 import { showPage } from './ui.js';
@@ -8,6 +8,9 @@ import { showPage } from './ui.js';
 
 let dailyChartInstance = null;
 let platformChartInstance = null;
+let dashboardUnsub = null;
+let currentFilter = 'all';
+let currentSearch = '';
 
 // DOM Elements specific to dashboard - get them when the module initializes or functions are called
 let el_appStatus, el_currentDateDisplay, el_refreshDashboardButton,
@@ -74,6 +77,21 @@ export function initializeDashboardPageListeners() {
     console.log("Dashboard listeners initialized.");
 }
 
+export function startDashboardRealtime() {
+    const ordersRefNode = ref(database, 'orders');
+    if (dashboardUnsub) dashboardUnsub();
+    dashboardUnsub = onValue(ordersRefNode, () => {
+        loadDashboardData(currentFilter, currentSearch);
+    });
+}
+
+export function stopDashboardRealtime() {
+    if (dashboardUnsub) {
+        dashboardUnsub();
+        dashboardUnsub = null;
+    }
+}
+
 export function updateCurrentDateOnDashboard() {
     if (el_currentDateDisplay) {
         const now = new Date();
@@ -82,6 +100,8 @@ export function updateCurrentDateOnDashboard() {
 }
 
 export async function loadDashboardData(filterStatus = 'all', searchCode = '') {
+    currentFilter = filterStatus;
+    currentSearch = searchCode;
     const currentUser = getCurrentUser();
     if (!currentUser) { console.log("No user logged in, skipping dashboard load."); return; }
     if (!el_appStatus) { console.error("el_appStatus (appStatus element) not found for dashboard."); return; }
