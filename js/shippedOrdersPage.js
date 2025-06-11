@@ -66,17 +66,14 @@ export async function loadShippedOrders() {
         batchArr.forEach(batch => {
             totalCount += batch.orders.length;
             const div = document.createElement('div');
-            div.className = 'batch-item';
-            div.style.marginBottom = '20px';
-            div.style.padding = '10px';
-            div.style.border = '1px solid #ccc';
-            div.style.borderRadius = '8px';
+            const complete = batch.orders.every(o => o.data.status === 'Shipment Approved');
+            div.className = 'batch-item' + (complete ? ' complete' : '');
 
             let heading = '';
             if (batch.courierShop) heading += batch.courierShop;
             if (batch.shippedAt) heading += (heading ? ' - ' : '') + formatDateTimeDDMMYYYYHHMM(batch.shippedAt);
             if (!heading) heading = 'การส่ง';
-            let html = `<h3 style="margin-top:0">${heading}</h3>`;
+            let html = `<h3 class="batch-heading">${heading}</h3><div class="batch-details hidden">`;
             if (role === 'administrator') {
                 html += `<p style="font-size:0.9em;margin:2px 0;"><strong>Batch ID:</strong> ${batch.batchId}</p>`;
             }
@@ -85,7 +82,8 @@ export async function loadShippedOrders() {
                 html += `<button type="button" class="toggle-batch-photo-btn" data-target="${photoId}" style="width:auto;margin:5px 0;">ดูรูปการส่ง</button>`;
                 html += `<img id="${photoId}" src="${batch.groupPhotoUrl}" class="batch-photo lightbox-thumb hidden" alt="Batch Photo" />`;
             }
-            html += '<ul style="list-style-type:none;padding-left:0;">';
+            html += `<button type="button" class="select-all-batch secondary" style="width:auto;margin:5px 0;" data-batch="${batch.batchId}">เลือกทั้งหมด</button>`;
+            html += '<ul class="batch-order-list" style="list-style-type:none;padding-left:0;">';
             batch.orders.forEach(o => {
                 if (!o.data.shipmentInfo?.adminVerifiedBy) pendingCount++;
                 const checked = o.data.shipmentInfo?.adminVerifiedBy ? 'disabled checked' : '';
@@ -93,7 +91,7 @@ export async function loadShippedOrders() {
                 const detailBtn = `<button type="button" class="shipped-detail-btn" data-orderkey="${o.key}" style="width:auto;padding:4px 8px;font-size:0.8em;margin-left:5px;">ดูรายละเอียด</button>`;
                 html += `<li style="border-bottom:1px solid #eee;padding:5px 0;">${cb} ${o.data.packageCode || o.key} (${o.data.platform || 'N/A'}) ${detailBtn}</li>`;
             });
-            html += '</ul>';
+            html += '</ul></div>';
             div.innerHTML = html;
             listContainer.appendChild(div);
             const toggleBtn = div.querySelector('.toggle-batch-photo-btn');
@@ -101,6 +99,17 @@ export async function loadShippedOrders() {
                 toggleBtn.addEventListener('click', () => {
                     const img = div.querySelector(`#${toggleBtn.dataset.target}`);
                     if (img) img.classList.toggle('hidden');
+                });
+            }
+            const headingEl = div.querySelector('.batch-heading');
+            const detailDiv = div.querySelector('.batch-details');
+            if (headingEl && detailDiv) {
+                headingEl.addEventListener('click', () => { detailDiv.classList.toggle('hidden'); });
+            }
+            const selectAllBtn = div.querySelector('.select-all-batch');
+            if (selectAllBtn) {
+                selectAllBtn.addEventListener('click', () => {
+                    div.querySelectorAll('.admin-verify-checkbox:not(:disabled)').forEach(cb => { cb.checked = true; });
                 });
             }
         });

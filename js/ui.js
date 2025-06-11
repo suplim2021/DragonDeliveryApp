@@ -29,6 +29,8 @@ export function initializeCoreDOMElements() { // Renamed for clarity
     uiElements.stopScanForPackingButton = document.getElementById('stopScanForPackingButton');
     uiElements.qrScanner_OperatorTask_div = document.getElementById('qrScanner_OperatorTask');
     uiElements.qrScannerContainer_OperatorTask = document.getElementById('qrScannerContainer_OperatorTask');
+    uiElements.pickListSummaryContainer = document.getElementById('pickListSummaryContainer');
+    uiElements.pickListSummaryTableBody = document.querySelector('#pickListSummaryTable tbody');
 
     uiElements.createNewBatchButton = document.getElementById('createNewBatchButton');
     uiElements.startScanForBatchButton = document.getElementById('startScanForBatchButton');

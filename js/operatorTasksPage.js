@@ -8,6 +8,8 @@ import { getCurrentUserRole } from './auth.js';
 let html5QrScannerForPacking = null;
 let isPackingScannerStopping = false;
 let isProcessingPackingScan = false; // Prevent double handling of a scan
+const orderDataMap = {};
+const selectedOrdersForPick = new Set();
 
 
 export function initializeOperatorTasksPageListeners() {
@@ -39,6 +41,9 @@ export async function loadOperatorPendingTasks() {
         return;
     }
 
+    selectedOrdersForPick.clear();
+    Object.keys(orderDataMap).forEach(k => delete orderDataMap[k]);
+    updatePickListSummary();
     showAppStatus("กำลังโหลดรายการออเดอร์ที่รอแพ็ก...", "info", uiElements.appStatus);
     uiElements.operatorOrderListContainer.innerHTML = '<p style="text-align:center; padding:15px;">กำลังโหลด...</p>';
     uiElements.noOperatorTasksMessage.classList.add('hidden');
@@ -72,6 +77,7 @@ export async function loadOperatorPendingTasks() {
             tasksArray.forEach(task => {
                 const orderKey = task.key;
                 const orderData = task;
+                orderDataMap[orderKey] = orderData;
 
                 const orderItemDiv = document.createElement('div');
                 orderItemDiv.className = 'order-item';
@@ -94,6 +100,12 @@ export async function loadOperatorPendingTasks() {
                     ${editBtnHtml}
                     ${deleteBtnHtml}
                 `;
+                const selectCb = document.createElement('input');
+                selectCb.type = 'checkbox';
+                selectCb.dataset.orderkey = orderKey;
+                selectCb.style.marginRight = '8px';
+                selectCb.addEventListener('change', handleOrderSelectChange);
+                orderItemDiv.prepend(selectCb);
                 uiElements.operatorOrderListContainer.appendChild(orderItemDiv);
             });
 
@@ -162,6 +174,44 @@ async function deleteOrder(orderKey) {
     } catch (err) {
         console.error('Delete order error', err);
         showAppStatus('เกิดข้อผิดพลาดในการลบ: ' + err.message, 'error', uiElements.appStatus);
+    }
+}
+
+function handleOrderSelectChange(e) {
+    const key = e.target.dataset.orderkey;
+    if (!key) return;
+    if (e.target.checked) {
+        selectedOrdersForPick.add(key);
+    } else {
+        selectedOrdersForPick.delete(key);
+    }
+    updatePickListSummary();
+}
+
+function updatePickListSummary() {
+    if (!uiElements.pickListSummaryContainer || !uiElements.pickListSummaryTableBody) return;
+    const totals = {};
+    selectedOrdersForPick.forEach(key => {
+        const order = orderDataMap[key];
+        if (order && order.items) {
+            Object.values(order.items).forEach(item => {
+                const name = item.productName || 'N/A';
+                if (!totals[name]) totals[name] = { qty: 0, unit: item.unit || '' };
+                totals[name].qty += Number(item.quantity) || 0;
+            });
+        }
+    });
+    const names = Object.keys(totals).sort((a,b) => a.localeCompare(b));
+    uiElements.pickListSummaryTableBody.innerHTML = '';
+    names.forEach(name => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${name}</td><td>${totals[name].qty}</td><td>${totals[name].unit}</td>`;
+        uiElements.pickListSummaryTableBody.appendChild(tr);
+    });
+    if (names.length > 0) {
+        uiElements.pickListSummaryContainer.classList.remove('hidden');
+    } else {
+        uiElements.pickListSummaryContainer.classList.add('hidden');
     }
 }
 
