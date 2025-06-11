@@ -29,6 +29,8 @@ export function initializeCoreDOMElements() { // Renamed for clarity
     uiElements.stopScanForPackingButton = document.getElementById('stopScanForPackingButton');
     uiElements.qrScanner_OperatorTask_div = document.getElementById('qrScanner_OperatorTask');
     uiElements.qrScannerContainer_OperatorTask = document.getElementById('qrScannerContainer_OperatorTask');
+    uiElements.pickListSummaryContainer = document.getElementById('pickListSummaryContainer');
+    uiElements.pickListSummaryTableBody = document.querySelector('#pickListSummaryTable tbody');
 
     uiElements.createNewBatchButton = document.getElementById('createNewBatchButton');
     uiElements.startScanForBatchButton = document.getElementById('startScanForBatchButton');
@@ -40,6 +42,7 @@ export function initializeCoreDOMElements() { // Renamed for clarity
     uiElements.addManualPackageButton = document.getElementById('addManualPackageButton');
     uiElements.readyToShipDatalist = document.getElementById('readyToShipDatalist');
     uiElements.readyToShipCheckboxList = document.getElementById('readyToShipCheckboxList');
+    uiElements.selectAllReadyPackagesButton = document.getElementById('selectAllReadyPackagesButton');
     uiElements.currentBatchIdDisplay = document.getElementById('currentBatchIdDisplay');
     uiElements.batchItemList = document.getElementById('batchItemList');
     uiElements.batchItemCount = document.getElementById('batchItemCount');
@@ -127,8 +130,11 @@ export function showPage(pageId) {
             if (window.currentUserFromAuth) {
                 if (typeof window.updateCurrentDateOnDashboardGlobal === 'function') window.updateCurrentDateOnDashboardGlobal();
                 const filterSelect = document.getElementById('logFilterStatus');
+                const dateFilter = document.getElementById('dashboardDateFilter');
+                const startInput = document.getElementById('dateFilterStart');
+                const endInput = document.getElementById('dateFilterEnd');
                 if (typeof window.loadDashboardDataGlobal === 'function') {
-                    window.loadDashboardDataGlobal(filterSelect ? filterSelect.value : 'all');
+                    window.loadDashboardDataGlobal(filterSelect ? filterSelect.value : 'all', '', dateFilter ? dateFilter.value : 'today', startInput ? startInput.value : null, endInput ? endInput.value : null);
                 } else { console.error("loadDashboardDataGlobal function not found on window."); }
             } else { console.warn("No user logged in, not loading dashboard data from showPage."); }
         } else if (pageId === 'operatorTaskListPage') {
@@ -152,7 +158,10 @@ export function showPage(pageId) {
             dashboardFallback.classList.add('current-page');
             if (window.currentUserFromAuth && typeof window.loadDashboardDataGlobal === 'function') {
                  if (typeof window.updateCurrentDateOnDashboardGlobal === 'function') window.updateCurrentDateOnDashboardGlobal();
-                window.loadDashboardDataGlobal('all');
+                const dateFilter = document.getElementById('dashboardDateFilter');
+                const startInput = document.getElementById('dateFilterStart');
+                const endInput = document.getElementById('dateFilterEnd');
+                window.loadDashboardDataGlobal('all', '', dateFilter ? dateFilter.value : 'today', startInput ? startInput.value : null, endInput ? endInput.value : null);
             }
         } else { console.error("UI: Dashboard fallback page also not found! Critical HTML missing."); }
     }

@@ -30,6 +30,23 @@
                     <span id="currentDateDisplay" style="font-size:0.9em;"></span>
                     <button id="refreshDashboardButton" type="button" class="secondary" style="width:auto; font-size:0.8em; padding:8px;">รีเฟรช</button>
                 </div>
+                <div style="display:flex; gap:10px; margin-bottom:15px; align-items:center; flex-wrap:wrap;" id="dateFilterGroup">
+                    <label for="dashboardDateFilter" style="margin-bottom:0;">ช่วงเวลา:</label>
+                    <select id="dashboardDateFilter" style="width:auto; padding:8px; margin-bottom:0;">
+                        <option value="all">ทั้งหมด</option>
+                        <option value="today" selected>วันนี้</option>
+                        <option value="yesterday">เมื่อวาน</option>
+                        <option value="last7">7 วันล่าสุด</option>
+                        <option value="last30">30 วันล่าสุด</option>
+                        <option value="custom">กำหนดเอง</option>
+                    </select>
+                    <span id="customDateInputs" class="hidden" style="display:flex; gap:5px;">
+                        <input type="date" id="dateFilterStart">
+                        <span>ถึง</span>
+                        <input type="date" id="dateFilterEnd">
+                    </span>
+                    <button id="applyDateFilterButton" type="button" class="secondary" style="width:auto; font-size:0.8em; padding:8px;">ตกลง</button>
+                </div>
                 <div id="summaryCardsContainer"></div>
                 <div id="chartsContainer" style="margin-bottom: 20px;">
                     <h3>สถิติรายวัน</h3>
@@ -152,6 +169,13 @@
                     <div id="qrScanner_OperatorTask" class="qr-scanner-area"></div>
                     <button id="stopScanForPackingButton" type="button" class="secondary hidden" style="margin-top:5px;">หยุดสแกน</button>
                 </div>
+                <div id="pickListSummaryContainer" class="hidden" style="margin-bottom:15px;">
+                    <h3>สินค้าที่ต้องหยิบ:</h3>
+                    <table id="pickListSummaryTable" class="pick-summary-table">
+                        <thead><tr><th>ชื่อ</th><th>จำนวน</th><th>หน่วย</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
                 <div id="operatorOrderListContainer">
                     <!-- รายการออเดอร์จะถูกสร้างด้วย JavaScript -->
                     <p>กำลังโหลดรายการออเดอร์ที่รอแพ็ก...</p>
@@ -160,9 +184,9 @@
             </div>
             <!-- ***** สิ้นสุดหน้า Operator Task List ***** -->
 
-            <!-- ***** หน้าใหม่สำหรับ Operator: จัดการ Batch การส่ง ***** -->
+            <!-- ***** หน้าใหม่สำหรับ Operator: จัดการการส่งของ ***** -->
             <div id="operatorShippingBatchPage" class="container page hidden">
-                <h2>จัดการ Batch การส่ง</h2>
+                <h2>จัดการการส่งของ</h2>
                 <div class="form-group">
                     <label for="courierSelect">เลือก Courier/ร้านที่จะไปส่ง:</label>
                     <select id="courierSelect">
@@ -174,11 +198,11 @@
                     </select>
                     <input type="text" id="otherCourierInput" class="hidden" placeholder="ระบุชื่อ Courier อื่นๆ" style="margin-top:10px;">
                 </div>
-                <button id="createNewBatchButton" type="button" class="hidden">สร้าง Batch ใหม่ / เลือก Batch ปัจจุบัน</button>
+                <button id="createNewBatchButton" type="button" class="hidden">สร้างรอบส่งใหม่ / เลือกรอบส่งปัจจุบัน</button>
                 <p><strong>Batch ID ปัจจุบัน:</strong> <span id="currentBatchIdDisplay">N/A</span></p>
                 
                 <div style="margin-top:20px;">
-                    <h3>สแกนพัสดุเข้า Batch นี้:</h3>
+                    <h3>สแกนพัสดุเข้ารอบส่งนี้:</h3>
                     <button id="startScanForBatchButton" type="button">สแกน QR พัสดุ</button>
 
                     <div class="input-group" style="margin-top:10px;">
@@ -188,6 +212,7 @@
                     </div>
 
                     <div style="margin-top:10px;">
+                        <button id="selectAllReadyPackagesButton" type="button" class="secondary" style="width:auto; margin-bottom:5px;">เลือกทั้งหมด</button>
                         <ul id="readyToShipCheckboxList" class="item-checklist" style="max-height:150px; overflow-y:auto; border:1px solid #eee; padding:10px;"></ul>
                     </div>
 
@@ -195,31 +220,32 @@
                         <div id="qrScanner_Batch" class="qr-scanner-area"></div>
                         <button id="stopScanForBatchButton" type="button" class="secondary hidden" style="margin-top:5px;">หยุดสแกน</button>
                     </div>
-                    <h4>รายการพัสดุใน Batch: (<span id="batchItemCount">0</span> ชิ้น)</h4>
+                    <h4>รายการพัสดุในรอบส่งนี้: (<span id="batchItemCount">0</span> ชิ้น)</h4>
                     <ul id="batchItemList" class="item-checklist" style="max-height:200px; overflow-y:auto; border:1px solid #eee; padding:10px;">
                         <!-- พัสดุที่สแกนแล้วจะแสดงที่นี่ -->
                     </ul>
-                    <button id="confirmBatchAndProceedButton" type="button" style="margin-top:15px;">ยืนยัน Batch และไปถ่ายรูป</button>
+                    <button id="confirmBatchAndProceedButton" type="button" style="margin-top:15px;">ยืนยันรอบส่งและไปถ่ายรูป</button>
                 </div>
             </div>
             <!-- ***** สิ้นสุดหน้า Operator Shipping Batch ***** -->
 
-            <!-- ***** หน้าใหม่สำหรับ Operator: ยืนยันการส่ง Batch ***** -->
+            <!-- ***** หน้าใหม่สำหรับ Operator: ยืนยันการส่ง ***** -->
             <div id="operatorConfirmShipmentPage" class="container page hidden">
-                <h2>ยืนยันการส่ง Batch ID: <span id="confirmShipBatchIdDisplay"></span></h2>
+                <h2>ยืนยันการส่ง</h2>
+                <p><strong>Batch ID:</strong> <span id="confirmShipBatchIdDisplay"></span></p>
                 <p><strong>Courier:</strong> <span id="confirmShipCourierDisplay"></span></p>
                 <p><strong>จำนวนพัสดุ:</strong> <span id="confirmShipItemCountDisplay"></span> รายการ</p>
                 <div class="form-group">
                     <label for="shipmentGroupPhoto">ถ่ายหรือเลือกรูปรวมพัสดุที่ส่ง:</label>
                     <input type="file" id="shipmentGroupPhoto" accept="image/*" >
-                    <img id="shipmentGroupPhotoPreview" src="#" alt="Preview รูปรวม" class="hidden">
+                    <img id="shipmentGroupPhotoPreview" src="#" alt="Preview รูปรวม" class="hidden lightbox-thumb">
                 </div>
                 <div class="form-group hidden">
                     <label>ตำแหน่ง GPS (ถ้ามี):</label>
                     <p id="shipmentGpsLocationDisplay" style="font-size:0.9em; color:#555;">กำลังดึงข้อมูล...</p>
                     <button id="getGpsButton" type="button" class="secondary" style="width:auto;">ดึง GPS ปัจจุบัน</button>
                 </div>
-                <button id="finalizeShipmentButton" type="button">ยืนยันการจัดส่ง Batch นี้</button>
+                <button id="finalizeShipmentButton" type="button">ยืนยันการจัดส่งรอบนี้</button>
             </div>
             <!-- ***** สิ้นสุดหน้า Operator Confirm Shipment ***** -->
 
@@ -275,7 +301,7 @@
             <div id="shippedOrderDetailPage" class="container page hidden">
                 <h2>รายละเอียดพัสดุที่ส่งแล้ว (Package Code: <span id="detailPackageCode"></span>)</h2>
                 <div id="shippedOrderDetailInfo"></div>
-                <img id="shippedOrderBatchPhoto" class="hidden" alt="Shipment Photo" style="max-width:100%; margin-top:10px; border:1px solid #dce4ec; border-radius:8px;" />
+                <img id="shippedOrderBatchPhoto" class="hidden lightbox-thumb" alt="Shipment Photo" style="max-width:100%; margin-top:10px; border:1px solid #dce4ec; border-radius:8px;" />
                 <button id="confirmShipmentButton" type="button" style="margin-top:15px;">ยืนยันความถูกต้อง</button>
                 <button id="backToShippedListButton" type="button" class="secondary" style="margin-top:10px;">กลับ</button>
             </div>
@@ -289,6 +315,7 @@
             <div id="overlayScanner" class="qr-scanner-area"></div>
             <button id="closeScanOverlayButton" type="button" class="secondary" style="margin-top:10px;">ปิดการสแกน</button>
         </div>
+        <div id="lightboxOverlay" class="lightbox-overlay hidden"><img id="lightboxImage" src="#" alt="Full Image"></div>
     </div>
 
     <script type="module" src="js/main.js"></script>

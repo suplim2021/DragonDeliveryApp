@@ -13,6 +13,7 @@ import { initializeSupervisorPackCheckListeners, loadOrdersForPackCheck } from '
 import { initializeOperatorTasksPageListeners, loadOperatorPendingTasks } from './operatorTasksPage.js';
 import { initializeOperatorShippingPageListeners, setupShippingBatchPage } from './operatorShippingPage.js';
 import { initializeShippedOrdersPageListeners, loadShippedOrders } from './shippedOrdersPage.js';
+import { initializeImageLightbox } from './utils.js';
 
 window.currentUserFromAuth = null; 
 window.currentUserRoleFromAuth = null;
@@ -84,6 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeOperatorTasksPageListeners();
     initializeOperatorShippingPageListeners();
     initializeShippedOrdersPageListeners();
+    initializeImageLightbox();
     
     console.log("Initial event listeners set up (main.js)");
 

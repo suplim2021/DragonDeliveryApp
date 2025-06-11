@@ -11,10 +11,14 @@ let platformChartInstance = null;
 let dashboardUnsub = null;
 let currentFilter = 'all';
 let currentSearch = '';
+let currentTimeFilter = 'today';
+let currentStartDate = null;
+let currentEndDate = null;
 
 // DOM Elements specific to dashboard - get them when the module initializes or functions are called
 let el_appStatus, el_currentDateDisplay, el_refreshDashboardButton,
     el_summaryCardsContainer, el_dailyStatsCanvas, el_platformStatsCanvas,
+    el_dateFilterSelect, el_dateStartInput, el_dateEndInput, el_applyDateFilterButton,
     el_logFilterSelect, el_applyLogFilterButton, el_logSearchInput,
     el_ordersTableBody, el_noOrdersMessage,
     el_dueTodayTableBody, el_noDueTodayMessage;
@@ -27,6 +31,10 @@ export function initializeDashboardPageListeners() {
     el_summaryCardsContainer = document.getElementById('summaryCardsContainer');
     el_dailyStatsCanvas = document.getElementById('dailyStatsChart');
     el_platformStatsCanvas = document.getElementById('platformStatsChart');
+    el_dateFilterSelect = document.getElementById('dashboardDateFilter');
+    el_dateStartInput = document.getElementById('dateFilterStart');
+    el_dateEndInput = document.getElementById('dateFilterEnd');
+    el_applyDateFilterButton = document.getElementById('applyDateFilterButton');
     el_logFilterSelect = document.getElementById('logFilterStatus');
     el_applyLogFilterButton = document.getElementById('applyLogFilterButton');
     el_logSearchInput = document.getElementById('logSearchPackageCode');
@@ -36,20 +44,35 @@ export function initializeDashboardPageListeners() {
     el_noDueTodayMessage = document.getElementById("noDueTodayMessage");
 
     if (el_refreshDashboardButton) {
-        el_refreshDashboardButton.addEventListener('click', () => loadDashboardData(el_logFilterSelect ? el_logFilterSelect.value : 'all', el_logSearchInput ? el_logSearchInput.value.trim() : ''));
+        el_refreshDashboardButton.addEventListener('click', () => loadDashboardData(el_logFilterSelect ? el_logFilterSelect.value : 'all', el_logSearchInput ? el_logSearchInput.value.trim() : '', el_dateFilterSelect ? el_dateFilterSelect.value : 'today', el_dateStartInput ? el_dateStartInput.value : null, el_dateEndInput ? el_dateEndInput.value : null));
     }
     if (el_applyLogFilterButton) {
         el_applyLogFilterButton.addEventListener('click', () => {
             const filter = el_logFilterSelect ? el_logFilterSelect.value : 'all';
             const search = el_logSearchInput ? el_logSearchInput.value.trim() : '';
-            loadDashboardData(filter, search);
+            loadDashboardData(filter, search, el_dateFilterSelect ? el_dateFilterSelect.value : 'today', el_dateStartInput ? el_dateStartInput.value : null, el_dateEndInput ? el_dateEndInput.value : null);
         });
     }
     if (el_logFilterSelect) {
         el_logFilterSelect.addEventListener('change', () => {
             const filter = el_logFilterSelect.value;
             const search = el_logSearchInput ? el_logSearchInput.value.trim() : '';
-            loadDashboardData(filter, search);
+            loadDashboardData(filter, search, el_dateFilterSelect ? el_dateFilterSelect.value : 'today', el_dateStartInput ? el_dateStartInput.value : null, el_dateEndInput ? el_dateEndInput.value : null);
+        });
+    }
+    if (el_dateFilterSelect) {
+        el_dateFilterSelect.addEventListener('change', () => {
+            const showCustom = el_dateFilterSelect.value === 'custom';
+            const customSpan = document.getElementById('customDateInputs');
+            if (customSpan) customSpan.classList.toggle('hidden', !showCustom);
+            if (!showCustom) {
+                loadDashboardData(currentFilter, currentSearch, el_dateFilterSelect.value);
+            }
+        });
+    }
+    if (el_applyDateFilterButton) {
+        el_applyDateFilterButton.addEventListener('click', () => {
+            loadDashboardData(currentFilter, currentSearch, el_dateFilterSelect ? el_dateFilterSelect.value : 'today', el_dateStartInput ? el_dateStartInput.value : null, el_dateEndInput ? el_dateEndInput.value : null);
         });
     }
     if (el_ordersTableBody) {
@@ -81,7 +104,7 @@ export function startDashboardRealtime() {
     const ordersRefNode = ref(database, 'orders');
     if (dashboardUnsub) dashboardUnsub();
     dashboardUnsub = onValue(ordersRefNode, () => {
-        loadDashboardData(currentFilter, currentSearch);
+        loadDashboardData(currentFilter, currentSearch, currentTimeFilter, currentStartDate, currentEndDate);
     });
 }
 
@@ -99,9 +122,12 @@ export function updateCurrentDateOnDashboard() {
     }
 }
 
-export async function loadDashboardData(filterStatus = 'all', searchCode = '') {
+export async function loadDashboardData(filterStatus = 'all', searchCode = '', timeFilter = 'today', startDate = null, endDate = null) {
     currentFilter = filterStatus;
     currentSearch = searchCode;
+    currentTimeFilter = timeFilter;
+    currentStartDate = startDate;
+    currentEndDate = endDate;
     const currentUser = getCurrentUser();
     if (!currentUser) { console.log("No user logged in, skipping dashboard load."); return; }
     if (!el_appStatus) { console.error("el_appStatus (appStatus element) not found for dashboard."); return; }
@@ -120,10 +146,11 @@ export async function loadDashboardData(filterStatus = 'all', searchCode = '') {
             allOrders = allOrders.slice(0, 150);
         }
 
-        updateSummaryCards(allOrders);
+        const statsOrders = applyTimeFilter(allOrders, timeFilter, startDate, endDate);
+        updateSummaryCards(statsOrders);
         updateDueTodayTable(allOrders);
         updateOrdersLogTable(allOrders, filterStatus, searchCode);
-        renderCharts(allOrders);
+        renderCharts(statsOrders);
 
         showAppStatus("โหลดข้อมูล Dashboard สำเร็จ", "success", el_appStatus);
         if (el_noOrdersMessage) {
@@ -139,6 +166,43 @@ export async function loadDashboardData(filterStatus = 'all', searchCode = '') {
         showAppStatus("เกิดข้อผิดพลาด: " + error.message, "error", el_appStatus);
         if (el_noOrdersMessage) el_noOrdersMessage.classList.remove('hidden');
     }
+}
+
+function applyTimeFilter(orders, filterVal, startDateStr, endDateStr) {
+    if (!orders || filterVal === 'all') return orders.slice();
+    let startTs = null, endTs = null;
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    switch(filterVal) {
+        case 'today':
+            startTs = today.getTime();
+            endTs = startTs + 86400000 - 1;
+            break;
+        case 'yesterday':
+            endTs = today.getTime() - 1;
+            startTs = endTs - 86400000 + 1;
+            break;
+        case 'last7':
+            startTs = today.getTime() - 6*86400000;
+            endTs = today.getTime() + 86400000 - 1;
+            break;
+        case 'last30':
+            startTs = today.getTime() - 29*86400000;
+            endTs = today.getTime() + 86400000 - 1;
+            break;
+        case 'custom':
+            if (startDateStr) startTs = new Date(startDateStr).setHours(0,0,0,0);
+            if (endDateStr) endTs = new Date(endDateStr).setHours(23,59,59,999);
+            break;
+        default:
+            return orders.slice();
+    }
+    return orders.filter(o => {
+        const ts = o.createdAt || 0;
+        if (startTs !== null && ts < startTs) return false;
+        if (endTs !== null && ts > endTs) return false;
+        return true;
+    });
 }
 
 function updateSummaryCards(orders) {
@@ -360,7 +424,7 @@ async function handleEditOrder(orderKey) {
             await update(ref(database, 'orders/' + orderKey), updates);
             const filter = el_logFilterSelect ? el_logFilterSelect.value : 'all';
             const search = el_logSearchInput ? el_logSearchInput.value.trim() : '';
-            loadDashboardData(filter, search);
+            loadDashboardData(filter, search, el_dateFilterSelect ? el_dateFilterSelect.value : currentTimeFilter, el_dateStartInput ? el_dateStartInput.value : currentStartDate, el_dateEndInput ? el_dateEndInput.value : currentEndDate);
             showAppStatus('อัปเดตข้อมูลแล้ว', 'success', el_appStatus);
         } catch (err) {
             console.error('edit order error', err);
@@ -371,7 +435,7 @@ async function handleEditOrder(orderKey) {
     cancelBtn.addEventListener('click', () => {
         const filter = el_logFilterSelect ? el_logFilterSelect.value : 'all';
         const search = el_logSearchInput ? el_logSearchInput.value.trim() : '';
-        loadDashboardData(filter, search);
+        loadDashboardData(filter, search, el_dateFilterSelect ? el_dateFilterSelect.value : currentTimeFilter, el_dateStartInput ? el_dateStartInput.value : currentStartDate, el_dateEndInput ? el_dateEndInput.value : currentEndDate);
     });
 }
 
@@ -440,7 +504,7 @@ function renderCharts(orders) {
         await remove(ref(database, 'orders/' + orderKey));
         const filter = el_logFilterSelect ? el_logFilterSelect.value : 'all';
         const search = el_logSearchInput ? el_logSearchInput.value.trim() : '';
-        loadDashboardData(filter, search);
+        loadDashboardData(filter, search, el_dateFilterSelect ? el_dateFilterSelect.value : currentTimeFilter, el_dateStartInput ? el_dateStartInput.value : currentStartDate, el_dateEndInput ? el_dateEndInput.value : currentEndDate);
         showAppStatus('ลบออเดอร์แล้ว', 'success', el_appStatus);
     } catch (err) {
         console.error('delete order error', err);
