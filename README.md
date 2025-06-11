@@ -16,6 +16,20 @@ Dragon Delivery App is a web-based logistics management tool built with Firebase
 2. Provide your Firebase project credentials in `js/config.js`.
 3. Use `firebase serve` to run a local development server.
 
+## How to Use
+
+### English
+1. Log in with your account.
+2. Create and manage orders via the dashboard.
+3. Scan QR codes on the tracking page when packing parcels.
+4. Monitor delivery status and reports in the admin panel.
+
+### ภาษาไทย
+1. เข้าสู่ระบบด้วยบัญชีของคุณ
+2. สร้างและจัดการคำสั่งซื้อผ่านแดชบอร์ด
+3. สแกน QR โค๊ดในหน้าติดตามเมื่อแพ็กพัสดุ
+4. ตรวจสอบสถานะการจัดส่งและรายงานในแผงผู้ดูแล
+
 ## Deployment
 
 1. Install the Firebase CLI: `npm install -g firebase-tools`
