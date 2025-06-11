@@ -7,6 +7,7 @@ import { getCurrentUserRole } from './auth.js';
 
 let html5QrScannerForPacking = null;
 let isPackingScannerStopping = false;
+let isProcessingPackingScan = false; // Prevent double handling of a scan
 
 
 export function initializeOperatorTasksPageListeners() {
@@ -229,6 +230,8 @@ async function stopScanForPacking() {
 window.stopScanForPacking = stopScanForPacking;
 
 async function onPackingScanSuccess(decodedText) {
+    if (isProcessingPackingScan) return;
+    isProcessingPackingScan = true;
     const code = decodedText.trim();
     const ordersRef = ref(database, 'orders');
     const ordersQuery = query(ordersRef, orderByChild('packageCode'), equalTo(code));
@@ -252,4 +255,5 @@ async function onPackingScanSuccess(decodedText) {
     } else {
         showAppStatus('ไม่พบออเดอร์พร้อมแพ็กสำหรับรหัสพัสดุ: ' + code, 'error', uiElements.appStatus);
     }
+    isProcessingPackingScan = false;
 }
