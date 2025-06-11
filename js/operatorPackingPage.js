@@ -149,6 +149,7 @@ function displayPackingPhotoPreviews() {
 
         const img = document.createElement('img');
         img.src = url;
+        img.classList.add('lightbox-thumb');
         wrapper.appendChild(img);
 
         const removeBtn = document.createElement('button');
@@ -170,6 +171,7 @@ function displayPackingPhotoPreviews() {
 
         const img = document.createElement('img');
         img.src = URL.createObjectURL(file);
+        img.classList.add('lightbox-thumb');
         img.onload = () => URL.revokeObjectURL(img.src);
         wrapper.appendChild(img);
 

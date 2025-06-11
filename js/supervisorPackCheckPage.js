@@ -152,6 +152,7 @@ async function loadIndividualOrderForSupervisorCheck(orderKey) {
             urls.forEach(url => {
                 const img = document.createElement('img');
                 img.src = url;
+                img.classList.add('lightbox-thumb');
                 uiElements.checkOrderPackingPhotoContainer.appendChild(img);
             });
             uiElements.checkOrderOperatorNotesDisplay.textContent = orderData.packingInfo?.operatorNotes || 'ไม่มีหมายเหตุจาก Operator';

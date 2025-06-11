@@ -235,3 +235,31 @@ export function resizeImageFileIfNeeded(file, maxDim = 1000) {
         img.src = URL.createObjectURL(file);
     });
 }
+
+// ----- Lightbox utility -----
+export function initializeImageLightbox() {
+    let overlay = document.getElementById('lightboxOverlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'lightboxOverlay';
+        overlay.className = 'lightbox-overlay hidden';
+        const img = document.createElement('img');
+        img.id = 'lightboxImage';
+        overlay.appendChild(img);
+        document.body.appendChild(overlay);
+    }
+    overlay.addEventListener('click', () => {
+        overlay.classList.add('hidden');
+        const img = overlay.querySelector('img');
+        if (img) img.src = '#';
+    });
+    document.body.addEventListener('click', e => {
+        const target = e.target;
+        if (target && target.classList.contains('lightbox-thumb')) {
+            const src = target.dataset.full || target.src;
+            const img = overlay.querySelector('img');
+            if (img) img.src = src;
+            overlay.classList.remove('hidden');
+        }
+    });
+}

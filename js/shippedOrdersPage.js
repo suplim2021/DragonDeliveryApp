@@ -83,7 +83,7 @@ export async function loadShippedOrders() {
             if (batch.groupPhotoUrl) {
                 const photoId = `batch_photo_${batch.batchId}`;
                 html += `<button type="button" class="toggle-batch-photo-btn" data-target="${photoId}" style="width:auto;margin:5px 0;">ดูรูปการส่ง</button>`;
-                html += `<img id="${photoId}" src="${batch.groupPhotoUrl}" class="batch-photo hidden" alt="Batch Photo" />`;
+                html += `<img id="${photoId}" src="${batch.groupPhotoUrl}" class="batch-photo lightbox-thumb hidden" alt="Batch Photo" />`;
             }
             html += '<ul style="list-style-type:none;padding-left:0;">';
             batch.orders.forEach(o => {
