@@ -205,7 +205,10 @@ async function confirmShipmentAdmin() {
         await loadShippedOrders();
         showPage('shippedOrdersPage');
         if (typeof window.loadDashboardDataGlobal === 'function') {
-            window.loadDashboardDataGlobal('all');
+            const df = document.getElementById('dashboardDateFilter');
+            const ds = document.getElementById('dateFilterStart');
+            const de = document.getElementById('dateFilterEnd');
+            window.loadDashboardDataGlobal('all', '', df ? df.value : 'today', ds ? ds.value : null, de ? de.value : null);
         }
     } catch (err) {
         console.error('confirmShipmentAdmin error', err);
@@ -236,7 +239,10 @@ async function confirmSelectedShipments() {
         await loadShippedOrders();
         showPage('shippedOrdersPage');
         if (typeof window.loadDashboardDataGlobal === 'function') {
-            window.loadDashboardDataGlobal('all');
+            const df = document.getElementById('dashboardDateFilter');
+            const ds = document.getElementById('dateFilterStart');
+            const de = document.getElementById('dateFilterEnd');
+            window.loadDashboardDataGlobal('all', '', df ? df.value : 'today', ds ? ds.value : null, de ? de.value : null);
         }
     } catch (err) {
         console.error('confirmSelectedShipments error', err);

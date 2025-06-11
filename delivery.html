@@ -30,6 +30,23 @@
                     <span id="currentDateDisplay" style="font-size:0.9em;"></span>
                     <button id="refreshDashboardButton" type="button" class="secondary" style="width:auto; font-size:0.8em; padding:8px;">รีเฟรช</button>
                 </div>
+                <div style="display:flex; gap:10px; margin-bottom:15px; align-items:center; flex-wrap:wrap;" id="dateFilterGroup">
+                    <label for="dashboardDateFilter" style="margin-bottom:0;">ช่วงเวลา:</label>
+                    <select id="dashboardDateFilter" style="width:auto; padding:8px; margin-bottom:0;">
+                        <option value="all">ทั้งหมด</option>
+                        <option value="today" selected>วันนี้</option>
+                        <option value="yesterday">เมื่อวาน</option>
+                        <option value="last7">7 วันล่าสุด</option>
+                        <option value="last30">30 วันล่าสุด</option>
+                        <option value="custom">กำหนดเอง</option>
+                    </select>
+                    <span id="customDateInputs" class="hidden" style="display:flex; gap:5px;">
+                        <input type="date" id="dateFilterStart">
+                        <span>ถึง</span>
+                        <input type="date" id="dateFilterEnd">
+                    </span>
+                    <button id="applyDateFilterButton" type="button" class="secondary" style="width:auto; font-size:0.8em; padding:8px;">ตกลง</button>
+                </div>
                 <div id="summaryCardsContainer"></div>
                 <div id="chartsContainer" style="margin-bottom: 20px;">
                     <h3>สถิติรายวัน</h3>
