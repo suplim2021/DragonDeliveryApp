@@ -211,7 +211,7 @@ async function stopScanForPacking() {
     isPackingScannerStopping = true;
     if (html5QrScannerForPacking) {
         try {
-            if (html5QrScannerForPacking._isScanning) {
+            if (html5QrScannerForPacking.isScanning) {
                 await html5QrScannerForPacking.stop();
             }
             await html5QrScannerForPacking.clear();

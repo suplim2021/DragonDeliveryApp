@@ -209,7 +209,7 @@ async function stopScanForBatch() {
     if (html5QrScannerForBatch) {
         try {
             // Some devices may trigger stop twice; check if scanner is running
-            if (html5QrScannerForBatch._isScanning) {
+            if (html5QrScannerForBatch.isScanning) {
                 await html5QrScannerForBatch.stop();
             }
             await html5QrScannerForBatch.clear();
