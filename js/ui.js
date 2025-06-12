@@ -31,6 +31,7 @@ export function initializeCoreDOMElements() { // Renamed for clarity
     uiElements.qrScannerContainer_OperatorTask = document.getElementById('qrScannerContainer_OperatorTask');
     uiElements.pickListSummaryContainer = document.getElementById('pickListSummaryContainer');
     uiElements.pickListSummaryTableBody = document.querySelector('#pickListSummaryTable tbody');
+    uiElements.selectAllPendingOrdersButton = document.getElementById('selectAllPendingOrdersButton');
 
     uiElements.parcelTableBody = document.getElementById('parcelListTableBody');
     uiElements.noParcelsMessage = document.getElementById('noParcelsMessage');

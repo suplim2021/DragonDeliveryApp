@@ -130,16 +130,22 @@ export async function loadParcelList(timeFilter = 'today', startDate = null, end
             tr.insertCell().textContent = formatDateTimeDDMMYYYYHHMM(o.createdAt);
             tr.insertCell().textContent = formatDateDDMMYYYY(o.dueDate);
             const photoCell = tr.insertCell();
-            const url = o.packingInfo?.packingPhotoUrls ? o.packingInfo.packingPhotoUrls[0] : null;
-            if (url) {
-                const img = document.createElement('img');
-                img.src = url;
-                img.classList.add('lightbox-thumb');
-                img.style.maxWidth = '60px';
-                photoCell.appendChild(img);
+            const urls = o.packingInfo?.packingPhotoUrls ? [...o.packingInfo.packingPhotoUrls] : [];
+            if (urls.length) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.textContent = 'ดูรูป';
+                btn.className = 'secondary';
+                btn.addEventListener('click', e => { e.stopPropagation(); if (typeof window.showImageAlbum === 'function') window.showImageAlbum(urls); });
+                photoCell.appendChild(btn);
             } else {
                 photoCell.textContent = '-';
             }
+
+            tr.classList.add('clickable-row');
+            tr.addEventListener('click', () => {
+                if (typeof window.loadOrderForAddingItems === 'function') window.loadOrderForAddingItems(o.key);
+            });
         });
     } catch (err) {
         console.error('loadParcelList error', err);

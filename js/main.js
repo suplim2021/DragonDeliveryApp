@@ -14,7 +14,7 @@ import { initializeOperatorTasksPageListeners, loadOperatorPendingTasks } from '
 import { initializeOperatorShippingPageListeners, setupShippingBatchPage, updateBatchIdVisibilityForRole } from './operatorShippingPage.js';
 import { initializeShippedOrdersPageListeners, loadShippedOrders } from './shippedOrdersPage.js';
 import { initializeAdminParcelListPageListeners, loadParcelList } from './adminParcelListPage.js';
-import { initializeImageLightbox } from './utils.js';
+import { initializeImageLightbox, showImageAlbum } from './utils.js';
 
 window.currentUserFromAuth = null; 
 window.currentUserRoleFromAuth = null;
@@ -103,6 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.loadParcelListGlobal = loadParcelList;
     window.loadOrderForPacking = operatorLoadOrderForPacking;
     window.loadOrderForAddingItems = loadOrderForAddingItems;
+    window.showImageAlbum = showImageAlbum;
 
     window.addEventListener('scroll', () => {
         const nav = document.getElementById('bottomNavContainer');

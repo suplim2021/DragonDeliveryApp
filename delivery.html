@@ -212,6 +212,7 @@
                 <h2>รายการรอแพ็ก</h2>
                 <button id="refreshOperatorTaskList" type="button" class="secondary" style="width:auto; margin-bottom:10px;">รีเฟรชรายการ</button>
                 <button id="startScanForPackingButton" type="button" style="width:auto; margin-bottom:15px;">สแกน QR เลือกพัสดุ</button>
+                <button id="selectAllPendingOrdersButton" type="button" class="secondary" style="width:auto; margin-left:10px; margin-bottom:15px;">เลือกทั้งหมด</button>
                 <div id="qrScannerContainer_OperatorTask" class="hidden" style="margin-bottom:10px;">
                     <div id="qrScanner_OperatorTask" class="qr-scanner-area"></div>
                     <button id="stopScanForPackingButton" type="button" class="secondary hidden" style="margin-top:5px;">หยุดสแกน</button>
@@ -362,7 +363,11 @@
             <div id="overlayScanner" class="qr-scanner-area"></div>
             <button id="closeScanOverlayButton" type="button" class="secondary" style="margin-top:10px;">ปิดการสแกน</button>
         </div>
-        <div id="lightboxOverlay" class="lightbox-overlay hidden"><img id="lightboxImage" src="#" alt="Full Image"></div>
+        <div id="lightboxOverlay" class="lightbox-overlay hidden">
+            <img id="lightboxImage" src="#" alt="Full Image">
+            <button id="lightboxPrev" class="lightbox-nav">&lt;</button>
+            <button id="lightboxNext" class="lightbox-nav">&gt;</button>
+        </div>
     </div>
 
     <script type="module" src="js/main.js"></script>
