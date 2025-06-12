@@ -123,6 +123,8 @@ export async function loadParcelList(timeFilter = 'today', startDate = null, end
         const role = getCurrentUserRole();
         orders.forEach(o => {
             const tr = el_tableBody.insertRow();
+            const isVerified = (o.status === 'Shipment Approved') || (o.status === 'Shipped' && o.shipmentInfo?.adminVerifiedBy);
+            if (isVerified) tr.classList.add('verified-row');
             tr.insertCell().textContent = o.packageCode || 'N/A';
             tr.insertCell().textContent = o.platformOrderId || '-';
             tr.insertCell().textContent = o.platform || 'N/A';

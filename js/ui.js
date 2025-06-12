@@ -202,9 +202,9 @@ export function setupRoleBasedUI(currentUserRoleForNav) {
         { pageId: 'adminCreateOrderPage', icon: 'add', label: 'สร้างออเดอร์', roles: ['administrator','supervisor'] },
         { pageId: 'operatorTaskListPage', icon: 'inventory_2', label: 'รายการรอแพ็ก', roles: ['administrator','operator','supervisor'] },
         { pageId: 'supervisorPackCheckListPage', icon: 'checklist', label: 'รอตรวจแพ็ก', roles: ['administrator','supervisor'] },
-        { pageId: 'parcelListPage', icon: 'list', label: 'พัสดุทั้งหมด', roles: ['administrator','supervisor'] },
         { pageId: 'operatorShippingBatchPage', icon: 'local_shipping', label: 'เตรียมส่งของ', roles: ['administrator','operator','supervisor'] },
         { pageId: 'shippedOrdersPage', icon: 'check_circle', label: 'ส่งแล้ว', roles: ['administrator','operator','supervisor'] },
+        { pageId: 'parcelListPage', icon: 'list', label: 'พัสดุทั้งหมด', roles: ['administrator','supervisor'] },
     ];
 
     const allowedItems = navItems.filter(item => item.roles.includes(currentUserRoleForNav));

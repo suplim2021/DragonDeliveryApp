@@ -273,16 +273,49 @@ export function initializeImageLightbox() {
         if (imgElem) imgElem.src = albumUrls[albumIndex];
     };
 
-    prevBtn.addEventListener('click', e => {
-        e.stopPropagation();
+    const showPrev = () => {
         albumIndex = (albumIndex - 1 + albumUrls.length) % albumUrls.length;
         showCurrent();
+    };
+
+    const showNext = () => {
+        albumIndex = (albumIndex + 1) % albumUrls.length;
+        showCurrent();
+    };
+
+    prevBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        showPrev();
     });
 
     nextBtn.addEventListener('click', e => {
         e.stopPropagation();
-        albumIndex = (albumIndex + 1) % albumUrls.length;
-        showCurrent();
+        showNext();
+    });
+
+    let touchStartX = 0;
+    overlay.addEventListener('touchstart', e => {
+        if (e.touches.length === 1) touchStartX = e.touches[0].clientX;
+    });
+    overlay.addEventListener('touchend', e => {
+        if (!touchStartX) return;
+        const diff = e.changedTouches[0].clientX - touchStartX;
+        if (Math.abs(diff) > 30) {
+            if (diff < 0) showNext();
+            else showPrev();
+        }
+        touchStartX = 0;
+    });
+
+    document.addEventListener('keydown', e => {
+        if (overlay.classList.contains('hidden')) return;
+        if (e.key === 'ArrowLeft') { showPrev(); }
+        else if (e.key === 'ArrowRight') { showNext(); }
+        else if (e.key === 'Escape') {
+            overlay.classList.add('hidden');
+            if (imgElem) imgElem.src = '#';
+            albumUrls = [];
+        }
     });
 
     overlay.addEventListener('click', e => {

@@ -239,6 +239,7 @@ tbody tr:hover { background-color: #f1f8ff; }
 
 /* Completed order row highlight */
 .completed-row { background-color: #e6ffe6; }
+.verified-row { background-color: #e6ffe6; }
 
 /* Summary cards container responsive styles */
 #summaryCardsContainer {

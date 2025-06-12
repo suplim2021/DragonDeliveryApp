@@ -162,7 +162,7 @@ export async function loadDashboardData(filterStatus = 'all', searchCode = '', t
         }
 
         const statsOrders = applyTimeFilter(allOrders, timeFilter, startDate, endDate);
-        updateSummaryCards(allOrders);
+        updateSummaryCards(statsOrders);
         updateDueTodayTable(allOrders);
         updateOrdersLogTable(allOrders, filterStatus, searchCode);
         renderCharts(statsOrders, timeFilter, startDate, endDate);
@@ -227,6 +227,7 @@ function updateSummaryCards(orders) {
     const pendingCheck = orders.filter(o => o.status === 'Pending Supervisor Pack Check').length;
     const readyToShip = orders.filter(o => (o.status === 'Ready for Shipment' || o.status === 'Pack Approved')).length;
     const shipped = orders.filter(o => o.status === 'Shipped' || o.status === 'Shipment Approved').length;
+    const shippedPending = orders.filter(o => (o.status === 'Shipped' || o.status === 'Shipment Approved') && !o.shipmentInfo?.adminVerifiedBy).length;
 
     createSummaryCard('รายการรอแพ็ค', readyToPack, '', 'list_alt', 'operatorTaskListPage');
     createSummaryCard('รอตรวจเช็ค', pendingCheck, '', 'fact_check', 'supervisorPackCheckListPage');
@@ -237,7 +238,7 @@ function updateSummaryCards(orders) {
         window.setNavBadgeCount('operatorTaskListPage', readyToPack);
         window.setNavBadgeCount('supervisorPackCheckListPage', pendingCheck);
         window.setNavBadgeCount('operatorShippingBatchPage', readyToShip);
-        window.setNavBadgeCount('shippedOrdersPage', shipped);
+        window.setNavBadgeCount('shippedOrdersPage', shippedPending);
     }
 }
 
@@ -514,10 +515,22 @@ function renderCharts(orders, timeFilter = 'today', startDateStr = null, endDate
 
     if (dailyChartInstance) dailyChartInstance.destroy();
     dailyChartInstance = new Chart(el_dailyStatsCanvas, {
-        type: 'bar', data: { labels: dailyLabels, datasets: [
-            { label: 'สร้างใหม่', data: dailyCreatedCounts, backgroundColor: 'rgba(54, 162, 235, 0.7)', stack: 'Stack 0',},
-            { label: 'ส่งแล้ว', data: dailyShippedCounts, backgroundColor: 'rgba(75, 192, 192, 0.7)', stack: 'Stack 0',}
-        ]}, options: { scales: { y: { beginAtZero: true, stacked: true } , x: {stacked: true}}, responsive: true, maintainAspectRatio: false }
+        type: 'bar',
+        data: {
+            labels: dailyLabels,
+            datasets: [
+                { label: 'สร้างใหม่', data: dailyCreatedCounts, backgroundColor: 'rgba(54, 162, 235, 0.7)' },
+                { label: 'ส่งแล้ว', data: dailyShippedCounts, type: 'line', borderColor: 'rgba(75, 192, 192, 1)', backgroundColor: 'rgba(75,192,192,0.3)', fill: false }
+            ]
+        },
+        options: {
+            scales: {
+                y: { beginAtZero: true, stacked: false },
+                x: { stacked: false }
+            },
+            responsive: true,
+            maintainAspectRatio: false
+        }
     });
 
     const completedCount = orders.filter(o => (
