@@ -63,6 +63,8 @@ export function initializeOperatorShippingPageListeners() {
     
     uiElements.shipmentGroupPhoto.addEventListener('change', handleShipmentGroupPhotoSelect);
     uiElements.finalizeShipmentButton.addEventListener('click', finalizeShipment);
+
+    updateBatchIdVisibilityForRole();
 }
 
 export function setupShippingBatchPage() {
@@ -84,6 +86,15 @@ export function setupShippingBatchPage() {
     currentBatchCourier = '';
     loadReadyToShipPackages();
     showAppStatus("พร้อมสำหรับการจัดการรอบส่ง", "info", uiElements.appStatus);
+}
+
+export function updateBatchIdVisibilityForRole() {
+    const role = getCurrentUserRole();
+    const hide = role === 'operator' || role === 'supervisor';
+    const batchIdParent = uiElements.currentBatchIdDisplay ? uiElements.currentBatchIdDisplay.parentElement : null;
+    if (batchIdParent) batchIdParent.classList.toggle('hidden', hide);
+    const confirmParent = uiElements.confirmShipBatchIdDisplay ? uiElements.confirmShipBatchIdDisplay.parentElement : null;
+    if (confirmParent) confirmParent.classList.toggle('hidden', hide);
 }
 
 async function createOrSelectBatch() {
@@ -145,7 +156,8 @@ function startScanForBatch() {
             if (!cam) cam = cameras[cameras.length - 1];
             const camId = cam.id;
             html5QrScannerForBatch.start(
-                { deviceId: { exact: camId } }, { fps: 10, qrbox: { width: 250, height: 250 } },
+                { deviceId: { exact: camId } },
+                { fps: 10, qrbox: { width: 250, height: 250 }, videoConstraints: { focusMode: "continuous", facingMode: "environment" } },
                 async (decodedText, decodedResult) => { // onScanSuccess
             const packageCodeScanned = decodedText.trim();
             console.log(`Scanned for batch: ${packageCodeScanned}`);

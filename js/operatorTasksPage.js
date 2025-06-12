@@ -231,7 +231,8 @@ function startScanForPacking() {
             if (!cam) cam = cameras[cameras.length - 1];
             const camId = cam.id;
             html5QrScannerForPacking.start(
-                { deviceId: { exact: camId } }, { fps: 10, qrbox: { width: 250, height: 250 } },
+                { deviceId: { exact: camId } },
+                { fps: 10, qrbox: { width: 250, height: 250 }, videoConstraints: { focusMode: "continuous", facingMode: "environment" } },
                 onPackingScanSuccess,
                 () => { beepError(); }
             ).catch(err => {

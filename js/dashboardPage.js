@@ -22,7 +22,7 @@ let el_appStatus, el_currentDateDisplay, el_refreshDashboardButton,
     el_logFilterSelect, el_applyLogFilterButton, el_logSearchInput,
     el_ordersTableBody, el_noOrdersMessage,
     el_dueTodayTableBody, el_noDueTodayMessage,
-    el_chartStatsInfo;
+    el_chartStatsInfo, el_chartsContainer;
 
 export function initializeDashboardPageListeners() {
     // Query for elements specific to this page when listeners are set up
@@ -44,6 +44,9 @@ export function initializeDashboardPageListeners() {
     el_dueTodayTableBody = document.getElementById("dueTodayTableBody");
     el_noDueTodayMessage = document.getElementById("noDueTodayMessage");
     el_chartStatsInfo = document.getElementById('chartStatsInfo');
+    el_chartsContainer = document.getElementById('chartsContainer');
+
+    updateDashboardVisibilityForRole();
 
     if (el_refreshDashboardButton) {
         el_refreshDashboardButton.addEventListener('click', () => loadDashboardData(el_logFilterSelect ? el_logFilterSelect.value : 'all', el_logSearchInput ? el_logSearchInput.value.trim() : '', el_dateFilterSelect ? el_dateFilterSelect.value : 'today', el_dateStartInput ? el_dateStartInput.value : null, el_dateEndInput ? el_dateEndInput.value : null));
@@ -117,6 +120,16 @@ export function stopDashboardRealtime() {
     }
 }
 
+export function updateDashboardVisibilityForRole() {
+    if (!el_chartsContainer) return;
+    const role = getCurrentUserRole();
+    if (role === 'operator') {
+        el_chartsContainer.classList.add('hidden');
+    } else {
+        el_chartsContainer.classList.remove('hidden');
+    }
+}
+
 export function updateCurrentDateOnDashboard() {
     if (el_currentDateDisplay) {
         const now = new Date();
@@ -152,7 +165,7 @@ export async function loadDashboardData(filterStatus = 'all', searchCode = '', t
         updateSummaryCards(allOrders);
         updateDueTodayTable(allOrders);
         updateOrdersLogTable(allOrders, filterStatus, searchCode);
-        renderCharts(statsOrders);
+        renderCharts(statsOrders, timeFilter, startDate, endDate);
 
         showAppStatus("โหลดข้อมูล Dashboard สำเร็จ", "success", el_appStatus);
         if (el_noOrdersMessage) {
@@ -177,8 +190,8 @@ function applyTimeFilter(orders, filterVal, startDateStr, endDateStr) {
     today.setHours(0,0,0,0);
     switch(filterVal) {
         case 'today':
-            startTs = today.getTime();
-            endTs = startTs + 86400000 - 1;
+            startTs = today.getTime() + 60000; // start 00:01
+            endTs = Date.now();
             break;
         case 'yesterday':
             endTs = today.getTime() - 1;
@@ -432,7 +445,7 @@ async function handleEditOrder(orderKey) {
     });
 }
 
-function renderCharts(orders) {
+function renderCharts(orders, timeFilter = 'today', startDateStr = null, endDateStr = null) {
     if (typeof Chart === 'undefined') { console.warn("Chart.js library not loaded."); return; }
     if (!el_dailyStatsCanvas || !el_platformStatsCanvas) {
         console.warn("One or both chart canvas elements not found in renderCharts (dashboardPage.js).");
@@ -452,25 +465,49 @@ function renderCharts(orders) {
 
     // Daily Stats
     const dailyData = {};
-    let minTs = Infinity, maxTs = -Infinity;
-    orders.forEach(o => {
-        if (o.createdAt && typeof o.createdAt === 'number') {
-            if (o.createdAt < minTs) minTs = o.createdAt;
-            if (o.createdAt > maxTs) maxTs = o.createdAt;
+    let startTs, endTs;
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    switch(timeFilter){
+        case 'today':
+            startTs = today.getTime() + 60000;
+            endTs = Date.now();
+            break;
+        case 'yesterday':
+            endTs = today.getTime() - 1;
+            startTs = endTs - 86400000 + 1;
+            break;
+        case 'last7':
+            startTs = today.getTime() - 6*86400000;
+            endTs = today.getTime() + 86400000 - 1;
+            break;
+        case 'last30':
+            startTs = today.getTime() - 29*86400000;
+            endTs = today.getTime() + 86400000 - 1;
+            break;
+        case 'custom':
+            startTs = startDateStr ? new Date(startDateStr).setHours(0,0,0,0) : today.getTime();
+            endTs = endDateStr ? new Date(endDateStr).setHours(23,59,59,999) : today.getTime();
+            break;
+        default:
+            startTs = today.getTime() - 6*86400000;
+            endTs = today.getTime() + 86400000 - 1;
+    }
+    const startDate = new Date(startTs); startDate.setHours(0,0,0,0);
+    const endDate = new Date(endTs); endDate.setHours(0,0,0,0);
+    for(let d=new Date(startDate); d<=endDate; d.setDate(d.getDate()+1)){
+        dailyData[d.toISOString().slice(0,10)] = {created:0, shipped:0};
+    }
+    orders.forEach(o=>{
+        if(o.createdAt && typeof o.createdAt==='number'){
+            const cd=new Date(o.createdAt).toISOString().slice(0,10);
+            if(dailyData[cd]) dailyData[cd].created++;
         }
-        const shipTs = o.shipmentInfo?.shippedAt_actual;
-        if ((o.status === 'Shipped' || o.status === 'Shipment Approved') && typeof shipTs === 'number') {
-            if (shipTs < minTs) minTs = shipTs;
-            if (shipTs > maxTs) maxTs = shipTs;
+        if((o.status==='Shipped'||o.status==='Shipment Approved') && o.shipmentInfo?.shippedAt_actual && typeof o.shipmentInfo.shippedAt_actual==='number'){
+            const sd=new Date(o.shipmentInfo.shippedAt_actual).toISOString().slice(0,10);
+            if(dailyData[sd]) dailyData[sd].shipped++;
         }
     });
-    if (minTs === Infinity || maxTs === -Infinity) {
-        const d = new Date();
-        minTs = d.setDate(d.getDate() - 6);
-        maxTs = Date.now();
-    }
-    const startDate = new Date(minTs); startDate.setHours(0,0,0,0);
-    const endDate = new Date(maxTs); endDate.setHours(0,0,0,0);
     for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate()+1)) {
         dailyData[d.toISOString().slice(0,10)] = { created: 0, shipped: 0 };
     }

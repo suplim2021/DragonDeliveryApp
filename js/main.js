@@ -8,11 +8,12 @@ import { initializeCoreDOMElements, showPage, setupRoleBasedUI } from './ui.js';
 import { initializeAdminOrderPageListeners } from './adminOrderPage.js';
 import { initializeAdminItemsPageListeners, loadOrderForAddingItems } from './adminItemsPage.js';
 import { initializeOperatorPackingPageListeners, loadOrderForPacking as operatorLoadOrderForPacking } from './operatorPackingPage.js';
-import { initializeDashboardPageListeners, updateCurrentDateOnDashboard, loadDashboardData, startDashboardRealtime, stopDashboardRealtime } from './dashboardPage.js';
+import { initializeDashboardPageListeners, updateCurrentDateOnDashboard, loadDashboardData, startDashboardRealtime, stopDashboardRealtime, updateDashboardVisibilityForRole } from './dashboardPage.js';
 import { initializeSupervisorPackCheckListeners, loadOrdersForPackCheck } from './supervisorPackCheckPage.js';
 import { initializeOperatorTasksPageListeners, loadOperatorPendingTasks } from './operatorTasksPage.js';
-import { initializeOperatorShippingPageListeners, setupShippingBatchPage } from './operatorShippingPage.js';
+import { initializeOperatorShippingPageListeners, setupShippingBatchPage, updateBatchIdVisibilityForRole } from './operatorShippingPage.js';
 import { initializeShippedOrdersPageListeners, loadShippedOrders } from './shippedOrdersPage.js';
+import { initializeAdminParcelListPageListeners, loadParcelList } from './adminParcelListPage.js';
 import { initializeImageLightbox } from './utils.js';
 
 window.currentUserFromAuth = null; 
@@ -85,6 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeOperatorTasksPageListeners();
     initializeOperatorShippingPageListeners();
     initializeShippedOrdersPageListeners();
+    initializeAdminParcelListPageListeners();
     initializeImageLightbox();
     
     console.log("Initial event listeners set up (main.js)");
@@ -92,10 +94,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Expose page-specific load/setup functions to be callable from ui.js's showPage via window object
     window.updateCurrentDateOnDashboardGlobal = updateCurrentDateOnDashboard;
     window.loadDashboardDataGlobal = loadDashboardData;
+    window.updateDashboardVisibilityForRoleGlobal = updateDashboardVisibilityForRole;
     window.loadOrdersForPackCheckGlobal = loadOrdersForPackCheck;
     window.loadOperatorPendingTasksGlobal = loadOperatorPendingTasks;
     window.setupShippingBatchPageGlobal = setupShippingBatchPage;
     window.loadShippedOrdersGlobal = loadShippedOrders;
+    window.updateBatchIdVisibilityForRoleGlobal = updateBatchIdVisibilityForRole;
+    window.loadParcelListGlobal = loadParcelList;
     window.loadOrderForPacking = operatorLoadOrderForPacking;
     window.loadOrderForAddingItems = loadOrderForAddingItems;
 

@@ -88,6 +88,53 @@
                 </div>
             </div>
 
+            <!-- All Parcels Page -->
+            <div id="parcelListPage" class="container page hidden">
+                <h2>รายการพัสดุทั้งหมด</h2>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px; align-items:center;">
+                    <label for="parcelDateFilter" style="margin-bottom:0;">ช่วงเวลา:</label>
+                    <select id="parcelDateFilter" style="width:auto; padding:8px; margin-bottom:0;">
+                        <option value="all">ทั้งหมด</option>
+                        <option value="today">วันนี้</option>
+                        <option value="yesterday">เมื่อวาน</option>
+                        <option value="last7" selected>7 วันล่าสุด</option>
+                        <option value="last30">30 วันล่าสุด</option>
+                        <option value="custom">กำหนดเอง</option>
+                    </select>
+                    <span id="parcelCustomDates" class="hidden" style="display:flex; gap:5px;">
+                        <input type="date" id="parcelDateStart">
+                        <span>ถึง</span>
+                        <input type="date" id="parcelDateEnd">
+                        <button id="applyParcelDateFilterButton" type="button" class="secondary" style="width:auto;font-size:0.8em;">ตกลง</button>
+                    </span>
+                    <label for="parcelPlatformFilter" style="margin-bottom:0;">Shop:</label>
+                    <select id="parcelPlatformFilter" style="width:auto; padding:8px; margin-bottom:0;">
+                        <option value="all">ทั้งหมด</option>
+                        <option value="Shopee">Shopee</option>
+                        <option value="Lazada">Lazada</option>
+                        <option value="Tiktok">Tiktok</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div style="max-height:400px; overflow-y:auto; border:1px solid #ccc;">
+                    <table id="parcelListTable">
+                        <thead>
+                            <tr style="background-color:#f0f0f0;">
+                                <th class="sortable" data-field="packageCode">Package Code</th>
+                                <th class="sortable" data-field="platformOrderId">Platform Order ID</th>
+                                <th class="sortable" data-field="platform">Platform</th>
+                                <th class="sortable" data-field="status">สถานะ</th>
+                                <th class="sortable" data-field="createdAt">Created At</th>
+                                <th class="sortable" data-field="dueDate">Due Date</th>
+                                <th>Photo</th>
+                            </tr>
+                        </thead>
+                        <tbody id="parcelListTableBody"></tbody>
+                    </table>
+                </div>
+                <p id="noParcelsMessage" class="hidden" style="text-align:center; padding:20px;">ไม่พบข้อมูล</p>
+            </div>
+
             <!-- Admin: Create Order Page -->
             <div id="adminCreateOrderPage" class="container page hidden">
                 <h2>สร้างออเดอร์ใหม่</h2>
