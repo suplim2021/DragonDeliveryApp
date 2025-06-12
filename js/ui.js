@@ -136,6 +136,7 @@ export function showPage(pageId) {
                 if (typeof window.loadDashboardDataGlobal === 'function') {
                     window.loadDashboardDataGlobal(filterSelect ? filterSelect.value : 'all', '', dateFilter ? dateFilter.value : 'today', startInput ? startInput.value : null, endInput ? endInput.value : null);
                 } else { console.error("loadDashboardDataGlobal function not found on window."); }
+                if (typeof window.updateDashboardVisibilityForRoleGlobal === 'function') window.updateDashboardVisibilityForRoleGlobal();
             } else { console.warn("No user logged in, not loading dashboard data from showPage."); }
         } else if (pageId === 'operatorTaskListPage') {
             if (typeof window.loadOperatorPendingTasksGlobal === 'function') window.loadOperatorPendingTasksGlobal();
@@ -162,6 +163,7 @@ export function showPage(pageId) {
                 const startInput = document.getElementById('dateFilterStart');
                 const endInput = document.getElementById('dateFilterEnd');
                 window.loadDashboardDataGlobal('all', '', dateFilter ? dateFilter.value : 'today', startInput ? startInput.value : null, endInput ? endInput.value : null);
+                if (typeof window.updateDashboardVisibilityForRoleGlobal === 'function') window.updateDashboardVisibilityForRoleGlobal();
             }
         } else { console.error("UI: Dashboard fallback page also not found! Critical HTML missing."); }
     }

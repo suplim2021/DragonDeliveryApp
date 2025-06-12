@@ -145,7 +145,8 @@ function startScanForBatch() {
             if (!cam) cam = cameras[cameras.length - 1];
             const camId = cam.id;
             html5QrScannerForBatch.start(
-                { deviceId: { exact: camId } }, { fps: 10, qrbox: { width: 250, height: 250 } },
+                { deviceId: { exact: camId } },
+                { fps: 10, qrbox: { width: 250, height: 250 }, videoConstraints: { focusMode: "continuous", facingMode: "environment" } },
                 async (decodedText, decodedResult) => { // onScanSuccess
             const packageCodeScanned = decodedText.trim();
             console.log(`Scanned for batch: ${packageCodeScanned}`);

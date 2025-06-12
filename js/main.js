@@ -8,7 +8,7 @@ import { initializeCoreDOMElements, showPage, setupRoleBasedUI } from './ui.js';
 import { initializeAdminOrderPageListeners } from './adminOrderPage.js';
 import { initializeAdminItemsPageListeners, loadOrderForAddingItems } from './adminItemsPage.js';
 import { initializeOperatorPackingPageListeners, loadOrderForPacking as operatorLoadOrderForPacking } from './operatorPackingPage.js';
-import { initializeDashboardPageListeners, updateCurrentDateOnDashboard, loadDashboardData, startDashboardRealtime, stopDashboardRealtime } from './dashboardPage.js';
+import { initializeDashboardPageListeners, updateCurrentDateOnDashboard, loadDashboardData, startDashboardRealtime, stopDashboardRealtime, updateDashboardVisibilityForRole } from './dashboardPage.js';
 import { initializeSupervisorPackCheckListeners, loadOrdersForPackCheck } from './supervisorPackCheckPage.js';
 import { initializeOperatorTasksPageListeners, loadOperatorPendingTasks } from './operatorTasksPage.js';
 import { initializeOperatorShippingPageListeners, setupShippingBatchPage } from './operatorShippingPage.js';
@@ -92,6 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Expose page-specific load/setup functions to be callable from ui.js's showPage via window object
     window.updateCurrentDateOnDashboardGlobal = updateCurrentDateOnDashboard;
     window.loadDashboardDataGlobal = loadDashboardData;
+    window.updateDashboardVisibilityForRoleGlobal = updateDashboardVisibilityForRole;
     window.loadOrdersForPackCheckGlobal = loadOrdersForPackCheck;
     window.loadOperatorPendingTasksGlobal = loadOperatorPendingTasks;
     window.setupShippingBatchPageGlobal = setupShippingBatchPage;

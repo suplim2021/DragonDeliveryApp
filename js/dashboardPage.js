@@ -22,7 +22,7 @@ let el_appStatus, el_currentDateDisplay, el_refreshDashboardButton,
     el_logFilterSelect, el_applyLogFilterButton, el_logSearchInput,
     el_ordersTableBody, el_noOrdersMessage,
     el_dueTodayTableBody, el_noDueTodayMessage,
-    el_chartStatsInfo;
+    el_chartStatsInfo, el_chartsContainer;
 
 export function initializeDashboardPageListeners() {
     // Query for elements specific to this page when listeners are set up
@@ -44,6 +44,9 @@ export function initializeDashboardPageListeners() {
     el_dueTodayTableBody = document.getElementById("dueTodayTableBody");
     el_noDueTodayMessage = document.getElementById("noDueTodayMessage");
     el_chartStatsInfo = document.getElementById('chartStatsInfo');
+    el_chartsContainer = document.getElementById('chartsContainer');
+
+    updateDashboardVisibilityForRole();
 
     if (el_refreshDashboardButton) {
         el_refreshDashboardButton.addEventListener('click', () => loadDashboardData(el_logFilterSelect ? el_logFilterSelect.value : 'all', el_logSearchInput ? el_logSearchInput.value.trim() : '', el_dateFilterSelect ? el_dateFilterSelect.value : 'today', el_dateStartInput ? el_dateStartInput.value : null, el_dateEndInput ? el_dateEndInput.value : null));
@@ -114,6 +117,16 @@ export function stopDashboardRealtime() {
     if (dashboardUnsub) {
         dashboardUnsub();
         dashboardUnsub = null;
+    }
+}
+
+export function updateDashboardVisibilityForRole() {
+    if (!el_chartsContainer) return;
+    const role = getCurrentUserRole();
+    if (role === 'operator') {
+        el_chartsContainer.classList.add('hidden');
+    } else {
+        el_chartsContainer.classList.remove('hidden');
     }
 }
 
