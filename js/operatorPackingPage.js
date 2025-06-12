@@ -7,6 +7,7 @@ import { showAppStatus, showToast, formatDateDDMMYYYY, getTimestampForFilename, 
 import { getCurrentUser, getCurrentUserRole } from './auth.js';
 
 let currentOrderKeyForPacking = null;
+let currentOrderPackageCode = null;
 let packingPhotoFiles = [];
 let existingPackingPhotoUrls = [];
 
@@ -56,6 +57,7 @@ export async function loadOrderForPacking(orderKey) {
         return;
     }
     currentOrderKeyForPacking = orderKey;
+    currentOrderPackageCode = null;
     packingPhotoFiles = [];
 
     showAppStatus('กำลังโหลดข้อมูลพัสดุ...', 'info', opPacking_appStatus);
@@ -72,7 +74,8 @@ export async function loadOrderForPacking(orderKey) {
                 return;
             }
 
-            if(opPacking_currentOrderIdSpan) opPacking_currentOrderIdSpan.textContent = orderData.packageCode || orderKey;
+            currentOrderPackageCode = orderData.packageCode || orderKey;
+            if(opPacking_currentOrderIdSpan) opPacking_currentOrderIdSpan.textContent = currentOrderPackageCode;
             if(opPacking_platformSpan) opPacking_platformSpan.textContent = orderData.platform || 'N/A';
             if(opPacking_dueDateSpan) opPacking_dueDateSpan.textContent = formatDateDDMMYYYY(orderData.dueDate);
             
@@ -210,7 +213,8 @@ async function confirmPacking() {
         for (const file of packingPhotoFiles) {
             const ts = getTimestampForFilename();
             const ext = file.name.split('.').pop();
-            const fname = `${currentOrderKeyForPacking}_${ts}_${Math.random().toString(36).substring(2,6)}.${ext}`;
+            const code = currentOrderPackageCode || currentOrderKeyForPacking;
+            const fname = `${code}_${ts}.${ext}`;
             const storagePath = `packingPhotos/${currentOrderKeyForPacking}/${fname}`;
             const imageRef = storageRefFirebase(storage, storagePath);
             const resized = await resizeImageFileIfNeeded(file, 1000);
