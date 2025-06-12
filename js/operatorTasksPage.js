@@ -24,6 +24,9 @@ export function initializeOperatorTasksPageListeners() {
     if (uiElements.stopScanForPackingButton) {
         uiElements.stopScanForPackingButton.addEventListener('click', stopScanForPacking);
     }
+    if (uiElements.selectAllPendingOrdersButton) {
+        uiElements.selectAllPendingOrdersButton.addEventListener('click', selectAllPendingOrders);
+    }
 }
 
 export async function loadOperatorPendingTasks() {
@@ -185,6 +188,17 @@ function handleOrderSelectChange(e) {
     } else {
         selectedOrdersForPick.delete(key);
     }
+    updatePickListSummary();
+}
+
+function selectAllPendingOrders() {
+    if (!uiElements.operatorOrderListContainer) return;
+    uiElements.operatorOrderListContainer.querySelectorAll('input[type="checkbox"][data-orderkey]').forEach(cb => {
+        if (!cb.checked) {
+            cb.checked = true;
+            selectedOrdersForPick.add(cb.dataset.orderkey);
+        }
+    });
     updatePickListSummary();
 }
 

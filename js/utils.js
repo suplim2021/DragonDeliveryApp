@@ -237,6 +237,9 @@ export function resizeImageFileIfNeeded(file, maxDim = 1000) {
 }
 
 // ----- Lightbox utility -----
+let albumUrls = [];
+let albumIndex = 0;
+
 export function initializeImageLightbox() {
     let overlay = document.getElementById('lightboxOverlay');
     if (!overlay) {
@@ -245,21 +248,69 @@ export function initializeImageLightbox() {
         overlay.className = 'lightbox-overlay hidden';
         const img = document.createElement('img');
         img.id = 'lightboxImage';
+        const prev = document.createElement('button');
+        prev.id = 'lightboxPrev';
+        prev.className = 'lightbox-nav';
+        prev.textContent = '<';
+        const next = document.createElement('button');
+        next.id = 'lightboxNext';
+        next.className = 'lightbox-nav';
+        next.textContent = '>';
         overlay.appendChild(img);
+        overlay.appendChild(prev);
+        overlay.appendChild(next);
         document.body.appendChild(overlay);
     }
-    overlay.addEventListener('click', () => {
-        overlay.classList.add('hidden');
-        const img = overlay.querySelector('img');
-        if (img) img.src = '#';
+
+    const imgElem = overlay.querySelector('#lightboxImage');
+    const prevBtn = overlay.querySelector('#lightboxPrev');
+    const nextBtn = overlay.querySelector('#lightboxNext');
+
+    const showCurrent = () => {
+        if (!albumUrls.length) return;
+        if (albumIndex < 0) albumIndex = 0;
+        if (albumIndex >= albumUrls.length) albumIndex = albumUrls.length - 1;
+        if (imgElem) imgElem.src = albumUrls[albumIndex];
+    };
+
+    prevBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        albumIndex = (albumIndex - 1 + albumUrls.length) % albumUrls.length;
+        showCurrent();
     });
+
+    nextBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        albumIndex = (albumIndex + 1) % albumUrls.length;
+        showCurrent();
+    });
+
+    overlay.addEventListener('click', e => {
+        if (e.target === overlay) {
+            overlay.classList.add('hidden');
+            if (imgElem) imgElem.src = '#';
+            albumUrls = [];
+        }
+    });
+
     document.body.addEventListener('click', e => {
         const target = e.target;
         if (target && target.classList.contains('lightbox-thumb')) {
             const src = target.dataset.full || target.src;
-            const img = overlay.querySelector('img');
-            if (img) img.src = src;
+            albumUrls = [src];
+            albumIndex = 0;
+            showCurrent();
             overlay.classList.remove('hidden');
         }
     });
+}
+
+export function showImageAlbum(urls, startIndex = 0) {
+    albumUrls = Array.isArray(urls) ? urls : [];
+    albumIndex = startIndex;
+    const overlay = document.getElementById('lightboxOverlay');
+    const imgElem = document.getElementById('lightboxImage');
+    if (!overlay || !imgElem || albumUrls.length === 0) return;
+    imgElem.src = albumUrls[albumIndex];
+    overlay.classList.remove('hidden');
 }

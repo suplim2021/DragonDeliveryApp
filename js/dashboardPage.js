@@ -508,13 +508,6 @@ function renderCharts(orders, timeFilter = 'today', startDateStr = null, endDate
             if(dailyData[sd]) dailyData[sd].shipped++;
         }
     });
-    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate()+1)) {
-        dailyData[d.toISOString().slice(0,10)] = { created: 0, shipped: 0 };
-    }
-    orders.forEach(o => {
-        if (o.createdAt && typeof o.createdAt === 'number') { const cd = new Date(o.createdAt).toISOString().slice(0, 10); if (dailyData[cd]) dailyData[cd].created++; }
-        if ((o.status === "Shipped" || o.status === "Shipment Approved") && o.shipmentInfo?.shippedAt_actual && typeof o.shipmentInfo.shippedAt_actual === 'number') { const sd = new Date(o.shipmentInfo.shippedAt_actual).toISOString().slice(0, 10); if (dailyData[sd]) dailyData[sd].shipped++; }
-    });
     const dailyLabels = Object.keys(dailyData).map(dStr => new Date(dStr).toLocaleDateString('th-TH', { day:'numeric', month:'short'}));
     const dailyCreatedCounts = Object.values(dailyData).map(data => data.created);
     const dailyShippedCounts = Object.values(dailyData).map(data => data.shipped);
