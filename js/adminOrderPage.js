@@ -204,7 +204,7 @@ async function stopPlatformIdScan() {
 async function saveInitialOrder() {
     const currentUser = getCurrentUser();
     const currentUserRole = getCurrentUserRole();
-    if (!currentUser || currentUserRole !== 'administrator') {
+    if (!currentUser || (currentUserRole !== 'administrator' && currentUserRole !== 'supervisor')) {
         showAppStatus("คุณไม่มีสิทธิ์", 'error', adminOrderAppStatus);
         return;
     }

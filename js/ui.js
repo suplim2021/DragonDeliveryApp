@@ -32,6 +32,13 @@ export function initializeCoreDOMElements() { // Renamed for clarity
     uiElements.pickListSummaryContainer = document.getElementById('pickListSummaryContainer');
     uiElements.pickListSummaryTableBody = document.querySelector('#pickListSummaryTable tbody');
 
+    uiElements.parcelTableBody = document.getElementById('parcelListTableBody');
+    uiElements.noParcelsMessage = document.getElementById('noParcelsMessage');
+    uiElements.parcelDateFilter = document.getElementById('parcelDateFilter');
+    uiElements.parcelDateStart = document.getElementById('parcelDateStart');
+    uiElements.parcelDateEnd = document.getElementById('parcelDateEnd');
+    uiElements.parcelPlatformFilter = document.getElementById('parcelPlatformFilter');
+
     uiElements.createNewBatchButton = document.getElementById('createNewBatchButton');
     uiElements.startScanForBatchButton = document.getElementById('startScanForBatchButton');
     uiElements.stopScanForBatchButton = document.getElementById('stopScanForBatchButton');
@@ -147,6 +154,15 @@ export function showPage(pageId) {
         } else if (pageId === 'operatorShippingBatchPage') {
             if (typeof window.setupShippingBatchPageGlobal === 'function') window.setupShippingBatchPageGlobal();
             else { console.error("setupShippingBatchPageGlobal function not found on window.");}
+            if (typeof window.updateBatchIdVisibilityForRoleGlobal === 'function') window.updateBatchIdVisibilityForRoleGlobal();
+        } else if (pageId === 'parcelListPage') {
+            if (typeof window.loadParcelListGlobal === 'function') {
+                const df = document.getElementById('parcelDateFilter');
+                const ds = document.getElementById('parcelDateStart');
+                const de = document.getElementById('parcelDateEnd');
+                const pf = document.getElementById('parcelPlatformFilter');
+                window.loadParcelListGlobal(df ? df.value : 'last7', ds ? ds.value : null, de ? de.value : null, pf ? pf.value : 'all');
+            }
         } else if (pageId === 'shippedOrdersPage') {
             if (typeof window.loadShippedOrdersGlobal === 'function') window.loadShippedOrdersGlobal();
             else { console.error("loadShippedOrdersGlobal function not found on window."); }
@@ -185,6 +201,7 @@ export function setupRoleBasedUI(currentUserRoleForNav) {
         { pageId: 'adminCreateOrderPage', icon: 'add', label: 'สร้างออเดอร์', roles: ['administrator','supervisor'] },
         { pageId: 'operatorTaskListPage', icon: 'inventory_2', label: 'รายการรอแพ็ก', roles: ['administrator','operator','supervisor'] },
         { pageId: 'supervisorPackCheckListPage', icon: 'checklist', label: 'รอตรวจแพ็ก', roles: ['administrator','supervisor'] },
+        { pageId: 'parcelListPage', icon: 'list', label: 'พัสดุทั้งหมด', roles: ['administrator','supervisor'] },
         { pageId: 'operatorShippingBatchPage', icon: 'local_shipping', label: 'เตรียมส่งของ', roles: ['administrator','operator','supervisor'] },
         { pageId: 'shippedOrdersPage', icon: 'check_circle', label: 'ส่งแล้ว', roles: ['administrator','operator','supervisor'] },
     ];
