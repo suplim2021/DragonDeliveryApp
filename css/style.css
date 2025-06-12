@@ -242,23 +242,14 @@ tbody tr:hover { background-color: #f1f8ff; }
 
 /* Summary cards container responsive styles */
 #summaryCardsContainer {
-    display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: 15px;
     margin-bottom: 20px;
 }
-#summaryCardsContainer::-webkit-scrollbar {
-    height: 8px;
-}
-#summaryCardsContainer::-webkit-scrollbar-thumb {
-    background-color: rgba(0,0,0,0.3);
-    border-radius: 4px;
-}
 @media (min-width: 768px) {
     #summaryCardsContainer {
-        flex-wrap: wrap;
-        overflow-x: visible;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
         justify-content: center;
     }
 }
