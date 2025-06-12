@@ -1,9 +1,10 @@
 import { database } from './config.js';
 import { ref, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { getCurrentUserRole } from './auth.js';
-import { formatDateTimeDDMMYYYYHHMM, formatDateDDMMYYYY, translateStatusToThai } from './utils.js';
+import { openImageAlbum, showAppStatus, formatDateTimeDDMMYYYYHHMM, formatDateDDMMYYYY, translateStatusToThai } from './utils.js';
+import { showPage } from './ui.js';
 
-let el_tableBody, el_noMsg, el_dateFilterSelect, el_startInput, el_endInput, el_applyDateButton, el_platformFilter;
+let el_tableBody, el_noMsg, el_dateFilterSelect, el_startInput, el_endInput, el_applyDateButton, el_platformFilter, backBtn;
 let currentSort = { column: 'createdAt', dir: 'desc' };
 
 export function initializeAdminParcelListPageListeners() {
@@ -14,6 +15,7 @@ export function initializeAdminParcelListPageListeners() {
     el_endInput = document.getElementById('parcelDateEnd');
     el_applyDateButton = document.getElementById('applyParcelDateFilterButton');
     el_platformFilter = document.getElementById('parcelPlatformFilter');
+    backBtn = document.getElementById('backToParcelListButton');
 
     if (el_dateFilterSelect) {
         el_dateFilterSelect.addEventListener('change', () => {
@@ -50,6 +52,10 @@ export function initializeAdminParcelListPageListeners() {
             loadParcelList(el_dateFilterSelect ? el_dateFilterSelect.value : 'today', el_startInput ? el_startInput.value : null, el_endInput ? el_endInput.value : null, el_platformFilter ? el_platformFilter.value : 'all');
         });
     });
+
+    if (backBtn) {
+        backBtn.addEventListener('click', () => showPage('parcelListPage'));
+    }
 }
 
 function applyTimeFilter(orders, filterVal, startDateStr, endDateStr) {
@@ -130,20 +136,60 @@ export async function loadParcelList(timeFilter = 'today', startDate = null, end
             tr.insertCell().textContent = formatDateTimeDDMMYYYYHHMM(o.createdAt);
             tr.insertCell().textContent = formatDateDDMMYYYY(o.dueDate);
             const photoCell = tr.insertCell();
-            const url = o.packingInfo?.packingPhotoUrls ? o.packingInfo.packingPhotoUrls[0] : null;
-            if (url) {
-                const img = document.createElement('img');
-                img.src = url;
-                img.classList.add('lightbox-thumb');
-                img.style.maxWidth = '60px';
-                photoCell.appendChild(img);
-            } else {
-                photoCell.textContent = '-';
-            }
+            const photoBtn = document.createElement('button');
+            photoBtn.type = 'button';
+            photoBtn.textContent = 'รูป';
+            photoBtn.style.width = 'auto';
+            const urls = o.packingInfo?.packingPhotoUrls || [];
+            if (urls.length === 0) photoBtn.disabled = true;
+            photoBtn.addEventListener('click', e => { e.stopPropagation(); openImageAlbum(urls); });
+            photoCell.appendChild(photoBtn);
+            tr.dataset.orderkey = o.key;
+            tr.addEventListener('click', () => loadParcelDetail(o.key));
         });
     } catch (err) {
         console.error('loadParcelList error', err);
         if (el_noMsg) el_noMsg.textContent = 'เกิดข้อผิดพลาดในการโหลด';
         if (el_noMsg) el_noMsg.classList.remove('hidden');
+    }
+}
+
+export async function loadParcelDetail(orderKey) {
+    const appStatus = document.getElementById('appStatus');
+    const infoDiv = document.getElementById('parcelDetailInfo');
+    const codeSpan = document.getElementById('parcelDetailCode');
+    const photosDiv = document.getElementById('parcelDetailPhotos');
+    if (!infoDiv || !codeSpan || !photosDiv) return;
+    showAppStatus('กำลังโหลดรายละเอียด...', 'info', appStatus);
+    try {
+        const snap = await get(ref(database, 'orders/' + orderKey));
+        photosDiv.innerHTML = '';
+        if (snap.exists()) {
+            const data = snap.val();
+            codeSpan.textContent = data.packageCode || orderKey;
+            infoDiv.innerHTML = `
+                <p><strong>Platform:</strong> ${data.platform || 'N/A'}</p>
+                <p><strong>Status:</strong> ${translateStatusToThai(data.status, !!data.shipmentInfo?.adminVerifiedBy)}</p>
+                <p><strong>Created:</strong> ${formatDateTimeDDMMYYYYHHMM(data.createdAt)}</p>
+                <p><strong>Due Date:</strong> ${formatDateDDMMYYYY(data.dueDate)}</p>
+            `;
+            if (Array.isArray(data.packingInfo?.packingPhotoUrls)) {
+                data.packingInfo.packingPhotoUrls.forEach(u => {
+                    const img = document.createElement('img');
+                    img.src = u;
+                    img.classList.add('lightbox-thumb');
+                    img.style.maxWidth = '100px';
+                    img.style.margin = '5px';
+                    photosDiv.appendChild(img);
+                });
+            }
+            showPage('parcelDetailPage');
+            showAppStatus('โหลดรายละเอียดแล้ว', 'success', appStatus);
+        } else {
+            showAppStatus('ไม่พบข้อมูลพัสดุ', 'error', appStatus);
+        }
+    } catch (err) {
+        console.error('loadParcelDetail error', err);
+        showAppStatus('เกิดข้อผิดพลาด', 'error', appStatus);
     }
 }

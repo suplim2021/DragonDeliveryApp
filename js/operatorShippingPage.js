@@ -111,10 +111,10 @@ async function createOrSelectBatch() {
     }
     currentBatchCourier = courier;
 
-    // For simplicity, we'll always create a new batch ID.
-    // In a real app, you might want to let users resume an existing open batch.
-    const newBatchRef = push(ref(database, 'shipmentBatches'));
-    currentActiveBatchId = newBatchRef.key;
+    // For simplicity, we'll always create a new batch ID based on timestamp.
+    const newBatchId = getTimestampForFilename();
+    const newBatchRef = ref(database, `shipmentBatches/${newBatchId}`);
+    currentActiveBatchId = newBatchId;
     itemsInCurrentBatch = {}; // Reset items for the new batch
 
     const batchData = {
@@ -426,8 +426,9 @@ async function finalizeShipment() {
 
     try {
         if (!currentActiveBatchId) {
-            const newBatchRef = push(ref(database, 'shipmentBatches'));
-            currentActiveBatchId = newBatchRef.key;
+            const newBatchId = getTimestampForFilename();
+            const newBatchRef = ref(database, `shipmentBatches/${newBatchId}`);
+            currentActiveBatchId = newBatchId;
         }
 
         // 1. Upload group photo

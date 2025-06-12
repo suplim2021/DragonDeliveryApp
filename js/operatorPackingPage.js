@@ -7,6 +7,7 @@ import { showAppStatus, showToast, formatDateDDMMYYYY, getTimestampForFilename, 
 import { getCurrentUser, getCurrentUserRole } from './auth.js';
 
 let currentOrderKeyForPacking = null;
+let currentPackageCodeForPacking = null;
 let packingPhotoFiles = [];
 let existingPackingPhotoUrls = [];
 
@@ -56,6 +57,7 @@ export async function loadOrderForPacking(orderKey) {
         return;
     }
     currentOrderKeyForPacking = orderKey;
+    currentPackageCodeForPacking = null;
     packingPhotoFiles = [];
 
     showAppStatus('กำลังโหลดข้อมูลพัสดุ...', 'info', opPacking_appStatus);
@@ -65,6 +67,7 @@ export async function loadOrderForPacking(orderKey) {
         const snapshot = await get(orderRef);
         if (snapshot.exists()) {
             const orderData = snapshot.val();
+            currentPackageCodeForPacking = orderData.packageCode || orderKey;
             if (orderData.status !== "Ready to Pack" && orderData.status !== "Pack Rejected") {
                 showToast(`พัสดุนี้ไม่พร้อมสำหรับการแพ็ก (สถานะ: ${orderData.status})`, "error");
                 showAppStatus(`พัสดุสถานะ: ${orderData.status}`, 'info', opPacking_appStatus);
@@ -210,7 +213,7 @@ async function confirmPacking() {
         for (const file of packingPhotoFiles) {
             const ts = getTimestampForFilename();
             const ext = file.name.split('.').pop();
-            const fname = `${currentOrderKeyForPacking}_${ts}_${Math.random().toString(36).substring(2,6)}.${ext}`;
+            const fname = `${currentPackageCodeForPacking}_${ts}.${ext}`;
             const storagePath = `packingPhotos/${currentOrderKeyForPacking}/${fname}`;
             const imageRef = storageRefFirebase(storage, storagePath);
             const resized = await resizeImageFileIfNeeded(file, 1000);

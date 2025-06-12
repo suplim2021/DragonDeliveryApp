@@ -263,3 +263,31 @@ export function initializeImageLightbox() {
         }
     });
 }
+
+export function openImageAlbum(urls = []) {
+    if (!urls || urls.length === 0) return;
+    let overlay = document.getElementById('lightboxOverlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'lightboxOverlay';
+        overlay.className = 'lightbox-overlay hidden';
+        document.body.appendChild(overlay);
+    }
+    overlay.innerHTML = '';
+    overlay.addEventListener('click', () => { overlay.classList.add('hidden'); overlay.innerHTML = ''; }, { once: true });
+    const container = document.createElement('div');
+    container.style.display = 'flex';
+    container.style.flexWrap = 'wrap';
+    container.style.gap = '10px';
+    container.style.justifyContent = 'center';
+    overlay.appendChild(container);
+    urls.forEach(u => {
+        const img = document.createElement('img');
+        img.src = u;
+        img.style.maxWidth = '90%';
+        img.style.maxHeight = '90vh';
+        img.style.margin = '5px';
+        container.appendChild(img);
+    });
+    overlay.classList.remove('hidden');
+}
