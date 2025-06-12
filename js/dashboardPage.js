@@ -496,15 +496,15 @@ function renderCharts(orders, timeFilter = 'today', startDateStr = null, endDate
     const startDate = new Date(startTs); startDate.setHours(0,0,0,0);
     const endDate = new Date(endTs); endDate.setHours(0,0,0,0);
     for(let d=new Date(startDate); d<=endDate; d.setDate(d.getDate()+1)){
-        dailyData[d.toISOString().slice(0,10)] = {created:0, shipped:0};
+        dailyData[formatDateYYYYMMDD(d)] = {created:0, shipped:0};
     }
     orders.forEach(o=>{
         if(o.createdAt && typeof o.createdAt==='number'){
-            const cd=new Date(o.createdAt).toISOString().slice(0,10);
+            const cd=formatDateYYYYMMDD(o.createdAt);
             if(dailyData[cd]) dailyData[cd].created++;
         }
         if((o.status==='Shipped'||o.status==='Shipment Approved') && o.shipmentInfo?.shippedAt_actual && typeof o.shipmentInfo.shippedAt_actual==='number'){
-            const sd=new Date(o.shipmentInfo.shippedAt_actual).toISOString().slice(0,10);
+            const sd=formatDateYYYYMMDD(o.shipmentInfo.shippedAt_actual);
             if(dailyData[sd]) dailyData[sd].shipped++;
         }
     });
