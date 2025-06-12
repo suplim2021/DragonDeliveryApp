@@ -21,7 +21,8 @@ let el_appStatus, el_currentDateDisplay, el_refreshDashboardButton,
     el_dateFilterSelect, el_dateStartInput, el_dateEndInput, el_applyDateFilterButton,
     el_logFilterSelect, el_applyLogFilterButton, el_logSearchInput,
     el_ordersTableBody, el_noOrdersMessage,
-    el_dueTodayTableBody, el_noDueTodayMessage;
+    el_dueTodayTableBody, el_noDueTodayMessage,
+    el_chartStatsInfo;
 
 export function initializeDashboardPageListeners() {
     // Query for elements specific to this page when listeners are set up
@@ -42,6 +43,7 @@ export function initializeDashboardPageListeners() {
     el_noOrdersMessage = document.getElementById('noOrdersMessage');
     el_dueTodayTableBody = document.getElementById("dueTodayTableBody");
     el_noDueTodayMessage = document.getElementById("noDueTodayMessage");
+    el_chartStatsInfo = document.getElementById('chartStatsInfo');
 
     if (el_refreshDashboardButton) {
         el_refreshDashboardButton.addEventListener('click', () => loadDashboardData(el_logFilterSelect ? el_logFilterSelect.value : 'all', el_logSearchInput ? el_logSearchInput.value.trim() : '', el_dateFilterSelect ? el_dateFilterSelect.value : 'today', el_dateStartInput ? el_dateStartInput.value : null, el_dateEndInput ? el_dateEndInput.value : null));
@@ -147,7 +149,7 @@ export async function loadDashboardData(filterStatus = 'all', searchCode = '', t
         }
 
         const statsOrders = applyTimeFilter(allOrders, timeFilter, startDate, endDate);
-        updateSummaryCards(statsOrders);
+        updateSummaryCards(allOrders);
         updateDueTodayTable(allOrders);
         updateOrdersLogTable(allOrders, filterStatus, searchCode);
         renderCharts(statsOrders);
@@ -208,31 +210,21 @@ function applyTimeFilter(orders, filterVal, startDateStr, endDateStr) {
 function updateSummaryCards(orders) {
     if (!el_summaryCardsContainer) return;
     el_summaryCardsContainer.innerHTML = '';
-    const total = orders.length;
     const readyToPack = orders.filter(o => o.status === 'Ready to Pack').length;
     const pendingCheck = orders.filter(o => o.status === 'Pending Supervisor Pack Check').length;
     const readyToShip = orders.filter(o => (o.status === 'Ready for Shipment' || o.status === 'Pack Approved')).length;
-    const shipped = orders.filter(o => (o.status === 'Shipped' || o.status === 'Shipment Approved') && !o.shipmentInfo?.adminVerifiedBy).length;
-    const completed = orders.filter(o => (
-        o.status === 'Shipment Approved' ||
-        (o.status === 'Shipped' && o.shipmentInfo?.adminVerifiedBy)
-    )).length;
-    const shippedAwaitingVerify = shipped;
+    const shipped = orders.filter(o => o.status === 'Shipped' || o.status === 'Shipment Approved').length;
 
-    const todayStr = new Date().toISOString().slice(0, 10);
-    const todayOrders = orders.filter(o => o.createdAt && typeof o.createdAt === 'number' && new Date(o.createdAt).toISOString().slice(0, 10) === todayStr).length;
+    createSummaryCard('รายการรอแพ็ค', readyToPack, '', 'list_alt', 'operatorTaskListPage');
+    createSummaryCard('รอตรวจเช็ค', pendingCheck, '', 'fact_check', 'supervisorPackCheckListPage');
+    createSummaryCard('เตรียมส่งของ', readyToShip, '', 'local_shipping', 'operatorShippingBatchPage');
+    createSummaryCard('จัดส่งแล้ว', shipped, '', 'check_circle', 'shippedOrdersPage');
 
-    createSummaryCard('พัสดุทั้งหมด', total, `+${todayOrders} วันนี้`, 'inventory_2');
-    createSummaryCard('รายการรอแพ็ก', readyToPack, total > 0 ? `${Math.round((readyToPack/total)*100)}%` : '0%', 'list_alt', 'operatorTaskListPage');
-    createSummaryCard('รอตรวจเช็ค', pendingCheck, total > 0 ? `${Math.round((pendingCheck/total)*100)}%` : '0%', 'fact_check', 'supervisorPackCheckListPage');
-    createSummaryCard('เตรียมส่ง', readyToShip, total > 0 ? `${Math.round((readyToShip/total)*100)}%` : '0%', 'local_shipping', 'operatorShippingBatchPage');
-    createSummaryCard('ส่งแล้ว', shipped, total > 0 ? `${Math.round((shipped/total)*100)}%` : '0%', 'check_circle', 'shippedOrdersPage');
-    createSummaryCard('เสร็จสิ้น', completed, total > 0 ? `${Math.round((completed/total)*100)}%` : '0%', 'done_all');
     if (typeof window.setNavBadgeCount === 'function') {
         window.setNavBadgeCount('operatorTaskListPage', readyToPack);
         window.setNavBadgeCount('supervisorPackCheckListPage', pendingCheck);
         window.setNavBadgeCount('operatorShippingBatchPage', readyToShip);
-        window.setNavBadgeCount('shippedOrdersPage', shippedAwaitingVerify);
+        window.setNavBadgeCount('shippedOrdersPage', shipped);
     }
 }
 
@@ -244,7 +236,8 @@ function createSummaryCard(title, value, subValue, icon, pageId = null) {
         card.classList.add('clickable');
         card.addEventListener('click', () => showPage(pageId));
     }
-    card.innerHTML = `<div class="summary-card-icon material-icons">${icon}</div><h4 class="summary-card-value">${value}</h4><p class="summary-card-title">${title}</p><p class="summary-card-subvalue">${subValue}</p>`;
+    const subHTML = subValue ? `<p class="summary-card-subvalue">${subValue}</p>` : '';
+    card.innerHTML = `<div class="summary-card-icon material-icons">${icon}</div><h4 class="summary-card-value">${value}</h4><p class="summary-card-title">${title}</p>${subHTML}`;
     el_summaryCardsContainer.appendChild(card);
 }
 
@@ -453,27 +446,57 @@ function renderCharts(orders) {
         if (platformChartInstance) { platformChartInstance.destroy(); platformChartInstance = null; }
         if(el_dailyStatsCanvas) el_dailyStatsCanvas.getContext('2d').clearRect(0,0,el_dailyStatsCanvas.width, el_dailyStatsCanvas.height);
         if(el_platformStatsCanvas) el_platformStatsCanvas.getContext('2d').clearRect(0,0,el_platformStatsCanvas.width, el_platformStatsCanvas.height);
+        if (el_chartStatsInfo) el_chartStatsInfo.textContent = '';
         return;
     }
 
     // Daily Stats
-    const dailyData = {}; 
-    for (let i = 6; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); dailyData[d.toISOString().slice(0, 10)] = { created: 0, shipped: 0 }; }
+    const dailyData = {};
+    let minTs = Infinity, maxTs = -Infinity;
+    orders.forEach(o => {
+        if (o.createdAt && typeof o.createdAt === 'number') {
+            if (o.createdAt < minTs) minTs = o.createdAt;
+            if (o.createdAt > maxTs) maxTs = o.createdAt;
+        }
+        const shipTs = o.shipmentInfo?.shippedAt_actual;
+        if ((o.status === 'Shipped' || o.status === 'Shipment Approved') && typeof shipTs === 'number') {
+            if (shipTs < minTs) minTs = shipTs;
+            if (shipTs > maxTs) maxTs = shipTs;
+        }
+    });
+    if (minTs === Infinity || maxTs === -Infinity) {
+        const d = new Date();
+        minTs = d.setDate(d.getDate() - 6);
+        maxTs = Date.now();
+    }
+    const startDate = new Date(minTs); startDate.setHours(0,0,0,0);
+    const endDate = new Date(maxTs); endDate.setHours(0,0,0,0);
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate()+1)) {
+        dailyData[d.toISOString().slice(0,10)] = { created: 0, shipped: 0 };
+    }
     orders.forEach(o => {
         if (o.createdAt && typeof o.createdAt === 'number') { const cd = new Date(o.createdAt).toISOString().slice(0, 10); if (dailyData[cd]) dailyData[cd].created++; }
-        if ((o.status === "Shipped" || o.status === "Shipment Approved") && o.shipmentInfo?.shippedAt_actual && typeof o.shipmentInfo.shippedAt_actual === 'number') { const sd = new Date(o.shipmentInfo.shippedAt_actual).toISOString().slice(0, 10); if (dailyData[sd]) dailyData[sd].shipped++;}
+        if ((o.status === "Shipped" || o.status === "Shipment Approved") && o.shipmentInfo?.shippedAt_actual && typeof o.shipmentInfo.shippedAt_actual === 'number') { const sd = new Date(o.shipmentInfo.shippedAt_actual).toISOString().slice(0, 10); if (dailyData[sd]) dailyData[sd].shipped++; }
     });
     const dailyLabels = Object.keys(dailyData).map(dStr => new Date(dStr).toLocaleDateString('th-TH', { day:'numeric', month:'short'}));
     const dailyCreatedCounts = Object.values(dailyData).map(data => data.created);
     const dailyShippedCounts = Object.values(dailyData).map(data => data.shipped);
 
     if (dailyChartInstance) dailyChartInstance.destroy();
-    dailyChartInstance = new Chart(el_dailyStatsCanvas, { 
+    dailyChartInstance = new Chart(el_dailyStatsCanvas, {
         type: 'bar', data: { labels: dailyLabels, datasets: [
             { label: 'สร้างใหม่', data: dailyCreatedCounts, backgroundColor: 'rgba(54, 162, 235, 0.7)', stack: 'Stack 0',},
             { label: 'ส่งแล้ว', data: dailyShippedCounts, backgroundColor: 'rgba(75, 192, 192, 0.7)', stack: 'Stack 0',}
         ]}, options: { scales: { y: { beginAtZero: true, stacked: true } , x: {stacked: true}}, responsive: true, maintainAspectRatio: false }
     });
+
+    const completedCount = orders.filter(o => (
+        o.status === 'Shipment Approved' ||
+        (o.status === 'Shipped' && o.shipmentInfo?.adminVerifiedBy)
+    )).length;
+    if (el_chartStatsInfo) {
+        el_chartStatsInfo.innerHTML = `<span style="color:#2980b9;">พัสดุทั้งหมด ${orders.length}</span> <span style="margin-left:10px;color:#27ae60;">เสร็จสิ้น ${completedCount}</span>`;
+    }
 
     // Platform Stats
     const platformCounts = {}; orders.forEach(o => {
