@@ -1,7 +1,7 @@
 // js/operatorShippingPage.js
 import { showPage, uiElements } from './ui.js';
 import { database, storage, auth } from './config.js';
-import { ref, set, get, update, serverTimestamp, push, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { ref, set, get, update, serverTimestamp, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { ref as storageRefFirebase, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js"; // Renamed to avoid conflict
 import { showAppStatus, showToast, beepSuccess, beepError, getTimestampForFilename, resizeImageFileIfNeeded } from './utils.js';
 import { getCurrentUser, getCurrentUserRole } from './auth.js';
@@ -111,11 +111,10 @@ async function createOrSelectBatch() {
     }
     currentBatchCourier = courier;
 
-    // For simplicity, we'll always create a new batch ID.
-    // In a real app, you might want to let users resume an existing open batch.
-    const newBatchRef = push(ref(database, 'shipmentBatches'));
-    currentActiveBatchId = newBatchRef.key;
+    // Create batch ID based on timestamp to make it human readable
+    currentActiveBatchId = getTimestampForFilename();
     itemsInCurrentBatch = {}; // Reset items for the new batch
+    const newBatchRef = ref(database, `shipmentBatches/${currentActiveBatchId}`);
 
     const batchData = {
         batchId: currentActiveBatchId,
@@ -426,8 +425,7 @@ async function finalizeShipment() {
 
     try {
         if (!currentActiveBatchId) {
-            const newBatchRef = push(ref(database, 'shipmentBatches'));
-            currentActiveBatchId = newBatchRef.key;
+            currentActiveBatchId = getTimestampForFilename();
         }
 
         // 1. Upload group photo
