@@ -148,11 +148,17 @@ async function loadIndividualOrderForSupervisorCheck(orderKey) {
             }
 
             uiElements.checkOrderPackingPhotoContainer.innerHTML = '';
-            const urls = orderData.packingInfo?.packingPhotoUrls || (orderData.packingInfo?.packingPhotoUrl ? [orderData.packingInfo.packingPhotoUrl] : []);
-            urls.forEach(url => {
+            const urls = orderData.packingInfo?.packingPhotoUrls ||
+                (orderData.packingInfo?.packingPhotoUrl ? [orderData.packingInfo.packingPhotoUrl] : []);
+            urls.forEach((url, idx) => {
                 const img = document.createElement('img');
                 img.src = url;
                 img.classList.add('lightbox-thumb');
+                img.addEventListener('click', () => {
+                    if (typeof window.showImageAlbum === 'function') {
+                        window.showImageAlbum(urls, idx);
+                    }
+                });
                 uiElements.checkOrderPackingPhotoContainer.appendChild(img);
             });
             uiElements.checkOrderOperatorNotesDisplay.textContent = orderData.packingInfo?.operatorNotes || 'ไม่มีหมายเหตุจาก Operator';

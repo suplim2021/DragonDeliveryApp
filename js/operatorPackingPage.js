@@ -58,6 +58,13 @@ export async function loadOrderForPacking(orderKey) {
     }
     currentOrderKeyForPacking = orderKey;
     currentOrderPackageCode = null;
+    // Revoke any existing preview URLs before clearing
+    packingPhotoFiles.forEach(f => {
+        if (f.previewUrl) {
+            URL.revokeObjectURL(f.previewUrl);
+            delete f.previewUrl;
+        }
+    });
     packingPhotoFiles = [];
 
     showAppStatus('กำลังโหลดข้อมูลพัสดุ...', 'info', opPacking_appStatus);
@@ -145,6 +152,13 @@ function handlePackingPhotoSelect(event) {
 function displayPackingPhotoPreviews() {
     if (!opPacking_photoPreviewContainer) return;
     opPacking_photoPreviewContainer.innerHTML = '';
+    // Ensure preview URLs exist for files and gather all URLs for album view
+    packingPhotoFiles.forEach(f => {
+        if (!f.previewUrl) {
+            f.previewUrl = URL.createObjectURL(f);
+        }
+    });
+    const urls = [...existingPackingPhotoUrls, ...packingPhotoFiles.map(f => f.previewUrl)];
 
     existingPackingPhotoUrls.forEach((url, idx) => {
         const wrapper = document.createElement('div');
@@ -153,6 +167,11 @@ function displayPackingPhotoPreviews() {
         const img = document.createElement('img');
         img.src = url;
         img.classList.add('lightbox-thumb');
+        img.addEventListener('click', () => {
+            if (typeof window.showImageAlbum === 'function') {
+                window.showImageAlbum(urls, idx);
+            }
+        });
         wrapper.appendChild(img);
 
         const removeBtn = document.createElement('button');
@@ -173,9 +192,13 @@ function displayPackingPhotoPreviews() {
         wrapper.className = 'photo-thumb';
 
         const img = document.createElement('img');
-        img.src = URL.createObjectURL(file);
+        img.src = file.previewUrl;
         img.classList.add('lightbox-thumb');
-        img.onload = () => URL.revokeObjectURL(img.src);
+        img.addEventListener('click', () => {
+            if (typeof window.showImageAlbum === 'function') {
+                window.showImageAlbum(urls, existingPackingPhotoUrls.length + idx);
+            }
+        });
         wrapper.appendChild(img);
 
         const removeBtn = document.createElement('button');
@@ -183,7 +206,10 @@ function displayPackingPhotoPreviews() {
         removeBtn.className = 'remove-photo-btn';
         removeBtn.textContent = '×';
         removeBtn.addEventListener('click', () => {
-            packingPhotoFiles.splice(idx, 1);
+            const removed = packingPhotoFiles.splice(idx, 1)[0];
+            if (removed && removed.previewUrl) {
+                URL.revokeObjectURL(removed.previewUrl);
+            }
             displayPackingPhotoPreviews();
         });
         wrapper.appendChild(removeBtn);
@@ -232,6 +258,12 @@ async function confirmPacking() {
             packingInfo: packingInfoData, status: "Pending Supervisor Pack Check", lastUpdatedAt: serverTimestamp()
         });
         showAppStatus("บันทึกการแพ็กและอัปโหลดรูปสำเร็จ!", "success", opPacking_appStatus);
+        packingPhotoFiles.forEach(f => {
+            if (f.previewUrl) {
+                URL.revokeObjectURL(f.previewUrl);
+            }
+        });
+        packingPhotoFiles = [];
         showPage('operatorTaskListPage');
     } catch (error) {
         console.error("Error confirming packing:", error);
