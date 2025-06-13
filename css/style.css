@@ -271,6 +271,8 @@ tbody tr:hover { background-color: #f1f8ff; }
     padding:4px 10px;
     cursor:pointer;
     z-index:10100;
+    width:auto;
+    margin:0;
 }
 #lightboxPrev { left:20px; }
 #lightboxNext { right:20px; }
