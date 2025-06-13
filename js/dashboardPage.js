@@ -454,29 +454,27 @@ function renderCharts(orders, timeFilter = 'today', startDateStr = null, endDate
         if (platformChartInstance) { platformChartInstance.destroy(); platformChartInstance = null; }
         return;
     }
-    if (!orders || orders.length === 0 ) {
-        console.warn("No data available for charts.");
-        if (dailyChartInstance) { dailyChartInstance.destroy(); dailyChartInstance = null; }
-        if (platformChartInstance) { platformChartInstance.destroy(); platformChartInstance = null; }
-        if(el_dailyStatsCanvas) el_dailyStatsCanvas.getContext('2d').clearRect(0,0,el_dailyStatsCanvas.width, el_dailyStatsCanvas.height);
-        if(el_platformStatsCanvas) el_platformStatsCanvas.getContext('2d').clearRect(0,0,el_platformStatsCanvas.width, el_platformStatsCanvas.height);
-        if (el_chartStatsInfo) el_chartStatsInfo.textContent = '';
-        return;
+    const hasData = orders && orders.length > 0;
+    if (!hasData) {
+        console.warn("No data available for charts. Rendering empty charts.");
     }
 
     // Daily Stats
     const dailyData = {};
     let startTs, endTs;
+    let showHourly = false;
     const today = new Date();
     today.setHours(0,0,0,0);
     switch(timeFilter){
         case 'today':
-            startTs = today.getTime() + 60000;
-            endTs = Date.now();
+            startTs = today.getTime();
+            endTs = today.getTime() + 86400000 - 1;
+            showHourly = true;
             break;
         case 'yesterday':
             endTs = today.getTime() - 1;
             startTs = endTs - 86400000 + 1;
+            showHourly = true;
             break;
         case 'last7':
             startTs = today.getTime() - 6*86400000;
@@ -489,43 +487,77 @@ function renderCharts(orders, timeFilter = 'today', startDateStr = null, endDate
         case 'custom':
             startTs = startDateStr ? new Date(startDateStr).setHours(0,0,0,0) : today.getTime();
             endTs = endDateStr ? new Date(endDateStr).setHours(23,59,59,999) : today.getTime();
+            if (endTs - startTs <= 86400000) showHourly = true;
             break;
         default:
             startTs = today.getTime() - 6*86400000;
             endTs = today.getTime() + 86400000 - 1;
     }
-    const startDate = new Date(startTs); startDate.setHours(0,0,0,0);
-    const endDate = new Date(endTs); endDate.setHours(0,0,0,0);
-    for(let d=new Date(startDate); d<=endDate; d.setDate(d.getDate()+1)){
-        dailyData[formatDateYYYYMMDD(d)] = {created:0, shipped:0};
+    let labels = [];
+    let createdCounts = [];
+    let shippedCounts = [];
+    if (showHourly) {
+        const startHour = new Date(startTs); startHour.setMinutes(0,0,0);
+        const endHour = new Date(endTs); endHour.setMinutes(0,0,0);
+        for (let d = new Date(startHour); d <= endHour; d.setHours(d.getHours()+1)) {
+            const key = formatDateYYYYMMDD(d) + '_' + d.getHours();
+            dailyData[key] = {created:0, shipped:0};
+        }
+        orders.forEach(o=>{
+            if(o.createdAt && typeof o.createdAt==='number'){
+                const d = new Date(o.createdAt);
+                const key = formatDateYYYYMMDD(d) + '_' + d.getHours();
+                if(dailyData[key]) dailyData[key].created++;
+            }
+            if((o.status==='Shipped'||o.status==='Shipment Approved') && o.shipmentInfo?.shippedAt_actual && typeof o.shipmentInfo.shippedAt_actual==='number'){
+                const d = new Date(o.shipmentInfo.shippedAt_actual);
+                const key = formatDateYYYYMMDD(d) + '_' + d.getHours();
+                if(dailyData[key]) dailyData[key].shipped++;
+            }
+        });
+        labels = Object.keys(dailyData).map(k => {
+            const parts = k.split('_');
+            const d = new Date(parts[0]);
+            d.setHours(parseInt(parts[1],10));
+            return d.toLocaleTimeString('th-TH', { hour:'2-digit', hour12:false });
+        });
+        createdCounts = Object.values(dailyData).map(v => v.created);
+        shippedCounts = Object.values(dailyData).map(v => v.shipped);
+    } else {
+        const startDate = new Date(startTs); startDate.setHours(0,0,0,0);
+        const endDate = new Date(endTs); endDate.setHours(0,0,0,0);
+        for(let d=new Date(startDate); d<=endDate; d.setDate(d.getDate()+1)){
+            dailyData[formatDateYYYYMMDD(d)] = {created:0, shipped:0};
+        }
+        orders.forEach(o=>{
+            if(o.createdAt && typeof o.createdAt==='number'){
+                const cd=formatDateYYYYMMDD(o.createdAt);
+                if(dailyData[cd]) dailyData[cd].created++;
+            }
+            if((o.status==='Shipped'||o.status==='Shipment Approved') && o.shipmentInfo?.shippedAt_actual && typeof o.shipmentInfo.shippedAt_actual==='number'){
+                const sd=formatDateYYYYMMDD(o.shipmentInfo.shippedAt_actual);
+                if(dailyData[sd]) dailyData[sd].shipped++;
+            }
+        });
+        labels = Object.keys(dailyData).map(dStr => new Date(dStr).toLocaleDateString('th-TH', { day:'numeric', month:'short'}));
+        createdCounts = Object.values(dailyData).map(data => data.created);
+        shippedCounts = Object.values(dailyData).map(data => data.shipped);
     }
-    orders.forEach(o=>{
-        if(o.createdAt && typeof o.createdAt==='number'){
-            const cd=formatDateYYYYMMDD(o.createdAt);
-            if(dailyData[cd]) dailyData[cd].created++;
-        }
-        if((o.status==='Shipped'||o.status==='Shipment Approved') && o.shipmentInfo?.shippedAt_actual && typeof o.shipmentInfo.shippedAt_actual==='number'){
-            const sd=formatDateYYYYMMDD(o.shipmentInfo.shippedAt_actual);
-            if(dailyData[sd]) dailyData[sd].shipped++;
-        }
-    });
-    const dailyLabels = Object.keys(dailyData).map(dStr => new Date(dStr).toLocaleDateString('th-TH', { day:'numeric', month:'short'}));
-    const dailyCreatedCounts = Object.values(dailyData).map(data => data.created);
-    const dailyShippedCounts = Object.values(dailyData).map(data => data.shipped);
 
+    const maxY = Math.max(...createdCounts, ...shippedCounts, 1);
     if (dailyChartInstance) dailyChartInstance.destroy();
     dailyChartInstance = new Chart(el_dailyStatsCanvas, {
         type: 'bar',
         data: {
-            labels: dailyLabels,
+            labels: labels,
             datasets: [
-                { label: 'สร้างใหม่', data: dailyCreatedCounts, backgroundColor: 'rgba(54, 162, 235, 0.7)', order: 1 },
-                { label: 'ส่งแล้ว', data: dailyShippedCounts, type: 'line', borderColor: 'rgba(75, 192, 192, 1)', backgroundColor: 'rgba(75,192,192,0.3)', fill: false, pointBackgroundColor: '#e74c3c', pointBorderColor: '#e74c3c', pointRadius: 5, order: 2 }
+                { label: 'สร้างใหม่', data: createdCounts, backgroundColor: 'rgba(54, 162, 235, 0.7)', order: 1 },
+                { label: 'ส่งแล้ว', data: shippedCounts, type: 'line', borderColor: 'rgba(75, 192, 192, 1)', backgroundColor: 'rgba(75,192,192,0.3)', fill: false, pointBackgroundColor: '#e74c3c', pointBorderColor: '#e74c3c', pointRadius: 5, order: 2 }
             ]
         },
         options: {
             scales: {
-                y: { beginAtZero: true, stacked: false },
+                y: { beginAtZero: true, stacked: false, suggestedMax: maxY },
                 x: { stacked: false }
             },
             responsive: true,
@@ -542,11 +574,15 @@ function renderCharts(orders, timeFilter = 'today', startDateStr = null, endDate
     }
 
     // Platform Stats
-    const platformCounts = {}; orders.forEach(o => {
+    const platformCounts = {};
+    orders.forEach(o => {
         let p = o.platform || 'Other';
         if (p === 'Unknown') p = 'Other';
         platformCounts[p] = (platformCounts[p] || 0) + 1;
     });
+    if (!hasData) {
+        platformCounts['No Data'] = 0;
+    }
     const platformLabels = Object.keys(platformCounts);
     const defaultColors = ['#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF','#FF9F40'];
     const platformColors = platformLabels.map((label, idx) => {
