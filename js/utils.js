@@ -329,9 +329,17 @@ export function initializeImageLightbox() {
     document.body.addEventListener('click', e => {
         const target = e.target;
         if (target && target.classList.contains('lightbox-thumb')) {
-            const src = target.dataset.full || target.src;
-            albumUrls = [src];
-            albumIndex = 0;
+            let thumbs;
+            const group = target.dataset.group;
+            if (group) {
+                thumbs = Array.from(document.querySelectorAll(`.lightbox-thumb[data-group="${group}"]`));
+            } else if (target.parentElement) {
+                thumbs = Array.from(target.parentElement.querySelectorAll('.lightbox-thumb'));
+            } else {
+                thumbs = [target];
+            }
+            albumUrls = thumbs.map(t => t.dataset.full || t.src);
+            albumIndex = thumbs.indexOf(target);
             showCurrent();
             overlay.classList.remove('hidden');
         }
