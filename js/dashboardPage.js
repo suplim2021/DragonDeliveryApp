@@ -519,8 +519,8 @@ function renderCharts(orders, timeFilter = 'today', startDateStr = null, endDate
         data: {
             labels: dailyLabels,
             datasets: [
-                { label: 'สร้างใหม่', data: dailyCreatedCounts, backgroundColor: 'rgba(54, 162, 235, 0.7)' },
-                { label: 'ส่งแล้ว', data: dailyShippedCounts, type: 'line', borderColor: 'rgba(75, 192, 192, 1)', backgroundColor: 'rgba(75,192,192,0.3)', fill: false }
+                { label: 'สร้างใหม่', data: dailyCreatedCounts, backgroundColor: 'rgba(54, 162, 235, 0.7)', order: 1 },
+                { label: 'ส่งแล้ว', data: dailyShippedCounts, type: 'line', borderColor: 'rgba(75, 192, 192, 1)', backgroundColor: 'rgba(75,192,192,0.3)', fill: false, pointBackgroundColor: '#e74c3c', pointBorderColor: '#e74c3c', pointRadius: 5, order: 2 }
             ]
         },
         options: {
