@@ -261,7 +261,17 @@ tbody tr:hover { background-color: #f1f8ff; }
 .lightbox-thumb { cursor:pointer; }
 .lightbox-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); display:flex; justify-content:center; align-items:center; z-index:10000; }
 .lightbox-overlay img { max-width:95%; max-height:95%; border-radius:8px; box-shadow:0 0 10px rgba(0,0,0,0.5); }
-.lightbox-nav { position:absolute; top:50%; transform:translateY(-50%); background:rgba(255,255,255,0.7); border:none; font-size:2rem; padding:4px 10px; cursor:pointer; }
+.lightbox-nav {
+    position:absolute;
+    top:50%;
+    transform:translateY(-50%);
+    background:rgba(255,255,255,0.7);
+    border:none;
+    font-size:2rem;
+    padding:4px 10px;
+    cursor:pointer;
+    z-index:10100;
+}
 #lightboxPrev { left:20px; }
 #lightboxNext { right:20px; }
 
