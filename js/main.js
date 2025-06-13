@@ -14,6 +14,7 @@ import { initializeOperatorTasksPageListeners, loadOperatorPendingTasks } from '
 import { initializeOperatorShippingPageListeners, setupShippingBatchPage, updateBatchIdVisibilityForRole } from './operatorShippingPage.js';
 import { initializeShippedOrdersPageListeners, loadShippedOrders } from './shippedOrdersPage.js';
 import { initializeAdminParcelListPageListeners, loadParcelList } from './adminParcelListPage.js';
+import { initializeAdminParcelDetailPageListeners, loadParcelDetail } from './adminParcelDetailPage.js';
 import { initializeImageLightbox, showImageAlbum } from './utils.js';
 
 window.currentUserFromAuth = null; 
@@ -87,6 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeOperatorShippingPageListeners();
     initializeShippedOrdersPageListeners();
     initializeAdminParcelListPageListeners();
+    initializeAdminParcelDetailPageListeners();
     initializeImageLightbox();
     
     console.log("Initial event listeners set up (main.js)");
@@ -101,6 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.loadShippedOrdersGlobal = loadShippedOrders;
     window.updateBatchIdVisibilityForRoleGlobal = updateBatchIdVisibilityForRole;
     window.loadParcelListGlobal = loadParcelList;
+    window.loadParcelDetail = loadParcelDetail;
     window.loadOrderForPacking = operatorLoadOrderForPacking;
     window.loadOrderForAddingItems = loadOrderForAddingItems;
     window.showImageAlbum = showImageAlbum;

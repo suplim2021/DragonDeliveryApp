@@ -146,7 +146,7 @@ export async function loadParcelList(timeFilter = 'today', startDate = null, end
 
             tr.classList.add('clickable-row');
             tr.addEventListener('click', () => {
-                if (typeof window.loadOrderForAddingItems === 'function') window.loadOrderForAddingItems(o.key);
+                if (typeof window.loadParcelDetail === 'function') window.loadParcelDetail(o.key);
             });
         });
     } catch (err) {
