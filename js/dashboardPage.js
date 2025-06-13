@@ -161,11 +161,10 @@ export async function loadDashboardData(filterStatus = 'all', searchCode = '', t
             allOrders = allOrders.slice(0, 150);
         }
 
-        const statsOrders = applyTimeFilter(allOrders, timeFilter, startDate, endDate);
         updateSummaryCards(allOrders, timeFilter, startDate, endDate);
         updateDueTodayTable(allOrders);
         updateOrdersLogTable(allOrders, filterStatus, searchCode);
-        renderCharts(statsOrders, timeFilter, startDate, endDate);
+        renderCharts(allOrders, timeFilter, startDate, endDate);
 
         showAppStatus("โหลดข้อมูล Dashboard สำเร็จ", "success", el_appStatus);
         if (el_noOrdersMessage) {
@@ -540,12 +539,12 @@ function renderCharts(orders, timeFilter = 'today', startDateStr = null, endDate
             dailyData[key] = {created:0, shipped:0};
         }
         orders.forEach(o=>{
-            if(o.createdAt && typeof o.createdAt==='number'){
+            if(o.createdAt && typeof o.createdAt==='number' && o.createdAt >= startTs && o.createdAt <= endTs){
                 const d = new Date(o.createdAt);
                 const key = formatDateYYYYMMDD(d) + '_' + d.getHours();
                 if(dailyData[key]) dailyData[key].created++;
             }
-            if((o.status==='Shipped'||o.status==='Shipment Approved') && o.shipmentInfo?.shippedAt_actual && typeof o.shipmentInfo.shippedAt_actual==='number'){
+            if((o.status==='Shipped'||o.status==='Shipment Approved') && o.shipmentInfo?.shippedAt_actual && typeof o.shipmentInfo.shippedAt_actual==='number' && o.shipmentInfo.shippedAt_actual >= startTs && o.shipmentInfo.shippedAt_actual <= endTs){
                 const d = new Date(o.shipmentInfo.shippedAt_actual);
                 const key = formatDateYYYYMMDD(d) + '_' + d.getHours();
                 if(dailyData[key]) dailyData[key].shipped++;
@@ -566,11 +565,11 @@ function renderCharts(orders, timeFilter = 'today', startDateStr = null, endDate
             dailyData[formatDateYYYYMMDD(d)] = {created:0, shipped:0};
         }
         orders.forEach(o=>{
-            if(o.createdAt && typeof o.createdAt==='number'){
+            if(o.createdAt && typeof o.createdAt==='number' && o.createdAt >= startTs && o.createdAt <= endTs){
                 const cd=formatDateYYYYMMDD(o.createdAt);
                 if(dailyData[cd]) dailyData[cd].created++;
             }
-            if((o.status==='Shipped'||o.status==='Shipment Approved') && o.shipmentInfo?.shippedAt_actual && typeof o.shipmentInfo.shippedAt_actual==='number'){
+            if((o.status==='Shipped'||o.status==='Shipment Approved') && o.shipmentInfo?.shippedAt_actual && typeof o.shipmentInfo.shippedAt_actual==='number' && o.shipmentInfo.shippedAt_actual >= startTs && o.shipmentInfo.shippedAt_actual <= endTs){
                 const sd=formatDateYYYYMMDD(o.shipmentInfo.shippedAt_actual);
                 if(dailyData[sd]) dailyData[sd].shipped++;
             }
@@ -601,12 +600,17 @@ function renderCharts(orders, timeFilter = 'today', startDateStr = null, endDate
         }
     });
 
-    const completedCount = orders.filter(o => (
+    const filteredForStats = orders.filter(o => {
+        const createdOk = o.createdAt && typeof o.createdAt === 'number' && o.createdAt >= startTs && o.createdAt <= endTs;
+        const shippedOk = (o.status === 'Shipped' || o.status === 'Shipment Approved') && o.shipmentInfo?.shippedAt_actual && typeof o.shipmentInfo.shippedAt_actual === 'number' && o.shipmentInfo.shippedAt_actual >= startTs && o.shipmentInfo.shippedAt_actual <= endTs;
+        return createdOk || shippedOk;
+    });
+    const completedCount = filteredForStats.filter(o => (
         o.status === 'Shipment Approved' ||
         (o.status === 'Shipped' && o.shipmentInfo?.adminVerifiedBy)
     )).length;
     if (el_chartStatsInfo) {
-        el_chartStatsInfo.innerHTML = `<span style="color:#2980b9;">พัสดุทั้งหมด ${orders.length}</span> <span style="margin-left:10px;color:#27ae60;">เสร็จสิ้น ${completedCount}</span>`;
+        el_chartStatsInfo.innerHTML = `<span style="color:#2980b9;">พัสดุทั้งหมด ${filteredForStats.length}</span> <span style="margin-left:10px;color:#27ae60;">เสร็จสิ้น ${completedCount}</span>`;
     }
 
     // Platform Stats
