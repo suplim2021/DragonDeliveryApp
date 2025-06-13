@@ -162,7 +162,7 @@ export async function loadDashboardData(filterStatus = 'all', searchCode = '', t
         }
 
         const statsOrders = applyTimeFilter(allOrders, timeFilter, startDate, endDate);
-        updateSummaryCards(statsOrders);
+        updateSummaryCards(allOrders, timeFilter, startDate, endDate);
         updateDueTodayTable(allOrders);
         updateOrdersLogTable(allOrders, filterStatus, searchCode);
         renderCharts(statsOrders, timeFilter, startDate, endDate);
@@ -220,14 +220,50 @@ function applyTimeFilter(orders, filterVal, startDateStr, endDateStr) {
     });
 }
 
-function updateSummaryCards(orders) {
+function updateSummaryCards(allOrders, timeFilter = 'today', startDateStr = null, endDateStr = null) {
     if (!el_summaryCardsContainer) return;
     el_summaryCardsContainer.innerHTML = '';
-    const readyToPack = orders.filter(o => o.status === 'Ready to Pack').length;
-    const pendingCheck = orders.filter(o => o.status === 'Pending Supervisor Pack Check').length;
-    const readyToShip = orders.filter(o => (o.status === 'Ready for Shipment' || o.status === 'Pack Approved')).length;
-    const shipped = orders.filter(o => o.status === 'Shipped' || o.status === 'Shipment Approved').length;
-    const shippedPending = orders.filter(o => (o.status === 'Shipped' || o.status === 'Shipment Approved') && !o.shipmentInfo?.adminVerifiedBy).length;
+    const filtered = applyTimeFilter(allOrders, timeFilter, startDateStr, endDateStr);
+    const readyToPack = filtered.filter(o => o.status === 'Ready to Pack').length;
+    const pendingCheck = filtered.filter(o => o.status === 'Pending Supervisor Pack Check').length;
+    const readyToShip = filtered.filter(o => (o.status === 'Ready for Shipment' || o.status === 'Pack Approved')).length;
+
+    let shippedOrders = allOrders.filter(o => (o.status === 'Shipped' || o.status === 'Shipment Approved') && o.shipmentInfo?.shippedAt_actual);
+    if (timeFilter !== 'all') {
+        let startTs = null, endTs = null;
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        switch(timeFilter){
+            case 'today':
+                startTs = today.getTime() + 60000;
+                endTs = Date.now();
+                break;
+            case 'yesterday':
+                endTs = today.getTime() - 1;
+                startTs = endTs - 86400000 + 1;
+                break;
+            case 'last7':
+                startTs = today.getTime() - 6*86400000;
+                endTs = today.getTime() + 86400000 - 1;
+                break;
+            case 'last30':
+                startTs = today.getTime() - 29*86400000;
+                endTs = today.getTime() + 86400000 - 1;
+                break;
+            case 'custom':
+                if (startDateStr) startTs = new Date(startDateStr).setHours(0,0,0,0);
+                if (endDateStr) endTs = new Date(endDateStr).setHours(23,59,59,999);
+                break;
+        }
+        shippedOrders = shippedOrders.filter(o => {
+            const ts = o.shipmentInfo?.shippedAt_actual || 0;
+            if (startTs !== null && ts < startTs) return false;
+            if (endTs !== null && ts > endTs) return false;
+            return true;
+        });
+    }
+    const shipped = shippedOrders.length;
+    const shippedPending = shippedOrders.filter(o => !o.shipmentInfo?.adminVerifiedBy).length;
 
     createSummaryCard('รายการรอแพ็ค', readyToPack, '', 'list_alt', 'operatorTaskListPage');
     createSummaryCard('รอตรวจเช็ค', pendingCheck, '', 'fact_check', 'supervisorPackCheckListPage');
