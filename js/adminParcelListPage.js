@@ -97,7 +97,14 @@ export async function loadParcelList(timeFilter = 'today', startDate = null, end
         const snap = await get(ref(database, 'orders'));
         let orders = [];
         if (snap.exists()) {
-            snap.forEach(child => { orders.push({ key: child.key, ...child.val() }); });
+            snap.forEach(child => {
+                const data = child.val();
+                orders.push({
+                    key: child.key,
+                    ...data,
+                    shippedAt_actual: data.shipmentInfo?.shippedAt_actual || null
+                });
+            });
         }
         orders.sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0));
         orders = applyTimeFilter(orders, timeFilter, startDate, endDate);
@@ -131,6 +138,7 @@ export async function loadParcelList(timeFilter = 'today', startDate = null, end
             tr.insertCell().textContent = translateStatusToThai(o.status, !!o.shipmentInfo?.adminVerifiedBy);
             tr.insertCell().textContent = formatDateTimeDDMMYYYYHHMM(o.createdAt);
             tr.insertCell().textContent = formatDateDDMMYYYY(o.dueDate);
+            tr.insertCell().textContent = o.shippedAt_actual ? formatDateTimeDDMMYYYYHHMM(o.shippedAt_actual) : '-';
             const photoCell = tr.insertCell();
             const urls = o.packingInfo?.packingPhotoUrls ? [...o.packingInfo.packingPhotoUrls] : [];
             if (urls.length) {
