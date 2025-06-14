@@ -1,5 +1,6 @@
 // js/home.js - handles login for the home page
 import { initializeAuthEventListeners, onAuthStateChangeHandler } from './auth.js';
+import { initializeImageLightbox } from './utils.js';
 
 function setCurrentUserAndUpdateUI(user, role, displayName) {
     const loginPage = document.getElementById('loginPage');
@@ -31,4 +32,5 @@ function setCurrentUserAndUpdateUI(user, role, displayName) {
 document.addEventListener('DOMContentLoaded', () => {
     initializeAuthEventListeners();
     onAuthStateChangeHandler(setCurrentUserAndUpdateUI);
+    initializeImageLightbox();
 });
