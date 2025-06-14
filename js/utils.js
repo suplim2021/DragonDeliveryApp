@@ -273,15 +273,35 @@ export function initializeImageLightbox() {
         if (imgElem) imgElem.src = albumUrls[albumIndex];
     };
 
-    const showPrev = () => {
-        albumIndex = (albumIndex - 1 + albumUrls.length) % albumUrls.length;
-        showCurrent();
+    const slideImage = (direction, startOffset = 0) => {
+        if (!imgElem) return;
+        const finish = () => {
+            imgElem.removeEventListener('transitionend', finish);
+            albumIndex = (albumIndex + direction + albumUrls.length) % albumUrls.length;
+            showCurrent();
+            imgElem.style.transition = 'none';
+            imgElem.style.transform = `translateX(${direction * 100}%)`;
+            requestAnimationFrame(() => {
+                imgElem.style.transition = 'transform 0.3s ease';
+                imgElem.style.transform = 'translateX(0)';
+            });
+        };
+        imgElem.style.transition = 'transform 0.3s ease';
+        if (startOffset) {
+            imgElem.style.transform = `translateX(${startOffset}px)`;
+            requestAnimationFrame(() => {
+                imgElem.addEventListener('transitionend', finish, { once: true });
+                imgElem.style.transform = `translateX(${direction * -100}%)`;
+            });
+        } else {
+            imgElem.addEventListener('transitionend', finish, { once: true });
+            imgElem.style.transform = `translateX(${direction * -100}%)`;
+        }
     };
 
-    const showNext = () => {
-        albumIndex = (albumIndex + 1) % albumUrls.length;
-        showCurrent();
-    };
+    const showPrev = (offset = 0) => slideImage(-1, offset);
+
+    const showNext = (offset = 0) => slideImage(1, offset);
 
     prevBtn.addEventListener('click', e => {
         e.stopPropagation();
@@ -294,40 +314,72 @@ export function initializeImageLightbox() {
     });
 
     let touchStartX = 0;
+    let touchDragging = false;
     overlay.addEventListener('touchstart', e => {
-        if (e.touches.length === 1) touchStartX = e.touches[0].clientX;
+        if (e.touches.length !== 1) return;
+        touchStartX = e.touches[0].clientX;
+        touchDragging = true;
+        if (imgElem) imgElem.style.transition = 'none';
     });
-    overlay.addEventListener('touchend', e => {
-        if (!touchStartX) return;
-        const diff = e.changedTouches[0].clientX - touchStartX;
-        if (Math.abs(diff) > 30) {
-            if (diff < 0) showNext();
-            else showPrev();
+    overlay.addEventListener('touchmove', e => {
+        if (!touchDragging || !imgElem) return;
+        const diff = e.touches[0].clientX - touchStartX;
+        imgElem.style.transform = `translateX(${diff}px)`;
+    });
+    const endTouchDrag = diff => {
+        if (!imgElem) return;
+        if (Math.abs(diff) > 50) {
+            if (diff < 0) showNext(diff);
+            else showPrev(diff);
+        } else {
+            imgElem.style.transition = 'transform 0.3s ease';
+            imgElem.style.transform = 'translateX(0)';
         }
-        touchStartX = 0;
+    };
+    overlay.addEventListener('touchend', e => {
+        if (!touchDragging) return;
+        const diff = e.changedTouches[0].clientX - touchStartX;
+        touchDragging = false;
+        endTouchDrag(diff);
+    });
+    overlay.addEventListener('touchcancel', () => {
+        if (!touchDragging) return;
+        touchDragging = false;
+        endTouchDrag(0);
     });
 
     let mouseStartX = 0;
-    let isDragging = false;
+    let mouseDragging = false;
     overlay.addEventListener('mousedown', e => {
-        isDragging = true;
+        mouseDragging = true;
         mouseStartX = e.clientX;
+        if (imgElem) imgElem.style.transition = 'none';
     });
     overlay.addEventListener('mousemove', e => {
-        if (!isDragging) return;
-    });
-    overlay.addEventListener('mouseup', e => {
-        if (!isDragging) return;
+        if (!mouseDragging || !imgElem) return;
         const diff = e.clientX - mouseStartX;
-        if (Math.abs(diff) > 30) {
-            if (diff < 0) showNext();
-            else showPrev();
+        imgElem.style.transform = `translateX(${diff}px)`;
+    });
+    const endMouseDrag = diff => {
+        if (!imgElem) return;
+        if (Math.abs(diff) > 50) {
+            if (diff < 0) showNext(diff);
+            else showPrev(diff);
+        } else {
+            imgElem.style.transition = 'transform 0.3s ease';
+            imgElem.style.transform = 'translateX(0)';
         }
-        isDragging = false;
-        mouseStartX = 0;
+    };
+    overlay.addEventListener('mouseup', e => {
+        if (!mouseDragging) return;
+        const diff = e.clientX - mouseStartX;
+        mouseDragging = false;
+        endMouseDrag(diff);
     });
     overlay.addEventListener('mouseleave', () => {
-        isDragging = false;
+        if (!mouseDragging) return;
+        mouseDragging = false;
+        endMouseDrag(0);
     });
 
     document.addEventListener('keydown', e => {
@@ -376,5 +428,7 @@ export function showImageAlbum(urls, startIndex = 0) {
     const imgElem = document.getElementById('lightboxImage');
     if (!overlay || !imgElem || albumUrls.length === 0) return;
     imgElem.src = albumUrls[albumIndex];
+    imgElem.style.transition = 'none';
+    imgElem.style.transform = 'translateX(0)';
     overlay.classList.remove('hidden');
 }
