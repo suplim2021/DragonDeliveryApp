@@ -434,7 +434,7 @@ async function finalizeShipment() {
         const photoFileName = `shipment_${currentActiveBatchId}_${timestamp}.${extension}`;
         const photoPath = `shipmentGroupPhotos/${currentActiveBatchId}/${photoFileName}`;
         const imageRef = storageRefFirebase(storage, photoPath); // Use aliased storageRef
-        const resized = await resizeImageFileIfNeeded(shipmentGroupPhotoFile, 1000);
+        const resized = await resizeImageFileIfNeeded(shipmentGroupPhotoFile, 500);
         await uploadBytes(imageRef, resized);
         const groupPhotoUrl = await getDownloadURL(imageRef);
 

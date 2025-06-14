@@ -209,10 +209,10 @@ export function getTimestampForFilename(date = new Date()) {
  * Returns the original file if no resizing is needed or resizing fails.
  *
  * @param {File} file - Image file to resize.
- * @param {number} [maxDim=1000] - Maximum width or height in pixels.
+ * @param {number} [maxDim=500] - Maximum width or height in pixels.
  * @returns {Promise<File>} - Promise resolving to the resized File object.
  */
-export function resizeImageFileIfNeeded(file, maxDim = 1000) {
+export function resizeImageFileIfNeeded(file, maxDim = 500) {
     return new Promise(resolve => {
         const img = new Image();
         img.onload = () => {

@@ -243,7 +243,7 @@ async function confirmPacking() {
             const fname = `${code}_${ts}.${ext}`;
             const storagePath = `packingPhotos/${currentOrderKeyForPacking}/${fname}`;
             const imageRef = storageRefFirebase(storage, storagePath);
-            const resized = await resizeImageFileIfNeeded(file, 1000);
+            const resized = await resizeImageFileIfNeeded(file, 500);
             await uploadBytes(imageRef, resized);
             photoUrls.push(await getDownloadURL(imageRef));
         }
