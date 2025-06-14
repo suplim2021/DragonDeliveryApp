@@ -307,6 +307,29 @@ export function initializeImageLightbox() {
         touchStartX = 0;
     });
 
+    let mouseStartX = 0;
+    let isDragging = false;
+    overlay.addEventListener('mousedown', e => {
+        isDragging = true;
+        mouseStartX = e.clientX;
+    });
+    overlay.addEventListener('mousemove', e => {
+        if (!isDragging) return;
+    });
+    overlay.addEventListener('mouseup', e => {
+        if (!isDragging) return;
+        const diff = e.clientX - mouseStartX;
+        if (Math.abs(diff) > 30) {
+            if (diff < 0) showNext();
+            else showPrev();
+        }
+        isDragging = false;
+        mouseStartX = 0;
+    });
+    overlay.addEventListener('mouseleave', () => {
+        isDragging = false;
+    });
+
     document.addEventListener('keydown', e => {
         if (overlay.classList.contains('hidden')) return;
         if (e.key === 'ArrowLeft') { showPrev(); }
