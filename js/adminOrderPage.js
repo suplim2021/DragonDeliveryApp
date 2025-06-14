@@ -204,7 +204,7 @@ async function stopPlatformIdScan() {
 async function saveInitialOrder() {
     const currentUser = getCurrentUser();
     const currentUserRole = getCurrentUserRole();
-    if (!currentUser || currentUserRole !== 'administrator') {
+    if (!currentUser || (currentUserRole !== 'administrator' && currentUserRole !== 'supervisor')) {
         showAppStatus("คุณไม่มีสิทธิ์", 'error', adminOrderAppStatus);
         return;
     }
@@ -228,7 +228,7 @@ async function saveInitialOrder() {
     try {
         const newRef = push(ref(database, 'orders'));
         const orderData = {
-            platform: platform || 'Unknown',
+            platform: platform || 'Other',
             platformOrderId: platformOrderId || null,
             packageCode: packageCode,
             dueDate: dueDate,

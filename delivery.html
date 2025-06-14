@@ -30,9 +30,26 @@
                     <span id="currentDateDisplay" style="font-size:0.9em;"></span>
                     <button id="refreshDashboardButton" type="button" class="secondary" style="width:auto; font-size:0.8em; padding:8px;">รีเฟรช</button>
                 </div>
-                <div id="summaryCardsContainer" style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;"></div>
+                <div id="summaryCardsContainer"></div>
                 <div id="chartsContainer" style="margin-bottom: 20px;">
-                    <h3>สถิติรายวัน</h3>
+                    <div style="display:flex; gap:10px; margin-bottom:10px; align-items:center; flex-wrap:wrap;" id="dateFilterGroup">
+                        <label for="dashboardDateFilter" style="margin-bottom:0;">ช่วงเวลา:</label>
+                        <select id="dashboardDateFilter" style="width:auto; padding:8px; margin-bottom:0;">
+                            <option value="all">ทั้งหมด</option>
+                            <option value="today" selected>วันนี้</option>
+                            <option value="yesterday">เมื่อวาน</option>
+                            <option value="last7">7 วันล่าสุด</option>
+                            <option value="last30">30 วันล่าสุด</option>
+                            <option value="custom">กำหนดเอง</option>
+                        </select>
+                        <span id="customDateInputs" class="hidden" style="display:flex; gap:5px;">
+                            <input type="date" id="dateFilterStart">
+                            <span>ถึง</span>
+                            <input type="date" id="dateFilterEnd">
+                        </span>
+                        <button id="applyDateFilterButton" type="button" class="secondary" style="width:auto; font-size:0.8em; padding:8px;">ตกลง</button>
+                    </div>
+                    <h3>สถิติ <span id="chartStatsInfo" style="font-weight:normal; font-size:0.9em; margin-left:5px;"></span></h3>
                     <div style="height:250px;"><canvas id="dailyStatsChart"></canvas></div>
                     <h3 style="margin-top:20px;">สถิติตามแพลตฟอร์ม</h3>
                     <div style="height:280px; max-width:400px; margin:auto;"><canvas id="platformStatsChart"></canvas></div>
@@ -57,6 +74,7 @@
                             <option value="Pending Supervisor Pack Check">รอตรวจแพ็ก</option>
                             <option value="Ready for Shipment">รอส่ง</option>
                             <option value="Shipped">ส่งแล้ว</option>
+                            <option value="Shipment Approved">เสร็จสิ้น</option>
                         </select>
                         <input id="logSearchPackageCode" type="text" placeholder="รหัสพัสดุ" style="flex:1; padding:8px; margin-bottom:0;">
                         <button id="applyLogFilterButton" type="button" class="secondary" style="width:auto; font-size:0.8em; padding:8px;">ค้นหา</button>
@@ -68,6 +86,63 @@
                     </div>
                     <p id="noOrdersMessage" class="hidden" style="text-align:center; padding:20px;">ไม่พบข้อมูลพัสดุ</p>
                 </div>
+            </div>
+
+            <!-- All Parcels Page -->
+            <div id="parcelListPage" class="container page hidden">
+                <h2>รายการพัสดุทั้งหมด</h2>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px; align-items:center;">
+                    <label for="parcelDateFilter" style="margin-bottom:0;">ช่วงเวลา:</label>
+                    <select id="parcelDateFilter" style="width:auto; padding:8px; margin-bottom:0;">
+                        <option value="all">ทั้งหมด</option>
+                        <option value="today">วันนี้</option>
+                        <option value="yesterday">เมื่อวาน</option>
+                        <option value="last7" selected>7 วันล่าสุด</option>
+                        <option value="last30">30 วันล่าสุด</option>
+                        <option value="custom">กำหนดเอง</option>
+                    </select>
+                    <span id="parcelCustomDates" class="hidden" style="display:flex; gap:5px;">
+                        <input type="date" id="parcelDateStart">
+                        <span>ถึง</span>
+                        <input type="date" id="parcelDateEnd">
+                        <button id="applyParcelDateFilterButton" type="button" class="secondary" style="width:auto;font-size:0.8em;">ตกลง</button>
+                    </span>
+                    <label for="parcelPlatformFilter" style="margin-bottom:0;">Shop:</label>
+                    <select id="parcelPlatformFilter" style="width:auto; padding:8px; margin-bottom:0;">
+                        <option value="all">ทั้งหมด</option>
+                        <option value="Shopee">Shopee</option>
+                        <option value="Lazada">Lazada</option>
+                        <option value="Tiktok">Tiktok</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div style="max-height:400px; overflow-y:auto; border:1px solid #ccc;">
+                    <table id="parcelListTable">
+                        <thead>
+                            <tr style="background-color:#f0f0f0;">
+                                <th class="sortable" data-field="packageCode">Package Code</th>
+                                <th class="sortable" data-field="platformOrderId">Platform Order ID</th>
+                                <th class="sortable" data-field="platform">Platform</th>
+                                <th class="sortable" data-field="status">สถานะ</th>
+                                <th class="sortable" data-field="createdAt">Created At</th>
+                                <th class="sortable" data-field="dueDate">Due Date</th>
+                                <th class="sortable" data-field="shippedAt_actual">Shipped At</th>
+                                <th>Photo</th>
+                            </tr>
+                        </thead>
+                        <tbody id="parcelListTableBody"></tbody>
+                    </table>
+                </div>
+                <p id="noParcelsMessage" class="hidden" style="text-align:center; padding:20px;">ไม่พบข้อมูล</p>
+            </div>
+
+            <!-- Parcel Detail Page -->
+            <div id="parcelDetailPage" class="container page hidden">
+                <h2>รายละเอียดพัสดุ (Package Code: <span id="parcelDetailCode"></span>)</h2>
+                <div id="parcelDetailInfo"></div>
+                <div id="parcelDetailPhotos" style="margin-top:10px;"></div>
+                <button id="parcelDetailAddItemsButton" type="button" class="secondary" style="width:auto; margin-top:10px; margin-right:10px;">เพิ่มรายการสินค้า</button>
+                <button id="backToParcelListButton" type="button" class="secondary" style="width:auto; margin-top:10px;">กลับ</button>
             </div>
 
             <!-- Admin: Create Order Page -->
@@ -129,9 +204,8 @@
                 <h3>Checklist รายการสินค้า:</h3>
                 <ul id="packOrderItemList" class="item-checklist packing-checklist"></ul>
                 <label for="packingPhoto">ถ่ายหรือเลือกรูปสินค้าที่เตรียม:</label>
-                <input type="file" id="packingPhoto" accept="image/*" >
-                <img id="packingPhotoPreview" src="#" alt="Preview" class="hidden">
-                <button id="removePackingPhotoButton" type="button" class="secondary hidden" style="width:auto; margin-top:10px;">ลบรูป / ถ่ายใหม่</button>
+                <input type="file" id="packingPhoto" accept="image/*" multiple>
+                <div id="packingPhotoPreviewContainer" class="hidden" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
                 <label for="operatorPackNotes">หมายเหตุ (ถ้ามี):</label>
                 <textarea id="operatorPackNotes"></textarea>
                 <button id="confirmPackingButton" type="button">ยืนยันการแพ็ก</button>
@@ -146,7 +220,20 @@
             <!-- ***** หน้าใหม่สำหรับ Operator: รายการรอแพ็ก ***** -->
             <div id="operatorTaskListPage" class="container page hidden">
                 <h2>รายการรอแพ็ก</h2>
-                <button id="refreshOperatorTaskList" type="button" class="secondary" style="width:auto; margin-bottom:15px;">รีเฟรชรายการ</button>
+                <button id="refreshOperatorTaskList" type="button" class="secondary" style="width:auto; margin-bottom:10px;">รีเฟรชรายการ</button>
+                <button id="startScanForPackingButton" type="button" style="width:auto; margin-bottom:15px;">สแกน QR เลือกพัสดุ</button>
+                <button id="selectAllPendingOrdersButton" type="button" class="secondary" style="width:auto; margin-left:10px; margin-bottom:15px;">เลือกทั้งหมด</button>
+                <div id="qrScannerContainer_OperatorTask" class="hidden" style="margin-bottom:10px;">
+                    <div id="qrScanner_OperatorTask" class="qr-scanner-area"></div>
+                    <button id="stopScanForPackingButton" type="button" class="secondary hidden" style="margin-top:5px;">หยุดสแกน</button>
+                </div>
+                <div id="pickListSummaryContainer" class="hidden" style="margin-bottom:15px;">
+                    <h3>สินค้าที่ต้องหยิบ:</h3>
+                    <table id="pickListSummaryTable" class="pick-summary-table">
+                        <thead><tr><th>ชื่อ</th><th>จำนวน</th><th>หน่วย</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
                 <div id="operatorOrderListContainer">
                     <!-- รายการออเดอร์จะถูกสร้างด้วย JavaScript -->
                     <p>กำลังโหลดรายการออเดอร์ที่รอแพ็ก...</p>
@@ -155,9 +242,9 @@
             </div>
             <!-- ***** สิ้นสุดหน้า Operator Task List ***** -->
 
-            <!-- ***** หน้าใหม่สำหรับ Operator: จัดการ Batch การส่ง ***** -->
+            <!-- ***** หน้าใหม่สำหรับ Operator: จัดการการส่งของ ***** -->
             <div id="operatorShippingBatchPage" class="container page hidden">
-                <h2>จัดการ Batch การส่ง</h2>
+                <h2>จัดการการส่งของ</h2>
                 <div class="form-group">
                     <label for="courierSelect">เลือก Courier/ร้านที่จะไปส่ง:</label>
                     <select id="courierSelect">
@@ -165,16 +252,15 @@
                         <option value="Shopee-Flash">Shopee (Flash)</option>
                         <option value="Lazada-LEX">Lazada (LEX)</option>
                         <option value="Tiktok-J&T">Tiktok (J&T)</option>
-                        <option value="Tiktok-Kerry">Tiktok (Kerry)</option>
                         <option value="Other">อื่นๆ (ระบุเอง)</option>
                     </select>
                     <input type="text" id="otherCourierInput" class="hidden" placeholder="ระบุชื่อ Courier อื่นๆ" style="margin-top:10px;">
                 </div>
-                <button id="createNewBatchButton" type="button" class="hidden">สร้าง Batch ใหม่ / เลือก Batch ปัจจุบัน</button>
+                <button id="createNewBatchButton" type="button" class="hidden">สร้างรอบส่งใหม่ / เลือกรอบส่งปัจจุบัน</button>
                 <p><strong>Batch ID ปัจจุบัน:</strong> <span id="currentBatchIdDisplay">N/A</span></p>
                 
                 <div style="margin-top:20px;">
-                    <h3>สแกนพัสดุเข้า Batch นี้:</h3>
+                    <h3>สแกนพัสดุเข้ารอบส่งนี้:</h3>
                     <button id="startScanForBatchButton" type="button">สแกน QR พัสดุ</button>
 
                     <div class="input-group" style="margin-top:10px;">
@@ -184,6 +270,7 @@
                     </div>
 
                     <div style="margin-top:10px;">
+                        <button id="selectAllReadyPackagesButton" type="button" class="secondary" style="width:auto; margin-bottom:5px;">เลือกทั้งหมด</button>
                         <ul id="readyToShipCheckboxList" class="item-checklist" style="max-height:150px; overflow-y:auto; border:1px solid #eee; padding:10px;"></ul>
                     </div>
 
@@ -191,31 +278,32 @@
                         <div id="qrScanner_Batch" class="qr-scanner-area"></div>
                         <button id="stopScanForBatchButton" type="button" class="secondary hidden" style="margin-top:5px;">หยุดสแกน</button>
                     </div>
-                    <h4>รายการพัสดุใน Batch: (<span id="batchItemCount">0</span> ชิ้น)</h4>
+                    <h4>รายการพัสดุในรอบส่งนี้: (<span id="batchItemCount">0</span> ชิ้น)</h4>
                     <ul id="batchItemList" class="item-checklist" style="max-height:200px; overflow-y:auto; border:1px solid #eee; padding:10px;">
                         <!-- พัสดุที่สแกนแล้วจะแสดงที่นี่ -->
                     </ul>
-                    <button id="confirmBatchAndProceedButton" type="button" style="margin-top:15px;">ยืนยัน Batch และไปถ่ายรูป</button>
+                    <button id="confirmBatchAndProceedButton" type="button" style="margin-top:15px;">ยืนยันรอบส่งและไปถ่ายรูป</button>
                 </div>
             </div>
             <!-- ***** สิ้นสุดหน้า Operator Shipping Batch ***** -->
 
-            <!-- ***** หน้าใหม่สำหรับ Operator: ยืนยันการส่ง Batch ***** -->
+            <!-- ***** หน้าใหม่สำหรับ Operator: ยืนยันการส่ง ***** -->
             <div id="operatorConfirmShipmentPage" class="container page hidden">
-                <h2>ยืนยันการส่ง Batch ID: <span id="confirmShipBatchIdDisplay"></span></h2>
+                <h2>ยืนยันการส่ง</h2>
+                <p><strong>Batch ID:</strong> <span id="confirmShipBatchIdDisplay"></span></p>
                 <p><strong>Courier:</strong> <span id="confirmShipCourierDisplay"></span></p>
                 <p><strong>จำนวนพัสดุ:</strong> <span id="confirmShipItemCountDisplay"></span> รายการ</p>
                 <div class="form-group">
                     <label for="shipmentGroupPhoto">ถ่ายหรือเลือกรูปรวมพัสดุที่ส่ง:</label>
                     <input type="file" id="shipmentGroupPhoto" accept="image/*" >
-                    <img id="shipmentGroupPhotoPreview" src="#" alt="Preview รูปรวม" class="hidden">
+                    <img id="shipmentGroupPhotoPreview" src="#" alt="Preview รูปรวม" class="hidden lightbox-thumb">
                 </div>
                 <div class="form-group hidden">
                     <label>ตำแหน่ง GPS (ถ้ามี):</label>
                     <p id="shipmentGpsLocationDisplay" style="font-size:0.9em; color:#555;">กำลังดึงข้อมูล...</p>
                     <button id="getGpsButton" type="button" class="secondary" style="width:auto;">ดึง GPS ปัจจุบัน</button>
                 </div>
-                <button id="finalizeShipmentButton" type="button">ยืนยันการจัดส่ง Batch นี้</button>
+                <button id="finalizeShipmentButton" type="button">ยืนยันการจัดส่งรอบนี้</button>
             </div>
             <!-- ***** สิ้นสุดหน้า Operator Confirm Shipment ***** -->
 
@@ -240,7 +328,7 @@
                 </div>
                 <div style="margin-top:20px;">
                     <h3>รูปภาพจาก Operator:</h3>
-                    <img id="checkOrderPackingPhotoDisplay" src="#" alt="รูปภาพการแพ็ก" style="max-width:100%; border:1px solid #ccc; border-radius:8px;">
+                    <div id="checkOrderPackingPhotoContainer" class="photo-preview-container"></div>
                     <p><strong>หมายเหตุจาก Operator:</strong> <span id="checkOrderOperatorNotesDisplay"></span></p>
                 </div>
                 <div style="margin-top:20px;">
@@ -255,6 +343,26 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Shipped Orders List Page -->
+            <div id="shippedOrdersPage" class="container page hidden">
+                <h2>รายการที่ส่งแล้ว</h2>
+                <button id="refreshShippedOrders" type="button" class="secondary" style="width:auto; margin-bottom:15px;">รีเฟรช</button>
+                <button id="confirmSelectedShipmentsButton" type="button" class="secondary" style="width:auto; margin-left:10px;">ยืนยันที่เลือก</button>
+                <div id="shippedOrdersListContainer">
+                    <p>กำลังโหลด...</p>
+                </div>
+                <p id="noShippedOrdersMessage" class="hidden">ไม่พบพัสดุที่ส่งแล้ว</p>
+            </div>
+
+            <!-- Shipped Order Detail Page -->
+            <div id="shippedOrderDetailPage" class="container page hidden">
+                <h2>รายละเอียดพัสดุที่ส่งแล้ว (Package Code: <span id="detailPackageCode"></span>)</h2>
+                <div id="shippedOrderDetailInfo"></div>
+                <img id="shippedOrderBatchPhoto" class="hidden lightbox-thumb" alt="Shipment Photo" style="max-width:100%; margin-top:10px; border:1px solid #dce4ec; border-radius:8px;" />
+                <button id="confirmShipmentButton" type="button" style="margin-top:15px;">ยืนยันความถูกต้อง</button>
+                <button id="backToShippedListButton" type="button" class="secondary" style="margin-top:10px;">กลับ</button>
+            </div>
             
             <p id="appStatus" style="text-align:center; padding:10px; font-size:0.9em;"></p>
         </div>
@@ -264,6 +372,11 @@
         <div id="scanOverlay" class="scan-overlay hidden">
             <div id="overlayScanner" class="qr-scanner-area"></div>
             <button id="closeScanOverlayButton" type="button" class="secondary" style="margin-top:10px;">ปิดการสแกน</button>
+        </div>
+        <div id="lightboxOverlay" class="lightbox-overlay hidden">
+            <div id="lightboxSlider" class="lightbox-slider"></div>
+            <button id="lightboxPrev" class="lightbox-nav">&lt;</button>
+            <button id="lightboxNext" class="lightbox-nav">&gt;</button>
         </div>
     </div>
 

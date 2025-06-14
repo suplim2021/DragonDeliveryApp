@@ -3,10 +3,10 @@
  * Detects the platform based on the package code.
  * IMPORTANT: This logic needs to be customized based on actual package code formats.
  * @param {string} packageCode - The package code scanned from the QR.
- * @returns {string} - The detected platform name (e.g., "Shopee", "Lazada", "Tiktok") or "Unknown".
+ * @returns {string} - The detected platform name (e.g., "Shopee", "Lazada", "Tiktok") or "Other".
  */
 export function detectPlatformFromPackageCode(packageCode) {
-    if (!packageCode) return "Unknown";
+    if (!packageCode) return "Other";
     const code = packageCode.toUpperCase().replace(/\s+/g, ""); // Normalize for easier comparison
 
     // Shopee codes usually start with TH + digits or the prefix SPX
@@ -29,8 +29,8 @@ export function detectPlatformFromPackageCode(packageCode) {
         return "Tiktok";
     }
 
-    // Fallback
-    return "Unknown";
+    // Fallback for any other platform
+    return "Other";
 }
 
 // ---- Scan Feedback Utility Functions ----
@@ -167,7 +167,10 @@ export function formatDateTimeDDMMYYYYHHMM(dateInput) {
  * @param {string} status - The status value stored in the database
  * @returns {string} - Thai label for the status
  */
-export function translateStatusToThai(status) {
+export function translateStatusToThai(status, adminVerified = false) {
+    if (status === 'Shipped' && adminVerified) {
+        return 'เสร็จสิ้น';
+    }
     const map = {
         'Adding Items': 'รอเพิ่มสินค้า',
         'Ready to Pack': 'รอแพ็ก',
@@ -177,7 +180,7 @@ export function translateStatusToThai(status) {
         'Ready for Shipment': 'รอส่ง',
         'Shipped - Pending Supervisor Check': 'ส่งแล้ว-รอตรวจ',
         'Shipped': 'ส่งแล้ว',
-        'Shipment Approved': 'ตรวจส่งแล้ว'
+        'Shipment Approved': 'เสร็จสิ้น'
     };
     return map[status] || status || 'N/A';
 }
@@ -206,10 +209,10 @@ export function getTimestampForFilename(date = new Date()) {
  * Returns the original file if no resizing is needed or resizing fails.
  *
  * @param {File} file - Image file to resize.
- * @param {number} [maxDim=1500] - Maximum width or height in pixels.
+ * @param {number} [maxDim=500] - Maximum width or height in pixels.
  * @returns {Promise<File>} - Promise resolving to the resized File object.
  */
-export function resizeImageFileIfNeeded(file, maxDim = 1500) {
+export function resizeImageFileIfNeeded(file, maxDim = 500) {
     return new Promise(resolve => {
         const img = new Image();
         img.onload = () => {
@@ -231,4 +234,198 @@ export function resizeImageFileIfNeeded(file, maxDim = 1500) {
         img.onerror = () => resolve(file);
         img.src = URL.createObjectURL(file);
     });
+}
+
+// ----- Lightbox utility -----
+let albumUrls = [];
+let albumIndex = 0;
+
+export function initializeImageLightbox() {
+    let overlay = document.getElementById('lightboxOverlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'lightboxOverlay';
+        overlay.className = 'lightbox-overlay hidden';
+        const slider = document.createElement('div');
+        slider.id = 'lightboxSlider';
+        slider.className = 'lightbox-slider';
+        const prev = document.createElement('button');
+        prev.id = 'lightboxPrev';
+        prev.className = 'lightbox-nav';
+        prev.textContent = '<';
+        const next = document.createElement('button');
+        next.id = 'lightboxNext';
+        next.className = 'lightbox-nav';
+        next.textContent = '>';
+        overlay.appendChild(slider);
+        overlay.appendChild(prev);
+        overlay.appendChild(next);
+        document.body.appendChild(overlay);
+    }
+
+    const sliderElem = overlay.querySelector('#lightboxSlider');
+    const prevBtn = overlay.querySelector('#lightboxPrev');
+    const nextBtn = overlay.querySelector('#lightboxNext');
+
+    const updateSlider = (animate = true) => {
+        if (!sliderElem) return;
+        const width = overlay.clientWidth;
+        if (animate) sliderElem.style.transition = 'transform 0.3s ease';
+        else sliderElem.style.transition = 'none';
+        sliderElem.style.transform = `translateX(-${albumIndex * width}px)`;
+    };
+
+    const showPrev = () => {
+        if (albumIndex > 0) {
+            albumIndex--;
+            updateSlider();
+        }
+    };
+
+    const showNext = () => {
+        if (albumIndex < albumUrls.length - 1) {
+            albumIndex++;
+            updateSlider();
+        }
+    };
+
+    prevBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        showPrev();
+    });
+
+    nextBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        showNext();
+    });
+
+    let startX = 0;
+    let dragging = false;
+
+    const startDrag = x => {
+        dragging = true;
+        startX = x;
+        if (sliderElem) sliderElem.style.transition = 'none';
+    };
+
+    const moveDrag = x => {
+        if (!dragging || !sliderElem) return;
+        const diff = x - startX;
+        const width = overlay.clientWidth;
+        sliderElem.style.transform = `translateX(${diff - albumIndex * width}px)`;
+    };
+
+    const endDrag = x => {
+        if (!dragging || !sliderElem) return;
+        dragging = false;
+        const diff = x - startX;
+        const width = overlay.clientWidth;
+        if (Math.abs(diff) > width * 0.2) {
+            if (diff < 0 && albumIndex < albumUrls.length - 1) albumIndex++;
+            if (diff > 0 && albumIndex > 0) albumIndex--;
+        }
+        sliderElem.style.transition = 'transform 0.3s ease';
+        sliderElem.style.transform = `translateX(-${albumIndex * width}px)`;
+    };
+
+    overlay.addEventListener('touchstart', e => {
+        if (e.touches.length !== 1) return;
+        startDrag(e.touches[0].clientX);
+    });
+    overlay.addEventListener('touchmove', e => {
+        if (e.touches.length !== 1) return;
+        moveDrag(e.touches[0].clientX);
+        e.preventDefault();
+    });
+    overlay.addEventListener('touchend', e => {
+        if (e.changedTouches.length !== 1) return;
+        endDrag(e.changedTouches[0].clientX);
+    });
+    overlay.addEventListener('touchcancel', () => {
+        if (dragging) endDrag(startX);
+    });
+
+    overlay.addEventListener('mousedown', e => {
+        startDrag(e.clientX);
+    });
+    overlay.addEventListener('mousemove', e => {
+        moveDrag(e.clientX);
+    });
+    overlay.addEventListener('mouseup', e => {
+        endDrag(e.clientX);
+    });
+    overlay.addEventListener('mouseleave', () => {
+        if (dragging) endDrag(startX);
+    });
+
+    const hideOverlay = () => {
+        overlay.classList.add('hidden');
+        document.body.classList.remove('no-scroll');
+        if (sliderElem) sliderElem.innerHTML = '';
+        albumUrls = [];
+    };
+
+    document.addEventListener('keydown', e => {
+        if (overlay.classList.contains('hidden')) return;
+        if (e.key === 'ArrowLeft') showPrev();
+        else if (e.key === 'ArrowRight') showNext();
+        else if (e.key === 'Escape') hideOverlay();
+    });
+
+    overlay.addEventListener('click', e => {
+        if (!dragging && !e.target.closest('img')) hideOverlay();
+    });
+
+    document.body.addEventListener('click', e => {
+        const target = e.target;
+        if (target && target.classList.contains('lightbox-thumb')) {
+            let thumbs;
+            const group = target.dataset.group;
+            if (group) {
+                thumbs = Array.from(document.querySelectorAll(`.lightbox-thumb[data-group="${group}"]`));
+            } else if (target.parentElement) {
+                thumbs = Array.from(target.parentElement.querySelectorAll('.lightbox-thumb'));
+            } else {
+                thumbs = [target];
+            }
+            albumUrls = thumbs.map(t => t.dataset.full || t.src);
+            albumIndex = thumbs.indexOf(target);
+            if (sliderElem) {
+                sliderElem.innerHTML = '';
+                albumUrls.forEach(url => {
+                    const slide = document.createElement('div');
+                    slide.className = 'lightbox-slide';
+                    const img = document.createElement('img');
+                    img.src = url;
+                    slide.appendChild(img);
+                    sliderElem.appendChild(slide);
+                });
+            }
+            updateSlider(false);
+            overlay.classList.remove('hidden');
+            document.body.classList.add('no-scroll');
+        }
+    });
+}
+
+export function showImageAlbum(urls, startIndex = 0) {
+    albumUrls = Array.isArray(urls) ? urls : [];
+    albumIndex = startIndex;
+    const overlay = document.getElementById('lightboxOverlay');
+    const sliderElem = document.getElementById('lightboxSlider');
+    if (!overlay || !sliderElem || albumUrls.length === 0) return;
+    sliderElem.innerHTML = '';
+    albumUrls.forEach(url => {
+        const slide = document.createElement('div');
+        slide.className = 'lightbox-slide';
+        const img = document.createElement('img');
+        img.src = url;
+        slide.appendChild(img);
+        sliderElem.appendChild(slide);
+    });
+    const width = overlay.clientWidth;
+    sliderElem.style.transition = 'none';
+    sliderElem.style.transform = `translateX(-${albumIndex * width}px)`;
+    overlay.classList.remove('hidden');
+    document.body.classList.add('no-scroll');
 }

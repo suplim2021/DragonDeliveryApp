@@ -8,10 +8,14 @@ import { initializeCoreDOMElements, showPage, setupRoleBasedUI } from './ui.js';
 import { initializeAdminOrderPageListeners } from './adminOrderPage.js';
 import { initializeAdminItemsPageListeners, loadOrderForAddingItems } from './adminItemsPage.js';
 import { initializeOperatorPackingPageListeners, loadOrderForPacking as operatorLoadOrderForPacking } from './operatorPackingPage.js';
-import { initializeDashboardPageListeners, updateCurrentDateOnDashboard, loadDashboardData } from './dashboardPage.js';
+import { initializeDashboardPageListeners, updateCurrentDateOnDashboard, loadDashboardData, startDashboardRealtime, stopDashboardRealtime, updateDashboardVisibilityForRole } from './dashboardPage.js';
 import { initializeSupervisorPackCheckListeners, loadOrdersForPackCheck } from './supervisorPackCheckPage.js';
 import { initializeOperatorTasksPageListeners, loadOperatorPendingTasks } from './operatorTasksPage.js';
-import { initializeOperatorShippingPageListeners, setupShippingBatchPage } from './operatorShippingPage.js'; 
+import { initializeOperatorShippingPageListeners, setupShippingBatchPage, updateBatchIdVisibilityForRole } from './operatorShippingPage.js';
+import { initializeShippedOrdersPageListeners, loadShippedOrders } from './shippedOrdersPage.js';
+import { initializeAdminParcelListPageListeners, loadParcelList } from './adminParcelListPage.js';
+import { initializeAdminParcelDetailPageListeners, loadParcelDetail } from './adminParcelDetailPage.js';
+import { initializeImageLightbox, showImageAlbum } from './utils.js';
 
 window.currentUserFromAuth = null; 
 window.currentUserRoleFromAuth = null;
@@ -41,6 +45,7 @@ function setCurrentUserAndUpdateUI(user, role, displayName) {
                 bottomNavContainerEl.classList.remove('hidden');
                 setupRoleBasedUI(role);
             }
+            startDashboardRealtime();
             showPage('dashboardPage');
         } else {
             userDisplayEmailEl.textContent = '';
@@ -51,6 +56,7 @@ function setCurrentUserAndUpdateUI(user, role, displayName) {
                 bottomNavContainerEl.classList.add('hidden');
                 bottomNavContainerEl.innerHTML = '';
             }
+            stopDashboardRealtime();
             if (loginPageEl) {
                 loginPageEl.classList.remove('hidden');
             } else {
@@ -80,17 +86,27 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeSupervisorPackCheckListeners();
     initializeOperatorTasksPageListeners();
     initializeOperatorShippingPageListeners();
+    initializeShippedOrdersPageListeners();
+    initializeAdminParcelListPageListeners();
+    initializeAdminParcelDetailPageListeners();
+    initializeImageLightbox();
     
     console.log("Initial event listeners set up (main.js)");
 
     // Expose page-specific load/setup functions to be callable from ui.js's showPage via window object
     window.updateCurrentDateOnDashboardGlobal = updateCurrentDateOnDashboard;
     window.loadDashboardDataGlobal = loadDashboardData;
+    window.updateDashboardVisibilityForRoleGlobal = updateDashboardVisibilityForRole;
     window.loadOrdersForPackCheckGlobal = loadOrdersForPackCheck;
     window.loadOperatorPendingTasksGlobal = loadOperatorPendingTasks;
     window.setupShippingBatchPageGlobal = setupShippingBatchPage;
+    window.loadShippedOrdersGlobal = loadShippedOrders;
+    window.updateBatchIdVisibilityForRoleGlobal = updateBatchIdVisibilityForRole;
+    window.loadParcelListGlobal = loadParcelList;
+    window.loadParcelDetail = loadParcelDetail;
     window.loadOrderForPacking = operatorLoadOrderForPacking;
     window.loadOrderForAddingItems = loadOrderForAddingItems;
+    window.showImageAlbum = showImageAlbum;
 
     window.addEventListener('scroll', () => {
         const nav = document.getElementById('bottomNavContainer');

@@ -1,7 +1,7 @@
 // js/operatorShippingPage.js
 import { showPage, uiElements } from './ui.js';
 import { database, storage, auth } from './config.js';
-import { ref, set, get, update, serverTimestamp, push, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { ref, set, get, update, serverTimestamp, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { ref as storageRefFirebase, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js"; // Renamed to avoid conflict
 import { showAppStatus, showToast, beepSuccess, beepError, getTimestampForFilename, resizeImageFileIfNeeded } from './utils.js';
 import { getCurrentUser, getCurrentUserRole } from './auth.js';
@@ -10,7 +10,8 @@ let currentActiveBatchId = null; // Stores the ID of the batch currently being w
 let currentBatchCourier = '';
 let itemsInCurrentBatch = {}; // Stores { orderKey: packageCode } for the current batch
 let shipmentGroupPhotoFile = null; // Stores the selected group photo file for shipment
-let readyToShipPackages = []; // Array of {orderKey, packageCode}
+let readyToShipPackages = []; // Array of {orderKey, packageCode, platform}
+let filteredReadyPackages = [];
 
 export function initializeOperatorShippingPageListeners() {
     if (!uiElements.createNewBatchButton || !uiElements.startScanForBatchButton || 
@@ -23,6 +24,7 @@ export function initializeOperatorShippingPageListeners() {
 
     uiElements.courierSelect.addEventListener('change', () => {
         uiElements.otherCourierInput.classList.toggle('hidden', uiElements.courierSelect.value !== 'Other');
+        filterReadyPackagesByCourier();
     });
 
     uiElements.createNewBatchButton.addEventListener('click', createOrSelectBatch);
@@ -54,9 +56,15 @@ export function initializeOperatorShippingPageListeners() {
             }
         });
     }
+
+    if (uiElements.selectAllReadyPackagesButton) {
+        uiElements.selectAllReadyPackagesButton.addEventListener('click', selectAllFilteredPackages);
+    }
     
     uiElements.shipmentGroupPhoto.addEventListener('change', handleShipmentGroupPhotoSelect);
     uiElements.finalizeShipmentButton.addEventListener('click', finalizeShipment);
+
+    updateBatchIdVisibilityForRole();
 }
 
 export function setupShippingBatchPage() {
@@ -67,7 +75,7 @@ export function setupShippingBatchPage() {
         renderBatchItems(); // Re-render items if a batch is already active
     } else {
         if (uiElements.currentBatchIdDisplay) uiElements.currentBatchIdDisplay.textContent = 'N/A';
-        if (uiElements.batchItemList) uiElements.batchItemList.innerHTML = '<li>ยังไม่มีพัสดุใน Batch นี้</li>';
+        if (uiElements.batchItemList) uiElements.batchItemList.innerHTML = '<li>ยังไม่มีพัสดุในรอบส่งนี้</li>';
         if (uiElements.batchItemCount) uiElements.batchItemCount.textContent = '0';
     }
     if (uiElements.courierSelect) uiElements.courierSelect.value = "";
@@ -77,7 +85,16 @@ export function setupShippingBatchPage() {
     }
     currentBatchCourier = '';
     loadReadyToShipPackages();
-    showAppStatus("พร้อมสำหรับการจัดการ Batch การส่ง", "info", uiElements.appStatus);
+    showAppStatus("พร้อมสำหรับการจัดการรอบส่ง", "info", uiElements.appStatus);
+}
+
+export function updateBatchIdVisibilityForRole() {
+    const role = getCurrentUserRole();
+    const hide = role === 'operator' || role === 'supervisor';
+    const batchIdParent = uiElements.currentBatchIdDisplay ? uiElements.currentBatchIdDisplay.parentElement : null;
+    if (batchIdParent) batchIdParent.classList.toggle('hidden', hide);
+    const confirmParent = uiElements.confirmShipBatchIdDisplay ? uiElements.confirmShipBatchIdDisplay.parentElement : null;
+    if (confirmParent) confirmParent.classList.toggle('hidden', hide);
 }
 
 async function createOrSelectBatch() {
@@ -94,11 +111,10 @@ async function createOrSelectBatch() {
     }
     currentBatchCourier = courier;
 
-    // For simplicity, we'll always create a new batch ID.
-    // In a real app, you might want to let users resume an existing open batch.
-    const newBatchRef = push(ref(database, 'shipmentBatches'));
-    currentActiveBatchId = newBatchRef.key;
+    // Create batch ID based on timestamp to make it human readable
+    currentActiveBatchId = getTimestampForFilename();
     itemsInCurrentBatch = {}; // Reset items for the new batch
+    const newBatchRef = ref(database, `shipmentBatches/${currentActiveBatchId}`);
 
     const batchData = {
         batchId: currentActiveBatchId,
@@ -113,10 +129,10 @@ async function createOrSelectBatch() {
         await set(newBatchRef, batchData);
         if (uiElements.currentBatchIdDisplay) uiElements.currentBatchIdDisplay.textContent = currentActiveBatchId;
         renderBatchItems(); // Clear list and show 'no items'
-        showAppStatus(`สร้าง Batch ID: ${currentActiveBatchId} สำหรับ ${courier} สำเร็จ`, "success", uiElements.appStatus);
+        showAppStatus(`สร้างรอบส่งใหม่ (ID: ${currentActiveBatchId}) สำหรับ ${courier} สำเร็จ`, "success", uiElements.appStatus);
     } catch (error) {
         console.error("Error creating new batch:", error);
-        showAppStatus("เกิดข้อผิดพลาดในการสร้าง Batch: " + error.message, "error", uiElements.appStatus);
+        showAppStatus("เกิดข้อผิดพลาดในการสร้างรอบส่ง: " + error.message, "error", uiElements.appStatus);
         currentActiveBatchId = null;
     }
 }
@@ -135,9 +151,12 @@ function startScanForBatch() {
     }
     Html5Qrcode.getCameras().then(cameras => {
         if (cameras && cameras.length) {
-            const camId = cameras[0].id;
+            let cam = cameras.find(c => /back|rear|environment/i.test(c.label));
+            if (!cam) cam = cameras[cameras.length - 1];
+            const camId = cam.id;
             html5QrScannerForBatch.start(
-                { deviceId: { exact: camId } }, { fps: 10, qrbox: { width: 250, height: 250 } },
+                { deviceId: { exact: camId } },
+                { fps: 10, qrbox: { width: 250, height: 250 }, videoConstraints: { focusMode: "continuous", facingMode: "environment" } },
                 async (decodedText, decodedResult) => { // onScanSuccess
             const packageCodeScanned = decodedText.trim();
             console.log(`Scanned for batch: ${packageCodeScanned}`);
@@ -180,7 +199,7 @@ function startScanForBatch() {
                 (errorMessage) => { /* console.warn("Batch Scan failure:", errorMessage); */ beepError(); }
             ).catch(err => {
                 beepError();
-                showToast("ไม่สามารถเปิดกล้องสแกน QR สำหรับ Batch ได้: " + (err?.message || err), "error");
+                showToast("ไม่สามารถเปิดกล้องสแกน QR สำหรับรอบส่งได้: " + (err?.message || err), "error");
                 uiElements.qrScannerContainer_Batch.classList.add('hidden');
                 uiElements.stopScanForBatchButton.classList.add('hidden');
                 uiElements.startScanForBatchButton.disabled = false;
@@ -207,7 +226,7 @@ async function stopScanForBatch() {
     if (html5QrScannerForBatch) {
         try {
             // Some devices may trigger stop twice; check if scanner is running
-            if (html5QrScannerForBatch._isScanning) {
+            if (html5QrScannerForBatch.isScanning) {
                 await html5QrScannerForBatch.stop();
             }
             await html5QrScannerForBatch.clear();
@@ -227,8 +246,6 @@ window.stopScanForBatch = stopScanForBatch;
 async function loadReadyToShipPackages() {
     if (!uiElements.readyToShipDatalist || !uiElements.readyToShipCheckboxList) return;
     readyToShipPackages = [];
-    uiElements.readyToShipDatalist.innerHTML = '';
-    uiElements.readyToShipCheckboxList.innerHTML = '';
     const statuses = ['Ready for Shipment', 'Pack Approved'];
     try {
         for (const status of statuses) {
@@ -238,31 +255,12 @@ async function loadReadyToShipPackages() {
                 snap.forEach(child => {
                     const pkg = child.val().packageCode;
                     if (pkg) {
-                        readyToShipPackages.push({ orderKey: child.key, packageCode: pkg });
+                        readyToShipPackages.push({ orderKey: child.key, packageCode: pkg, platform: child.val().platform || 'Other' });
                     }
                 });
             }
         }
-        const uniqueCodes = Array.from(new Set(readyToShipPackages.map(p => p.packageCode)));
-        uniqueCodes.forEach(code => {
-            const opt = document.createElement('option');
-            opt.value = code;
-            uiElements.readyToShipDatalist.appendChild(opt);
-        });
-
-        readyToShipPackages.forEach(entry => {
-            const li = document.createElement('li');
-            const label = document.createElement('label');
-            const cb = document.createElement('input');
-            cb.type = 'checkbox';
-            cb.dataset.orderkey = entry.orderKey;
-            cb.dataset.code = entry.packageCode;
-            if (itemsInCurrentBatch[entry.orderKey]) cb.checked = true;
-            label.appendChild(cb);
-            label.appendChild(document.createTextNode(' ' + entry.packageCode));
-            li.appendChild(label);
-            uiElements.readyToShipCheckboxList.appendChild(li);
-        });
+        filterReadyPackagesByCourier();
     } catch (err) {
         console.error('Error loading ready to ship packages', err);
     }
@@ -275,7 +273,7 @@ function addPackageCodeManually(packageCode) {
         return;
     }
     if (itemsInCurrentBatch[entry.orderKey]) {
-        showAppStatus(`พัสดุ ${packageCode} อยู่ใน Batch นี้แล้ว`, 'info', uiElements.appStatus);
+        showAppStatus(`พัสดุ ${packageCode} อยู่ในรอบส่งนี้แล้ว`, 'info', uiElements.appStatus);
         return;
     }
     itemsInCurrentBatch[entry.orderKey] = packageCode;
@@ -284,7 +282,7 @@ function addPackageCodeManually(packageCode) {
         if (cb) cb.checked = true;
     }
     renderBatchItems();
-    showAppStatus(`เพิ่ม ${packageCode} เข้า Batch สำเร็จ`, 'success', uiElements.appStatus);
+    showAppStatus(`เพิ่ม ${packageCode} เข้ารอบส่งสำเร็จ`, 'success', uiElements.appStatus);
 }
 
 function removePackageFromBatch(orderKey) {
@@ -296,7 +294,58 @@ function removePackageFromBatch(orderKey) {
         if (cb) cb.checked = false;
     }
     renderBatchItems();
-    showAppStatus(`ลบ ${code} ออกจาก Batch`, 'info', uiElements.appStatus);
+    showAppStatus(`ลบ ${code} ออกจากรอบส่ง`, 'info', uiElements.appStatus);
+}
+
+function getPlatformFilter(value) {
+    if (!value) return '';
+    if (value.startsWith('Shopee')) return 'Shopee';
+    if (value.startsWith('Lazada')) return 'Lazada';
+    if (value.startsWith('Tiktok')) return 'Tiktok';
+    return '';
+}
+
+function filterReadyPackagesByCourier() {
+    if (!uiElements.readyToShipDatalist || !uiElements.readyToShipCheckboxList) return;
+    uiElements.readyToShipDatalist.innerHTML = '';
+    uiElements.readyToShipCheckboxList.innerHTML = '';
+    const platform = getPlatformFilter(uiElements.courierSelect.value);
+    filteredReadyPackages = platform ? readyToShipPackages.filter(p => p.platform === platform) : readyToShipPackages.slice();
+
+    const uniqueCodes = Array.from(new Set(filteredReadyPackages.map(p => p.packageCode)));
+    uniqueCodes.forEach(code => {
+        const opt = document.createElement('option');
+        opt.value = code;
+        uiElements.readyToShipDatalist.appendChild(opt);
+    });
+
+    filteredReadyPackages.forEach(entry => {
+        const li = document.createElement('li');
+        const label = document.createElement('label');
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.dataset.orderkey = entry.orderKey;
+        cb.dataset.code = entry.packageCode;
+        if (itemsInCurrentBatch[entry.orderKey]) cb.checked = true;
+        label.appendChild(cb);
+        label.appendChild(document.createTextNode(' ' + entry.packageCode));
+        li.appendChild(label);
+        uiElements.readyToShipCheckboxList.appendChild(li);
+    });
+
+    if (typeof window.setNavBadgeCount === 'function') {
+        window.setNavBadgeCount('operatorShippingBatchPage', filteredReadyPackages.length);
+    }
+}
+
+function selectAllFilteredPackages() {
+    if (!uiElements.readyToShipCheckboxList) return;
+    uiElements.readyToShipCheckboxList.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        if (!cb.checked) {
+            cb.checked = true;
+            addPackageCodeManually(cb.dataset.code);
+        }
+    });
 }
 
 function renderBatchItems() {
@@ -306,7 +355,7 @@ function renderBatchItems() {
     uiElements.batchItemCount.textContent = itemCount;
 
     if (itemCount === 0) {
-        uiElements.batchItemList.innerHTML = '<li>ยังไม่มีพัสดุใน Batch นี้</li>';
+        uiElements.batchItemList.innerHTML = '<li>ยังไม่มีพัสดุในรอบส่งนี้</li>';
         return;
     }
     for (const orderKey in itemsInCurrentBatch) {
@@ -376,8 +425,7 @@ async function finalizeShipment() {
 
     try {
         if (!currentActiveBatchId) {
-            const newBatchRef = push(ref(database, 'shipmentBatches'));
-            currentActiveBatchId = newBatchRef.key;
+            currentActiveBatchId = getTimestampForFilename();
         }
 
         // 1. Upload group photo
@@ -386,7 +434,7 @@ async function finalizeShipment() {
         const photoFileName = `shipment_${currentActiveBatchId}_${timestamp}.${extension}`;
         const photoPath = `shipmentGroupPhotos/${currentActiveBatchId}/${photoFileName}`;
         const imageRef = storageRefFirebase(storage, photoPath); // Use aliased storageRef
-        const resized = await resizeImageFileIfNeeded(shipmentGroupPhotoFile, 1500);
+        const resized = await resizeImageFileIfNeeded(shipmentGroupPhotoFile, 500);
         await uploadBytes(imageRef, resized);
         const groupPhotoUrl = await getDownloadURL(imageRef);
 
@@ -419,7 +467,7 @@ async function finalizeShipment() {
         // Perform order updates
         await update(ref(database), orderUpdates); // Update individual orders
 
-        showAppStatus(`Batch ${currentActiveBatchId} ยืนยันการส่งเรียบร้อย!`, "success", uiElements.appStatus);
+        showAppStatus(`รอบส่ง ${currentActiveBatchId} ยืนยันการส่งเรียบร้อย!`, "success", uiElements.appStatus);
         currentActiveBatchId = null; // Clear active batch
         currentBatchCourier = '';
         itemsInCurrentBatch = {};

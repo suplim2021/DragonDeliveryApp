@@ -25,6 +25,20 @@ export function initializeCoreDOMElements() { // Renamed for clarity
     uiElements.refreshOperatorTaskList = document.getElementById('refreshOperatorTaskList');
     uiElements.operatorOrderListContainer = document.getElementById('operatorOrderListContainer');
     uiElements.noOperatorTasksMessage = document.getElementById('noOperatorTasksMessage');
+    uiElements.startScanForPackingButton = document.getElementById('startScanForPackingButton');
+    uiElements.stopScanForPackingButton = document.getElementById('stopScanForPackingButton');
+    uiElements.qrScanner_OperatorTask_div = document.getElementById('qrScanner_OperatorTask');
+    uiElements.qrScannerContainer_OperatorTask = document.getElementById('qrScannerContainer_OperatorTask');
+    uiElements.pickListSummaryContainer = document.getElementById('pickListSummaryContainer');
+    uiElements.pickListSummaryTableBody = document.querySelector('#pickListSummaryTable tbody');
+    uiElements.selectAllPendingOrdersButton = document.getElementById('selectAllPendingOrdersButton');
+
+    uiElements.parcelTableBody = document.getElementById('parcelListTableBody');
+    uiElements.noParcelsMessage = document.getElementById('noParcelsMessage');
+    uiElements.parcelDateFilter = document.getElementById('parcelDateFilter');
+    uiElements.parcelDateStart = document.getElementById('parcelDateStart');
+    uiElements.parcelDateEnd = document.getElementById('parcelDateEnd');
+    uiElements.parcelPlatformFilter = document.getElementById('parcelPlatformFilter');
 
     uiElements.createNewBatchButton = document.getElementById('createNewBatchButton');
     uiElements.startScanForBatchButton = document.getElementById('startScanForBatchButton');
@@ -36,6 +50,7 @@ export function initializeCoreDOMElements() { // Renamed for clarity
     uiElements.addManualPackageButton = document.getElementById('addManualPackageButton');
     uiElements.readyToShipDatalist = document.getElementById('readyToShipDatalist');
     uiElements.readyToShipCheckboxList = document.getElementById('readyToShipCheckboxList');
+    uiElements.selectAllReadyPackagesButton = document.getElementById('selectAllReadyPackagesButton');
     uiElements.currentBatchIdDisplay = document.getElementById('currentBatchIdDisplay');
     uiElements.batchItemList = document.getElementById('batchItemList');
     uiElements.batchItemCount = document.getElementById('batchItemCount');
@@ -57,7 +72,7 @@ export function initializeCoreDOMElements() { // Renamed for clarity
     uiElements.checkOrderPackageCodeDisplay = document.getElementById('checkOrderPackageCodeDisplay');
     uiElements.checkOrderPlatformDisplay = document.getElementById('checkOrderPlatformDisplay');
     uiElements.checkOrderItemListDisplay = document.getElementById('checkOrderItemListDisplay');
-    uiElements.checkOrderPackingPhotoDisplay = document.getElementById('checkOrderPackingPhotoDisplay');
+    uiElements.checkOrderPackingPhotoContainer = document.getElementById('checkOrderPackingPhotoContainer');
     uiElements.checkOrderOperatorNotesDisplay = document.getElementById('checkOrderOperatorNotesDisplay');
     uiElements.supervisorPackCheckNotes = document.getElementById('supervisorPackCheckNotes');
 
@@ -74,6 +89,8 @@ export function showPage(pageId) {
     if (typeof window.stopPackageCodeScan === 'function') window.stopPackageCodeScan();
     if (typeof window.stopPlatformIdScan === 'function') window.stopPlatformIdScan();
     if (typeof window.stopScanForBatch === 'function') window.stopScanForBatch();
+    if (typeof window.stopScanForPacking === 'function') window.stopScanForPacking();
+    window.scrollTo(0, 0);
     console.log(`UI: Attempting to show page: ${pageId}`);
 
     allPagesNodeList.forEach(page => {
@@ -121,9 +138,13 @@ export function showPage(pageId) {
             if (window.currentUserFromAuth) {
                 if (typeof window.updateCurrentDateOnDashboardGlobal === 'function') window.updateCurrentDateOnDashboardGlobal();
                 const filterSelect = document.getElementById('logFilterStatus');
+                const dateFilter = document.getElementById('dashboardDateFilter');
+                const startInput = document.getElementById('dateFilterStart');
+                const endInput = document.getElementById('dateFilterEnd');
                 if (typeof window.loadDashboardDataGlobal === 'function') {
-                    window.loadDashboardDataGlobal(filterSelect ? filterSelect.value : 'all');
+                    window.loadDashboardDataGlobal(filterSelect ? filterSelect.value : 'all', '', dateFilter ? dateFilter.value : 'today', startInput ? startInput.value : null, endInput ? endInput.value : null);
                 } else { console.error("loadDashboardDataGlobal function not found on window."); }
+                if (typeof window.updateDashboardVisibilityForRoleGlobal === 'function') window.updateDashboardVisibilityForRoleGlobal();
             } else { console.warn("No user logged in, not loading dashboard data from showPage."); }
         } else if (pageId === 'operatorTaskListPage') {
             if (typeof window.loadOperatorPendingTasksGlobal === 'function') window.loadOperatorPendingTasksGlobal();
@@ -134,6 +155,18 @@ export function showPage(pageId) {
         } else if (pageId === 'operatorShippingBatchPage') {
             if (typeof window.setupShippingBatchPageGlobal === 'function') window.setupShippingBatchPageGlobal();
             else { console.error("setupShippingBatchPageGlobal function not found on window.");}
+            if (typeof window.updateBatchIdVisibilityForRoleGlobal === 'function') window.updateBatchIdVisibilityForRoleGlobal();
+        } else if (pageId === 'parcelListPage') {
+            if (typeof window.loadParcelListGlobal === 'function') {
+                const df = document.getElementById('parcelDateFilter');
+                const ds = document.getElementById('parcelDateStart');
+                const de = document.getElementById('parcelDateEnd');
+                const pf = document.getElementById('parcelPlatformFilter');
+                window.loadParcelListGlobal(df ? df.value : 'last7', ds ? ds.value : null, de ? de.value : null, pf ? pf.value : 'all');
+            }
+        } else if (pageId === 'shippedOrdersPage') {
+            if (typeof window.loadShippedOrdersGlobal === 'function') window.loadShippedOrdersGlobal();
+            else { console.error("loadShippedOrdersGlobal function not found on window."); }
         }
     } else {
         console.error(`UI: Page with ID "${pageId}" not found in HTML. Defaulting to dashboard.`);
@@ -143,7 +176,11 @@ export function showPage(pageId) {
             dashboardFallback.classList.add('current-page');
             if (window.currentUserFromAuth && typeof window.loadDashboardDataGlobal === 'function') {
                  if (typeof window.updateCurrentDateOnDashboardGlobal === 'function') window.updateCurrentDateOnDashboardGlobal();
-                window.loadDashboardDataGlobal('all');
+                const dateFilter = document.getElementById('dashboardDateFilter');
+                const startInput = document.getElementById('dateFilterStart');
+                const endInput = document.getElementById('dateFilterEnd');
+                window.loadDashboardDataGlobal('all', '', dateFilter ? dateFilter.value : 'today', startInput ? startInput.value : null, endInput ? endInput.value : null);
+                if (typeof window.updateDashboardVisibilityForRoleGlobal === 'function') window.updateDashboardVisibilityForRoleGlobal();
             }
         } else { console.error("UI: Dashboard fallback page also not found! Critical HTML missing."); }
     }
@@ -166,6 +203,8 @@ export function setupRoleBasedUI(currentUserRoleForNav) {
         { pageId: 'operatorTaskListPage', icon: 'inventory_2', label: 'รายการรอแพ็ก', roles: ['administrator','operator','supervisor'] },
         { pageId: 'supervisorPackCheckListPage', icon: 'checklist', label: 'รอตรวจแพ็ก', roles: ['administrator','supervisor'] },
         { pageId: 'operatorShippingBatchPage', icon: 'local_shipping', label: 'เตรียมส่งของ', roles: ['administrator','operator','supervisor'] },
+        { pageId: 'shippedOrdersPage', icon: 'check_circle', label: 'ส่งแล้ว', roles: ['administrator','operator','supervisor'] },
+        { pageId: 'parcelListPage', icon: 'list', label: 'พัสดุทั้งหมด', roles: ['administrator','supervisor'] },
     ];
 
     const allowedItems = navItems.filter(item => item.roles.includes(currentUserRoleForNav));
