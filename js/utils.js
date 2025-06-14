@@ -373,7 +373,7 @@ export function initializeImageLightbox() {
     });
 
     overlay.addEventListener('click', e => {
-        if (e.target === overlay) hideOverlay();
+        if (!dragging && !e.target.closest('img')) hideOverlay();
     });
 
     document.body.addEventListener('click', e => {
