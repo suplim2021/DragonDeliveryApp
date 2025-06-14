@@ -246,8 +246,9 @@ export function initializeImageLightbox() {
         overlay = document.createElement('div');
         overlay.id = 'lightboxOverlay';
         overlay.className = 'lightbox-overlay hidden';
-        const img = document.createElement('img');
-        img.id = 'lightboxImage';
+        const slider = document.createElement('div');
+        slider.id = 'lightboxSlider';
+        slider.className = 'lightbox-slider';
         const prev = document.createElement('button');
         prev.id = 'lightboxPrev';
         prev.className = 'lightbox-nav';
@@ -256,52 +257,37 @@ export function initializeImageLightbox() {
         next.id = 'lightboxNext';
         next.className = 'lightbox-nav';
         next.textContent = '>';
-        overlay.appendChild(img);
+        overlay.appendChild(slider);
         overlay.appendChild(prev);
         overlay.appendChild(next);
         document.body.appendChild(overlay);
     }
 
-    const imgElem = overlay.querySelector('#lightboxImage');
+    const sliderElem = overlay.querySelector('#lightboxSlider');
     const prevBtn = overlay.querySelector('#lightboxPrev');
     const nextBtn = overlay.querySelector('#lightboxNext');
 
-    const showCurrent = () => {
-        if (!albumUrls.length) return;
-        if (albumIndex < 0) albumIndex = 0;
-        if (albumIndex >= albumUrls.length) albumIndex = albumUrls.length - 1;
-        if (imgElem) imgElem.src = albumUrls[albumIndex];
+    const updateSlider = (animate = true) => {
+        if (!sliderElem) return;
+        const width = overlay.clientWidth;
+        if (animate) sliderElem.style.transition = 'transform 0.3s ease';
+        else sliderElem.style.transition = 'none';
+        sliderElem.style.transform = `translateX(-${albumIndex * width}px)`;
     };
 
-    const slideImage = (direction, startOffset = 0) => {
-        if (!imgElem) return;
-        const finish = () => {
-            imgElem.removeEventListener('transitionend', finish);
-            albumIndex = (albumIndex + direction + albumUrls.length) % albumUrls.length;
-            showCurrent();
-            imgElem.style.transition = 'none';
-            imgElem.style.transform = `translateX(${direction * 100}%)`;
-            requestAnimationFrame(() => {
-                imgElem.style.transition = 'transform 0.3s ease';
-                imgElem.style.transform = 'translateX(0)';
-            });
-        };
-        imgElem.style.transition = 'transform 0.3s ease';
-        if (startOffset) {
-            imgElem.style.transform = `translateX(${startOffset}px)`;
-            requestAnimationFrame(() => {
-                imgElem.addEventListener('transitionend', finish, { once: true });
-                imgElem.style.transform = `translateX(${direction * -100}%)`;
-            });
-        } else {
-            imgElem.addEventListener('transitionend', finish, { once: true });
-            imgElem.style.transform = `translateX(${direction * -100}%)`;
+    const showPrev = () => {
+        if (albumIndex > 0) {
+            albumIndex--;
+            updateSlider();
         }
     };
 
-    const showPrev = (offset = 0) => slideImage(-1, offset);
-
-    const showNext = (offset = 0) => slideImage(1, offset);
+    const showNext = () => {
+        if (albumIndex < albumUrls.length - 1) {
+            albumIndex++;
+            updateSlider();
+        }
+    };
 
     prevBtn.addEventListener('click', e => {
         e.stopPropagation();
@@ -313,92 +299,81 @@ export function initializeImageLightbox() {
         showNext();
     });
 
-    let touchStartX = 0;
-    let touchDragging = false;
+    let startX = 0;
+    let dragging = false;
+
+    const startDrag = x => {
+        dragging = true;
+        startX = x;
+        if (sliderElem) sliderElem.style.transition = 'none';
+    };
+
+    const moveDrag = x => {
+        if (!dragging || !sliderElem) return;
+        const diff = x - startX;
+        const width = overlay.clientWidth;
+        sliderElem.style.transform = `translateX(${diff - albumIndex * width}px)`;
+    };
+
+    const endDrag = x => {
+        if (!dragging || !sliderElem) return;
+        dragging = false;
+        const diff = x - startX;
+        const width = overlay.clientWidth;
+        if (Math.abs(diff) > width * 0.2) {
+            if (diff < 0 && albumIndex < albumUrls.length - 1) albumIndex++;
+            if (diff > 0 && albumIndex > 0) albumIndex--;
+        }
+        sliderElem.style.transition = 'transform 0.3s ease';
+        sliderElem.style.transform = `translateX(-${albumIndex * width}px)`;
+    };
+
     overlay.addEventListener('touchstart', e => {
         if (e.touches.length !== 1) return;
-        touchStartX = e.touches[0].clientX;
-        touchDragging = true;
-        if (imgElem) imgElem.style.transition = 'none';
+        startDrag(e.touches[0].clientX);
     });
     overlay.addEventListener('touchmove', e => {
-        if (!touchDragging || !imgElem) return;
-        const diff = e.touches[0].clientX - touchStartX;
-        imgElem.style.transform = `translateX(${diff}px)`;
+        if (e.touches.length !== 1) return;
+        moveDrag(e.touches[0].clientX);
+        e.preventDefault();
     });
-    const endTouchDrag = diff => {
-        if (!imgElem) return;
-        if (Math.abs(diff) > 50) {
-            if (diff < 0) showNext(diff);
-            else showPrev(diff);
-        } else {
-            imgElem.style.transition = 'transform 0.3s ease';
-            imgElem.style.transform = 'translateX(0)';
-        }
-    };
     overlay.addEventListener('touchend', e => {
-        if (!touchDragging) return;
-        const diff = e.changedTouches[0].clientX - touchStartX;
-        touchDragging = false;
-        endTouchDrag(diff);
+        if (e.changedTouches.length !== 1) return;
+        endDrag(e.changedTouches[0].clientX);
     });
     overlay.addEventListener('touchcancel', () => {
-        if (!touchDragging) return;
-        touchDragging = false;
-        endTouchDrag(0);
+        if (dragging) endDrag(startX);
     });
 
-    let mouseStartX = 0;
-    let mouseDragging = false;
     overlay.addEventListener('mousedown', e => {
-        mouseDragging = true;
-        mouseStartX = e.clientX;
-        if (imgElem) imgElem.style.transition = 'none';
+        startDrag(e.clientX);
     });
     overlay.addEventListener('mousemove', e => {
-        if (!mouseDragging || !imgElem) return;
-        const diff = e.clientX - mouseStartX;
-        imgElem.style.transform = `translateX(${diff}px)`;
+        moveDrag(e.clientX);
     });
-    const endMouseDrag = diff => {
-        if (!imgElem) return;
-        if (Math.abs(diff) > 50) {
-            if (diff < 0) showNext(diff);
-            else showPrev(diff);
-        } else {
-            imgElem.style.transition = 'transform 0.3s ease';
-            imgElem.style.transform = 'translateX(0)';
-        }
-    };
     overlay.addEventListener('mouseup', e => {
-        if (!mouseDragging) return;
-        const diff = e.clientX - mouseStartX;
-        mouseDragging = false;
-        endMouseDrag(diff);
+        endDrag(e.clientX);
     });
     overlay.addEventListener('mouseleave', () => {
-        if (!mouseDragging) return;
-        mouseDragging = false;
-        endMouseDrag(0);
+        if (dragging) endDrag(startX);
     });
+
+    const hideOverlay = () => {
+        overlay.classList.add('hidden');
+        document.body.classList.remove('no-scroll');
+        if (sliderElem) sliderElem.innerHTML = '';
+        albumUrls = [];
+    };
 
     document.addEventListener('keydown', e => {
         if (overlay.classList.contains('hidden')) return;
-        if (e.key === 'ArrowLeft') { showPrev(); }
-        else if (e.key === 'ArrowRight') { showNext(); }
-        else if (e.key === 'Escape') {
-            overlay.classList.add('hidden');
-            if (imgElem) imgElem.src = '#';
-            albumUrls = [];
-        }
+        if (e.key === 'ArrowLeft') showPrev();
+        else if (e.key === 'ArrowRight') showNext();
+        else if (e.key === 'Escape') hideOverlay();
     });
 
     overlay.addEventListener('click', e => {
-        if (e.target === overlay) {
-            overlay.classList.add('hidden');
-            if (imgElem) imgElem.src = '#';
-            albumUrls = [];
-        }
+        if (e.target === overlay) hideOverlay();
     });
 
     document.body.addEventListener('click', e => {
@@ -415,8 +390,20 @@ export function initializeImageLightbox() {
             }
             albumUrls = thumbs.map(t => t.dataset.full || t.src);
             albumIndex = thumbs.indexOf(target);
-            showCurrent();
+            if (sliderElem) {
+                sliderElem.innerHTML = '';
+                albumUrls.forEach(url => {
+                    const slide = document.createElement('div');
+                    slide.className = 'lightbox-slide';
+                    const img = document.createElement('img');
+                    img.src = url;
+                    slide.appendChild(img);
+                    sliderElem.appendChild(slide);
+                });
+            }
+            updateSlider(false);
             overlay.classList.remove('hidden');
+            document.body.classList.add('no-scroll');
         }
     });
 }
@@ -425,10 +412,20 @@ export function showImageAlbum(urls, startIndex = 0) {
     albumUrls = Array.isArray(urls) ? urls : [];
     albumIndex = startIndex;
     const overlay = document.getElementById('lightboxOverlay');
-    const imgElem = document.getElementById('lightboxImage');
-    if (!overlay || !imgElem || albumUrls.length === 0) return;
-    imgElem.src = albumUrls[albumIndex];
-    imgElem.style.transition = 'none';
-    imgElem.style.transform = 'translateX(0)';
+    const sliderElem = document.getElementById('lightboxSlider');
+    if (!overlay || !sliderElem || albumUrls.length === 0) return;
+    sliderElem.innerHTML = '';
+    albumUrls.forEach(url => {
+        const slide = document.createElement('div');
+        slide.className = 'lightbox-slide';
+        const img = document.createElement('img');
+        img.src = url;
+        slide.appendChild(img);
+        sliderElem.appendChild(slide);
+    });
+    const width = overlay.clientWidth;
+    sliderElem.style.transition = 'none';
+    sliderElem.style.transform = `translateX(-${albumIndex * width}px)`;
     overlay.classList.remove('hidden');
+    document.body.classList.add('no-scroll');
 }
