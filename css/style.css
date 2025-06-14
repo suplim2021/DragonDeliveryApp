@@ -207,13 +207,21 @@ tbody tr:hover { background-color: #f1f8ff; }
 }
 
 .logo {
-    display: block;
-    margin: 10px auto;
-    max-width: 160px;
+    width: 48px;
+    margin-right: 10px;
 }
 
 .app-header {
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 10px 0;
+}
+
+.app-title {
+    font-size: 1.5em;
+    font-weight: 700;
+    color: #fff;
 }
 
 /* Toast notifications */
