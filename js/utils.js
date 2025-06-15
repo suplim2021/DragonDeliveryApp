@@ -249,6 +249,8 @@ export function resizeImageFileIfNeeded(file, maxDim = 500) {
 // ----- Lightbox utility -----
 let albumUrls = [];
 let albumIndex = 0;
+let panzoomInstances = [];
+let isZoomed = false;
 
 export function initializeImageLightbox() {
     let overlay = document.getElementById('lightboxOverlay');
@@ -288,6 +290,7 @@ export function initializeImageLightbox() {
     const showPrev = () => {
         if (albumIndex > 0) {
             albumIndex--;
+            resetZoom();
             updateSlider();
         }
     };
@@ -295,6 +298,7 @@ export function initializeImageLightbox() {
     const showNext = () => {
         if (albumIndex < albumUrls.length - 1) {
             albumIndex++;
+            resetZoom();
             updateSlider();
         }
     };
@@ -312,27 +316,69 @@ export function initializeImageLightbox() {
     let startX = 0;
     let dragging = false;
 
+    const resetZoom = () => {
+        isZoomed = false;
+        sliderElem?.querySelectorAll('img.zoomed').forEach(img => {
+            img.classList.remove('zoomed');
+            const pz = img._panzoom;
+            if (pz) {
+                pz.reset();
+                pz.pause();
+            }
+        });
+    };
+
+    const setupPanzoom = () => {
+        panzoomInstances.forEach(p => p.destroy());
+        panzoomInstances = [];
+        if (!sliderElem || !window.Panzoom) return;
+        sliderElem.querySelectorAll('img').forEach(img => {
+            const pz = window.Panzoom(img, { maxScale: 4 });
+            img._panzoom = pz;
+            panzoomInstances.push(pz);
+            pz.pause();
+            const toggle = e => {
+                e.stopPropagation();
+                if (img.classList.contains('zoomed')) {
+                    img.classList.remove('zoomed');
+                    pz.reset();
+                    pz.pause();
+                    isZoomed = false;
+                } else {
+                    resetZoom();
+                    img.classList.add('zoomed');
+                    pz.resume();
+                    isZoomed = true;
+                }
+            };
+            img.addEventListener('click', toggle);
+            img.addEventListener('dblclick', toggle);
+        });
+    };
+
     const startDrag = x => {
+        if (isZoomed) return;
         dragging = true;
         startX = x;
         if (sliderElem) sliderElem.style.transition = 'none';
     };
 
     const moveDrag = x => {
-        if (!dragging || !sliderElem) return;
+        if (!dragging || !sliderElem || isZoomed) return;
         const diff = x - startX;
         const width = overlay.clientWidth;
         sliderElem.style.transform = `translateX(${diff - albumIndex * width}px)`;
     };
 
     const endDrag = x => {
-        if (!dragging || !sliderElem) return;
+        if (!dragging || !sliderElem || isZoomed) return;
         dragging = false;
         const diff = x - startX;
         const width = overlay.clientWidth;
         if (Math.abs(diff) > width * 0.2) {
             if (diff < 0 && albumIndex < albumUrls.length - 1) albumIndex++;
             if (diff > 0 && albumIndex > 0) albumIndex--;
+            resetZoom();
         }
         sliderElem.style.transition = 'transform 0.3s ease';
         sliderElem.style.transform = `translateX(-${albumIndex * width}px)`;
@@ -371,7 +417,10 @@ export function initializeImageLightbox() {
     const hideOverlay = () => {
         overlay.classList.add('hidden');
         document.body.classList.remove('no-scroll');
+        resetZoom();
         if (sliderElem) sliderElem.innerHTML = '';
+        panzoomInstances.forEach(p => p.destroy());
+        panzoomInstances = [];
         albumUrls = [];
     };
 
@@ -410,6 +459,8 @@ export function initializeImageLightbox() {
                     slide.appendChild(img);
                     sliderElem.appendChild(slide);
                 });
+                resetZoom();
+                setupPanzoom();
             }
             updateSlider(false);
             overlay.classList.remove('hidden');
@@ -433,6 +484,8 @@ export function showImageAlbum(urls, startIndex = 0) {
         slide.appendChild(img);
         sliderElem.appendChild(slide);
     });
+    resetZoom();
+    setupPanzoom();
     const width = overlay.clientWidth;
     sliderElem.style.transition = 'none';
     sliderElem.style.transform = `translateX(-${albumIndex * width}px)`;
