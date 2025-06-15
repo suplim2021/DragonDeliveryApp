@@ -55,6 +55,7 @@ export async function loadParcelDetail(orderKey) {
                     urls.forEach((url, idx) => {
                         const img = document.createElement('img');
                         img.src = url;
+                        img.alt = `รูปการแพ็ค ${idx + 1}`;
                         img.className = 'lightbox-thumb';
                         img.style.maxWidth = '100px';
                         img.style.marginRight = '5px';

@@ -166,6 +166,7 @@ function displayPackingPhotoPreviews() {
 
         const img = document.createElement('img');
         img.src = url;
+        img.alt = `รูปการแพ็ค ${idx + 1}`;
         img.classList.add('lightbox-thumb');
         img.addEventListener('click', () => {
             if (typeof window.showImageAlbum === 'function') {
@@ -193,6 +194,7 @@ function displayPackingPhotoPreviews() {
 
         const img = document.createElement('img');
         img.src = file.previewUrl;
+        img.alt = `รูปการแพ็ค ${existingPackingPhotoUrls.length + idx + 1}`;
         img.classList.add('lightbox-thumb');
         img.addEventListener('click', () => {
             if (typeof window.showImageAlbum === 'function') {
