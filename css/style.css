@@ -285,6 +285,7 @@ tbody tr:hover { background-color: #f1f8ff; }
     z-index:10000;
     overflow:hidden;
     touch-action:none;
+    user-select:none;
 }
 .lightbox-slider {
     display:flex;
@@ -302,6 +303,12 @@ tbody tr:hover { background-color: #f1f8ff; }
     max-height:95%;
     border-radius:8px;
     box-shadow:0 0 10px rgba(0,0,0,0.5);
+    transform-origin:center center;
+    will-change:transform;
+    transition:transform 0.2s ease;
+}
+.lightbox-slide img.zoomed {
+    cursor:grab;
 }
 .lightbox-nav {
     position:absolute;
