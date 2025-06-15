@@ -222,10 +222,10 @@ function applyTimeFilter(orders, filterVal, startDateStr, endDateStr) {
 function updateSummaryCards(allOrders, timeFilter = 'today', startDateStr = null, endDateStr = null) {
     if (!el_summaryCardsContainer) return;
     el_summaryCardsContainer.innerHTML = '';
-    const filtered = applyTimeFilter(allOrders, timeFilter, startDateStr, endDateStr);
-    const readyToPack = filtered.filter(o => o.status === 'Ready to Pack').length;
-    const pendingCheck = filtered.filter(o => o.status === 'Pending Supervisor Pack Check').length;
-    const readyToShip = filtered.filter(o => (o.status === 'Ready for Shipment' || o.status === 'Pack Approved')).length;
+    // For pending/packing related cards always show totals from all time
+    const readyToPack = allOrders.filter(o => o.status === 'Ready to Pack').length;
+    const pendingCheck = allOrders.filter(o => o.status === 'Pending Supervisor Pack Check').length;
+    const readyToShip = allOrders.filter(o => (o.status === 'Ready for Shipment' || o.status === 'Pack Approved')).length;
 
     let shippedOrders = allOrders.filter(o => (o.status === 'Shipped' || o.status === 'Shipment Approved') && o.shipmentInfo?.shippedAt_actual);
     if (timeFilter !== 'all') {
