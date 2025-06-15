@@ -451,11 +451,12 @@ export function initializeImageLightbox() {
             albumIndex = thumbs.indexOf(target);
             if (sliderElem) {
                 sliderElem.innerHTML = '';
-                albumUrls.forEach(url => {
+                albumUrls.forEach((url, slideIdx) => {
                     const slide = document.createElement('div');
                     slide.className = 'lightbox-slide';
                     const img = document.createElement('img');
                     img.src = url;
+                    img.alt = `รูปภาพ ${slideIdx + 1}`;
                     slide.appendChild(img);
                     sliderElem.appendChild(slide);
                 });
@@ -476,11 +477,12 @@ export function showImageAlbum(urls, startIndex = 0) {
     const sliderElem = document.getElementById('lightboxSlider');
     if (!overlay || !sliderElem || albumUrls.length === 0) return;
     sliderElem.innerHTML = '';
-    albumUrls.forEach(url => {
+    albumUrls.forEach((url, slideIdx) => {
         const slide = document.createElement('div');
         slide.className = 'lightbox-slide';
         const img = document.createElement('img');
         img.src = url;
+        img.alt = `รูปภาพ ${slideIdx + 1}`;
         slide.appendChild(img);
         sliderElem.appendChild(slide);
     });
