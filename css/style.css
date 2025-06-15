@@ -207,8 +207,9 @@ tbody tr:hover { background-color: #f1f8ff; }
 }
 
 .logo {
-    width: 48px;
-    margin-right: 10px;
+    width: 150px;
+    height: auto;
+    margin-right: 0;
 }
 
 .app-header {
