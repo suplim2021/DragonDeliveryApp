@@ -299,6 +299,8 @@ function removePackageFromBatch(orderKey) {
 
 function getPlatformFilter(value) {
     if (!value) return '';
+    if (value === 'บริษัทส่งเอง') return 'บริษัทส่งเอง';
+    if (value.startsWith('ส่งด่วน Shopee')) return 'ส่งด่วน Shopee';
     if (value.startsWith('Shopee')) return 'Shopee';
     if (value.startsWith('Lazada')) return 'Lazada';
     if (value.startsWith('Tiktok')) return 'Tiktok';
