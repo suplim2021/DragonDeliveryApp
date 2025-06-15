@@ -9,6 +9,16 @@ export function detectPlatformFromPackageCode(packageCode) {
     if (!packageCode) return "Other";
     const code = packageCode.toUpperCase().replace(/\s+/g, ""); // Normalize for easier comparison
 
+    // If code starts with INV followed by numbers -> company's own delivery
+    if (/^INV\d+$/i.test(code)) {
+        return "บริษัทส่งเอง";
+    }
+
+    // If the code is exactly 4 alphanumeric characters -> Shopee express rush
+    if (/^[A-Z0-9]{4}$/i.test(code)) {
+        return "ส่งด่วน Shopee";
+    }
+
     // Shopee codes usually start with TH + digits or the prefix SPX
     if ((code.startsWith("TH") && code.length >= 12) || code.startsWith("SPX")) {
         return "Shopee";
