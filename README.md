@@ -10,6 +10,7 @@ Dragon Delivery App is a web-based logistics management tool built with Firebase
 - Dashboard with statistics rendered via Chart.js
 - Tracking and packing pages for daily operations
 - Uploaded photos are automatically resized so the longest side is 500&nbsp;px to speed up uploads
+- When packing items on a mobile browser, the photo picker lets users choose an existing image or open the camera. Add `capture="environment"` to the file input in `delivery.html` to launch the camera immediately if desired.
 
 ## Getting Started
 

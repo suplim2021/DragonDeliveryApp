@@ -204,6 +204,8 @@
                 <h3>Checklist รายการสินค้า:</h3>
                 <ul id="packOrderItemList" class="item-checklist packing-checklist"></ul>
                 <label for="packingPhoto">ถ่ายหรือเลือกรูปสินค้าที่เตรียม:</label>
+                <!-- Mobile users can select from gallery or take a new photo.
+                     Add capture="environment" if you want to open the back camera directly. -->
                 <input type="file" id="packingPhoto" accept="image/*" multiple>
                 <div id="packingPhotoPreviewContainer" class="hidden" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
                 <label for="operatorPackNotes">หมายเหตุ (ถ้ามี):</label>
