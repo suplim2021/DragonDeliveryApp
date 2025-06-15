@@ -49,6 +49,14 @@ After deployment your site will be available on your Firebase Hosting URL.
 
 All source code lives in plain HTML, CSS and JavaScript under the `js/` directory. Modules are used throughout so a modern browser is required.
 
+## Testing
+
+Run the basic test suite with:
+
+```bash
+npm test
+```
+
 ## License
 
 This repository is released under the terms of the MIT License. See [LICENSE](LICENSE) for details.
