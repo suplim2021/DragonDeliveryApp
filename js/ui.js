@@ -63,6 +63,7 @@ export function initializeCoreDOMElements() { // Renamed for clarity
     uiElements.shipmentGroupPhotoPreview = document.getElementById('shipmentGroupPhotoPreview');
     uiElements.shipmentGpsLocationDisplay = document.getElementById('shipmentGpsLocationDisplay');
     uiElements.finalizeShipmentButton = document.getElementById('finalizeShipmentButton');
+    uiElements.backToShippingBatchButton = document.getElementById('backToShippingBatchButton');
 
     uiElements.refreshSupervisorPackCheckList = document.getElementById('refreshSupervisorPackCheckList');
     uiElements.packCheckListContainer = document.getElementById('packCheckListContainer');
