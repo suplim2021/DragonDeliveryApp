@@ -64,6 +64,7 @@ export function initializeCoreDOMElements() { // Renamed for clarity
     uiElements.shipmentGroupPhotoPreview = document.getElementById('shipmentGroupPhotoPreview');
     uiElements.shipmentGpsLocationDisplay = document.getElementById('shipmentGpsLocationDisplay');
     uiElements.finalizeShipmentButton = document.getElementById('finalizeShipmentButton');
+    uiElements.backToShippingBatchButton = document.getElementById('backToShippingBatchButton');
     uiElements.confirmPackagesTableBody = document.querySelector('#confirmPackagesTable tbody');
 
     uiElements.refreshSupervisorPackCheckList = document.getElementById('refreshSupervisorPackCheckList');

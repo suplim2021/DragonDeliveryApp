@@ -63,6 +63,9 @@ export function initializeOperatorShippingPageListeners() {
     
     uiElements.shipmentGroupPhoto.addEventListener('change', handleShipmentGroupPhotoSelect);
     uiElements.finalizeShipmentButton.addEventListener('click', finalizeShipment);
+    if (uiElements.backToShippingBatchButton) {
+        uiElements.backToShippingBatchButton.addEventListener('click', () => showPage('operatorShippingBatchPage'));
+    }
 
     updateBatchIdVisibilityForRole();
 }
