@@ -12,6 +12,7 @@ let itemsInCurrentBatch = {}; // Stores { orderKey: packageCode } for the curren
 let shipmentGroupPhotoFile = null; // Stores the selected group photo file for shipment
 let readyToShipPackages = []; // Array of {orderKey, packageCode, platform}
 let filteredReadyPackages = [];
+let preserveBatchStateForReturn = false;
 
 export function initializeOperatorShippingPageListeners() {
     if (!uiElements.createNewBatchButton || !uiElements.startScanForBatchButton || 
@@ -64,7 +65,10 @@ export function initializeOperatorShippingPageListeners() {
     uiElements.shipmentGroupPhoto.addEventListener('change', handleShipmentGroupPhotoSelect);
     uiElements.finalizeShipmentButton.addEventListener('click', finalizeShipment);
     if (uiElements.backToShippingBatchButton) {
-        uiElements.backToShippingBatchButton.addEventListener('click', () => showPage('operatorShippingBatchPage'));
+        uiElements.backToShippingBatchButton.addEventListener('click', () => {
+            preserveBatchStateForReturn = true;
+            showPage('operatorShippingBatchPage');
+        });
     }
 
     updateBatchIdVisibilityForRole();
@@ -81,12 +85,21 @@ export function setupShippingBatchPage() {
         if (uiElements.batchItemList) uiElements.batchItemList.innerHTML = '<li>ยังไม่มีพัสดุในรอบส่งนี้</li>';
         if (uiElements.batchItemCount) uiElements.batchItemCount.textContent = '0';
     }
-    if (uiElements.courierSelect) uiElements.courierSelect.value = "";
-    if (uiElements.otherCourierInput) {
-        uiElements.otherCourierInput.value = "";
-        uiElements.otherCourierInput.classList.add('hidden');
+    if (preserveBatchStateForReturn && currentActiveBatchId) {
+        if (uiElements.courierSelect) uiElements.courierSelect.value = currentBatchCourier || '';
+        if (uiElements.otherCourierInput) {
+            uiElements.otherCourierInput.value = uiElements.courierSelect.value === 'Other' ? currentBatchCourier : '';
+            uiElements.otherCourierInput.classList.toggle('hidden', uiElements.courierSelect.value !== 'Other');
+        }
+    } else {
+        if (uiElements.courierSelect) uiElements.courierSelect.value = "";
+        if (uiElements.otherCourierInput) {
+            uiElements.otherCourierInput.value = "";
+            uiElements.otherCourierInput.classList.add('hidden');
+        }
+        currentBatchCourier = '';
     }
-    currentBatchCourier = '';
+    preserveBatchStateForReturn = false;
     loadReadyToShipPackages();
     showAppStatus("พร้อมสำหรับการจัดการรอบส่ง", "info", uiElements.appStatus);
 }
