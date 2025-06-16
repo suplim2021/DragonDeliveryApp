@@ -298,7 +298,7 @@ function updateDueTodayTable(orders) {
     if (dueToday.length === 0) {
         const r = el_dueTodayTableBody.insertRow();
         const c = r.insertCell();
-        c.colSpan = 7;
+        c.colSpan = 8;
         c.textContent = 'ไม่พบข้อมูล';
         c.style.textAlign = 'center';
         c.style.padding = '20px';
@@ -311,9 +311,12 @@ function updateDueTodayTable(orders) {
         const r = el_dueTodayTableBody.insertRow();
         r.classList.add('due-today-row');
         r.dataset.orderkey = o.key;
+        r.dataset.notes = o.notes || '';
+        r.dataset.platform = o.platform || '';
         r.insertCell().textContent = o.packageCode || 'N/A';
         r.insertCell().textContent = o.platformOrderId || '-';
         r.insertCell().textContent = o.platform || 'N/A';
+        r.insertCell().textContent = o.notes || '-';
         r.insertCell().textContent = translateStatusToThai(o.status, !!o.shipmentInfo?.adminVerifiedBy);
         r.insertCell().textContent = formatDateTimeDDMMYYYYHHMM(o.createdAt);
         r.insertCell().textContent = formatDateDDMMYYYY(o.dueDate);
@@ -344,7 +347,7 @@ function updateOrdersLogTable(orders, filterStatus = 'all', searchCode = '') {
         filtered = filtered.filter(o => (o.packageCode || '').toLowerCase().includes(scLower));
     }
     if (filtered.length === 0) {
-        const r = el_ordersTableBody.insertRow(); const c = r.insertCell(); c.colSpan = 7; c.textContent = "ไม่พบข้อมูล"; c.style.textAlign = "center"; c.style.padding="20px"; return;
+        const r = el_ordersTableBody.insertRow(); const c = r.insertCell(); c.colSpan = 8; c.textContent = "ไม่พบข้อมูล"; c.style.textAlign = "center"; c.style.padding="20px"; return;
     }
     const role = getCurrentUserRole();
     filtered.forEach(o => {
@@ -352,11 +355,14 @@ function updateOrdersLogTable(orders, filterStatus = 'all', searchCode = '') {
         r.dataset.orderkey = o.key;
         r.dataset.duedate = o.dueDate || '';
         r.dataset.status = o.status || '';
+        r.dataset.notes = o.notes || '';
+        r.dataset.platform = o.platform || '';
         const isCompleted = (o.status === 'Shipment Approved') || (o.status === 'Shipped' && o.shipmentInfo?.adminVerifiedBy);
         if (isCompleted) r.classList.add('completed-row');
         r.insertCell().textContent = o.packageCode || 'N/A';
         r.insertCell().textContent = o.platformOrderId || '-';
         r.insertCell().textContent = o.platform || 'N/A';
+        r.insertCell().textContent = o.notes || '-';
         r.insertCell().textContent = translateStatusToThai(o.status, !!o.shipmentInfo?.adminVerifiedBy);
         r.insertCell().textContent = formatDateTimeDDMMYYYYHHMM(o.createdAt);
         r.insertCell().textContent = formatDateDDMMYYYY(o.dueDate);
@@ -394,9 +400,11 @@ async function handleEditOrder(orderKey) {
     const cells = row.querySelectorAll('td');
     const packageCodeCell = cells[0];
     const platformOrderCell = cells[1];
-    const statusCell = cells[3];
-    const dueDateCell = cells[5];
-    const actionsCell = cells[6];
+    const platformCell = cells[2];
+    const notesCell = cells[3];
+    const statusCell = cells[4];
+    const dueDateCell = cells[6];
+    const actionsCell = cells[7];
 
     const platformOrderInput = document.createElement('input');
     platformOrderInput.type = 'text';
@@ -405,6 +413,14 @@ async function handleEditOrder(orderKey) {
     const packageCodeInput = document.createElement('input');
     packageCodeInput.type = 'text';
     packageCodeInput.value = packageCodeCell.textContent.trim();
+
+    const platformInput = document.createElement('input');
+    platformInput.type = 'text';
+    platformInput.value = row.dataset.platform || platformCell.textContent.trim();
+
+    const notesInput = document.createElement('input');
+    notesInput.type = 'text';
+    notesInput.value = row.dataset.notes || notesCell.textContent.trim();
 
     const statusSelect = document.createElement('select');
     const statusOptions = {
@@ -435,10 +451,14 @@ async function handleEditOrder(orderKey) {
 
     platformOrderCell.innerHTML = '';
     packageCodeCell.innerHTML = '';
+    platformCell.innerHTML = '';
+    notesCell.innerHTML = '';
     statusCell.innerHTML = '';
     dueDateCell.innerHTML = '';
     platformOrderCell.appendChild(platformOrderInput);
     packageCodeCell.appendChild(packageCodeInput);
+    platformCell.appendChild(platformInput);
+    notesCell.appendChild(notesInput);
     statusCell.appendChild(statusSelect);
     dueDateCell.appendChild(dueDateInput);
 
@@ -459,6 +479,8 @@ async function handleEditOrder(orderKey) {
             const updates = {
                 platformOrderId: platformOrderInput.value.trim(),
                 packageCode: packageCodeInput.value.trim(),
+                platform: platformInput.value.trim() || 'Other',
+                notes: notesInput.value.trim() || null,
                 status: statusSelect.value,
                 dueDate: dueDateInput.value ? new Date(dueDateInput.value).getTime() : null,
                 lastUpdatedAt: serverTimestamp()

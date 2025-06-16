@@ -58,7 +58,7 @@
                     <h3>รายการครบกำหนดวันนี้</h3>
                     <div id="dueTodayTableContainer" style="max-height:300px; overflow-y:auto; border:1px solid #ccc;">
                         <table><thead><tr style="background-color:#ffe5e5;">
-                            <th>Package Code</th><th>Platform Order ID</th><th>Platform</th><th>สถานะ</th><th>Created At</th><th>Due Date</th><th>Actions</th>
+                            <th>Package Code</th><th>Platform Order ID</th><th>Platform</th><th>หมายเหตุ</th><th>สถานะ</th><th>Created At</th><th>Due Date</th><th>Actions</th>
                         </tr></thead><tbody id="dueTodayTableBody"></tbody></table>
                     </div>
                     <p id="noDueTodayMessage" class="hidden" style="text-align:center; padding:20px;">ไม่มีรายการครบกำหนดวันนี้</p>
@@ -81,7 +81,7 @@
                     </div>
                     <div id="ordersTableContainer" style="max-height: 400px; overflow-y: auto; border:1px solid #ccc;">
                         <table><thead><tr style="background-color:#f0f0f0;">
-                            <th>Package Code</th><th>Platform Order ID</th><th>Platform</th><th>สถานะ</th><th>Created At</th><th>Due Date</th><th>Actions</th>
+                            <th>Package Code</th><th>Platform Order ID</th><th>Platform</th><th>หมายเหตุ</th><th>สถานะ</th><th>Created At</th><th>Due Date</th><th>Actions</th>
                         </tr></thead><tbody id="ordersTableBody"></tbody></table>
                     </div>
                     <p id="noOrdersMessage" class="hidden" style="text-align:center; padding:20px;">ไม่พบข้อมูลพัสดุ</p>
@@ -125,6 +125,7 @@
                                 <th class="sortable" data-field="packageCode">Package Code</th>
                                 <th class="sortable" data-field="platformOrderId">Platform Order ID</th>
                                 <th class="sortable" data-field="platform">Platform</th>
+                                <th>หมายเหตุ</th>
                                 <th class="sortable" data-field="status">สถานะ</th>
                                 <th class="sortable" data-field="createdAt">Created At</th>
                                 <th class="sortable" data-field="dueDate">Due Date</th>
@@ -206,6 +207,11 @@
                 <p><strong>Platform:</strong> <span id="packOrderPlatform"></span></p>
                 <p><strong>Due Date:</strong> <span id="packOrderDueDate"></span></p>
                 <p class="order-note"><strong>หมายเหตุออเดอร์:</strong> <span id="packOrderNotesDisplay"></span></p>
+                <button id="editBaseNotesButton" type="button" class="secondary hidden" style="width:auto; margin-bottom:5px;">แก้ไขหมายเหตุ</button>
+                <div id="editBaseNotesContainer" class="hidden" style="margin-bottom:10px;">
+                    <textarea id="editBaseNotesInput" style="width:100%;"></textarea>
+                    <button id="saveBaseNotesButton" type="button" style="margin-top:5px;">บันทึกหมายเหตุ</button>
+                </div>
                 <h3>Checklist รายการสินค้า:</h3>
                 <ul id="packOrderItemList" class="item-checklist packing-checklist"></ul>
                 <label for="packingPhoto">ถ่ายหรือเลือกรูปสินค้าที่เตรียม:</label>
