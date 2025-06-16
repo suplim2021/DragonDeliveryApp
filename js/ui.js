@@ -54,7 +54,6 @@ export function initializeCoreDOMElements() { // Renamed for clarity
     uiElements.currentBatchIdDisplay = document.getElementById('currentBatchIdDisplay');
     uiElements.batchItemsTableBody = document.querySelector('#batchItemsTable tbody');
     uiElements.batchItemCount = document.getElementById('batchItemCount');
-    uiElements.batchItemList = document.getElementById('batchItemList'); // legacy
     uiElements.qrScanner_Batch_div = document.getElementById('qrScanner_Batch');
     uiElements.qrScannerContainer_Batch = document.getElementById('qrScannerContainer_Batch');
     uiElements.confirmShipBatchIdDisplay = document.getElementById('confirmShipBatchIdDisplay');
