@@ -8,6 +8,7 @@ import { getCurrentUser, getCurrentUserRole } from './auth.js';
 
 let currentOrderKeyForPacking = null;
 let currentOrderPackageCode = null;
+let currentOrderNotes = '';
 let packingPhotoFiles = [];
 let existingPackingPhotoUrls = [];
 
@@ -86,7 +87,8 @@ export async function loadOrderForPacking(orderKey) {
             if(opPacking_currentOrderIdSpan) opPacking_currentOrderIdSpan.textContent = currentOrderPackageCode;
             if(opPacking_platformSpan) opPacking_platformSpan.textContent = orderData.platform || 'N/A';
             if(opPacking_dueDateSpan) opPacking_dueDateSpan.textContent = formatDateDDMMYYYY(orderData.dueDate);
-            if(opPacking_orderNotesSpan) opPacking_orderNotesSpan.textContent = orderData.notes || '-';
+            currentOrderNotes = orderData.notes || '';
+            if(opPacking_orderNotesSpan) opPacking_orderNotesSpan.textContent = currentOrderNotes || '-';
             
             if(opPacking_itemListUL) opPacking_itemListUL.innerHTML = '';
             if (orderData.items) {
@@ -252,15 +254,23 @@ async function confirmPacking() {
             photoUrls.push(await getDownloadURL(imageRef));
         }
 
+        const operatorNotesText = opPacking_notesTextarea ? opPacking_notesTextarea.value.trim() : '';
         const packingInfoData = {
             packedBy_operatorUid: currentUser.uid,
             packedAt: serverTimestamp(),
             packingPhotoUrls: photoUrls,
-            operatorNotes: opPacking_notesTextarea ? opPacking_notesTextarea.value.trim() : null
+            operatorNotes: operatorNotesText || null
         };
+        const combinedNotes = operatorNotesText ?
+            (currentOrderNotes ? `${currentOrderNotes}\n${operatorNotesText}` : operatorNotesText)
+            : currentOrderNotes;
         await update(ref(database, 'orders/' + currentOrderKeyForPacking), {
-            packingInfo: packingInfoData, status: "Pending Supervisor Pack Check", lastUpdatedAt: serverTimestamp()
+            packingInfo: packingInfoData,
+            status: "Pending Supervisor Pack Check",
+            lastUpdatedAt: serverTimestamp(),
+            notes: combinedNotes || null
         });
+        currentOrderNotes = combinedNotes;
         showAppStatus("บันทึกการแพ็กและอัปโหลดรูปสำเร็จ!", "success", opPacking_appStatus);
         packingPhotoFiles.forEach(f => {
             if (f.previewUrl) {
