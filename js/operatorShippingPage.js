@@ -8,7 +8,7 @@ import { getCurrentUser, getCurrentUserRole } from './auth.js';
 
 let currentActiveBatchId = null; // Stores the ID of the batch currently being worked on
 let currentBatchCourier = '';
-let itemsInCurrentBatch = {}; // Stores { orderKey: packageCode } for the current batch
+let itemsInCurrentBatch = {}; // Stores { orderKey: {packageCode, notes, items} }
 let shipmentGroupPhotoFile = null; // Stores the selected group photo file for shipment
 let readyToShipPackages = []; // Array of {orderKey, packageCode, platform}
 let filteredReadyPackages = [];
@@ -82,7 +82,7 @@ export function setupShippingBatchPage() {
         renderBatchItems(); // Re-render items if a batch is already active
     } else {
         if (uiElements.currentBatchIdDisplay) uiElements.currentBatchIdDisplay.textContent = 'N/A';
-        if (uiElements.batchItemList) uiElements.batchItemList.innerHTML = '<li>ยังไม่มีพัสดุในรอบส่งนี้</li>';
+        if (uiElements.batchItemsTableBody) uiElements.batchItemsTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">ยังไม่มีพัสดุในรอบส่งนี้</td></tr>';
         if (uiElements.batchItemCount) uiElements.batchItemCount.textContent = '0';
     }
     if (preserveBatchStateForReturn && currentActiveBatchId) {
@@ -202,7 +202,11 @@ function startScanForBatch() {
                 if (itemsInCurrentBatch[orderKeyFound]) {
                     showAppStatus(`พัสดุ ${packageCodeScanned} อยู่ใน Batch นี้แล้ว`, 'info', uiElements.appStatus);
                 } else {
-                    itemsInCurrentBatch[orderKeyFound] = packageCodeScanned; // Store package code for display
+                    itemsInCurrentBatch[orderKeyFound] = {
+                        packageCode: packageCodeScanned,
+                        notes: orderDataFound.notes || '',
+                        items: orderDataFound.items ? Object.values(orderDataFound.items).map(i => `${i.productName} - ${i.quantity} ${i.unit}`).join(', ') : ''
+                    };
                     renderBatchItems();
                     showAppStatus(`เพิ่ม ${packageCodeScanned} เข้า Batch สำเร็จ`, 'success', uiElements.appStatus);
                 }
@@ -275,7 +279,8 @@ async function loadReadyToShipPackages() {
                             orderKey: child.key,
                             packageCode: pkg,
                             platform: child.val().platform || 'Other',
-                            notes: child.val().notes || ''
+                            notes: child.val().notes || '',
+                            items: child.val().items ? Object.values(child.val().items).map(i => `${i.productName} - ${i.quantity} ${i.unit}`).join(', ') : ''
                         });
                     }
                 });
@@ -297,7 +302,11 @@ function addPackageCodeManually(packageCode) {
         showAppStatus(`พัสดุ ${packageCode} อยู่ในรอบส่งนี้แล้ว`, 'info', uiElements.appStatus);
         return;
     }
-    itemsInCurrentBatch[entry.orderKey] = packageCode;
+    itemsInCurrentBatch[entry.orderKey] = {
+        packageCode: entry.packageCode,
+        notes: entry.notes,
+        items: entry.items
+    };
     if (uiElements.readyToShipCheckboxList) {
         const cb = uiElements.readyToShipCheckboxList.querySelector(`input[data-orderkey="${entry.orderKey}"]`);
         if (cb) cb.checked = true;
@@ -307,15 +316,15 @@ function addPackageCodeManually(packageCode) {
 }
 
 function removePackageFromBatch(orderKey) {
-    const code = itemsInCurrentBatch[orderKey];
-    if (!code) return;
+    const entry = itemsInCurrentBatch[orderKey];
+    if (!entry) return;
     delete itemsInCurrentBatch[orderKey];
     if (uiElements.readyToShipCheckboxList) {
         const cb = uiElements.readyToShipCheckboxList.querySelector(`input[data-orderkey="${orderKey}"]`);
         if (cb) cb.checked = false;
     }
     renderBatchItems();
-    showAppStatus(`ลบ ${code} ออกจากรอบส่ง`, 'info', uiElements.appStatus);
+    showAppStatus(`ลบ ${entry.packageCode} ออกจากรอบส่ง`, 'info', uiElements.appStatus);
 }
 
 function getPlatformFilter(value) {
@@ -378,25 +387,35 @@ function selectAllFilteredPackages() {
 }
 
 function renderBatchItems() {
-    if (!uiElements.batchItemList || !uiElements.batchItemCount) return;
-    uiElements.batchItemList.innerHTML = '';
+    if (!uiElements.batchItemsTableBody || !uiElements.batchItemCount) return;
+    uiElements.batchItemsTableBody.innerHTML = '';
     const itemCount = Object.keys(itemsInCurrentBatch).length;
     uiElements.batchItemCount.textContent = itemCount;
 
     if (itemCount === 0) {
-        uiElements.batchItemList.innerHTML = '<li>ยังไม่มีพัสดุในรอบส่งนี้</li>';
+        uiElements.batchItemsTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">ยังไม่มีพัสดุในรอบส่งนี้</td></tr>';
         return;
     }
     for (const orderKey in itemsInCurrentBatch) {
-        const packageCode = itemsInCurrentBatch[orderKey];
-        const li = document.createElement('li');
-        li.textContent = packageCode;
+        const entry = itemsInCurrentBatch[orderKey];
+        const tr = document.createElement('tr');
+        const codeTd = document.createElement('td');
+        codeTd.textContent = entry.packageCode;
+        tr.appendChild(codeTd);
+        const noteTd = document.createElement('td');
+        noteTd.innerHTML = entry.notes ? `<span class="order-note">${entry.notes}</span>` : '';
+        tr.appendChild(noteTd);
+        const itemsTd = document.createElement('td');
+        itemsTd.textContent = entry.items || '';
+        tr.appendChild(itemsTd);
+        const removeTd = document.createElement('td');
         const btn = document.createElement('button');
         btn.textContent = '✖';
         btn.className = 'remove-batch-item-btn';
         btn.addEventListener('click', () => removePackageFromBatch(orderKey));
-        li.appendChild(btn);
-        uiElements.batchItemList.appendChild(li);
+        removeTd.appendChild(btn);
+        tr.appendChild(removeTd);
+        uiElements.batchItemsTableBody.appendChild(tr);
     }
 }
 
@@ -415,7 +434,17 @@ function confirmBatchAndMoveToPhoto() {
     if(uiElements.confirmShipBatchIdDisplay) uiElements.confirmShipBatchIdDisplay.textContent = currentActiveBatchId || 'จะสร้างอัตโนมัติ';
     if(uiElements.confirmShipCourierDisplay) uiElements.confirmShipCourierDisplay.textContent = currentBatchCourier;
     if(uiElements.confirmShipItemCountDisplay) uiElements.confirmShipItemCountDisplay.textContent = Object.keys(itemsInCurrentBatch).length;
-    
+
+    if(uiElements.confirmPackagesTableBody){
+        uiElements.confirmPackagesTableBody.innerHTML = '';
+        for(const orderKey in itemsInCurrentBatch){
+            const entry = itemsInCurrentBatch[orderKey];
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${entry.packageCode}</td><td>${entry.notes ? `<span class="order-note">${entry.notes}</span>` : ''}</td><td>${entry.items || ''}</td>`;
+            uiElements.confirmPackagesTableBody.appendChild(tr);
+        }
+    }
+
     if(uiElements.shipmentGroupPhoto) uiElements.shipmentGroupPhoto.value = ''; // Reset file input
     if(uiElements.shipmentGroupPhotoPreview) {
         uiElements.shipmentGroupPhotoPreview.classList.add('hidden');

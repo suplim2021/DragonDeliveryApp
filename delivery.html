@@ -294,9 +294,19 @@
                         <button id="stopScanForBatchButton" type="button" class="secondary hidden" style="margin-top:5px;">หยุดสแกน</button>
                     </div>
                     <h4>รายการพัสดุในรอบส่งนี้: (<span id="batchItemCount">0</span> ชิ้น)</h4>
-                    <ul id="batchItemList" class="item-checklist" style="max-height:200px; overflow-y:auto; border:1px solid #eee; padding:10px;">
-                        <!-- พัสดุที่สแกนแล้วจะแสดงที่นี่ -->
-                    </ul>
+                    <div id="batchItemsTableContainer" style="max-height:200px; overflow-y:auto; border:1px solid #eee; padding:10px;">
+                        <table id="batchItemsTable" style="width:100%; border-collapse:collapse;">
+                            <thead>
+                                <tr style="background-color:#f8f9fa;">
+                                    <th>Package Code</th>
+                                    <th>หมายเหตุ</th>
+                                    <th>รายละเอียดสินค้า</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
                     <button id="confirmBatchAndProceedButton" type="button" style="margin-top:15px;">ยืนยันรอบส่งและไปถ่ายรูป</button>
                 </div>
             </div>
@@ -308,6 +318,18 @@
                 <p><strong>Batch ID:</strong> <span id="confirmShipBatchIdDisplay"></span></p>
                 <p><strong>Courier:</strong> <span id="confirmShipCourierDisplay"></span></p>
                 <p><strong>จำนวนพัสดุ:</strong> <span id="confirmShipItemCountDisplay"></span> รายการ</p>
+                <div id="confirmPackagesTableContainer" style="max-height:200px; overflow-y:auto; border:1px solid #eee; padding:10px; margin-top:10px;">
+                    <table id="confirmPackagesTable" style="width:100%; border-collapse:collapse;">
+                        <thead>
+                            <tr style="background-color:#f8f9fa;">
+                                <th>Package Code</th>
+                                <th>หมายเหตุ</th>
+                                <th>รายละเอียดสินค้า</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
                 <div class="form-group">
                     <label for="shipmentGroupPhoto">ถ่ายหรือเลือกรูปรวมพัสดุที่ส่ง:</label>
                     <input type="file" id="shipmentGroupPhoto" accept="image/*" >
