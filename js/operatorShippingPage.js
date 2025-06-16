@@ -255,7 +255,12 @@ async function loadReadyToShipPackages() {
                 snap.forEach(child => {
                     const pkg = child.val().packageCode;
                     if (pkg) {
-                        readyToShipPackages.push({ orderKey: child.key, packageCode: pkg, platform: child.val().platform || 'Other' });
+                        readyToShipPackages.push({
+                            orderKey: child.key,
+                            packageCode: pkg,
+                            platform: child.val().platform || 'Other',
+                            notes: child.val().notes || ''
+                        });
                     }
                 });
             }
@@ -332,6 +337,12 @@ function filterReadyPackagesByCourier() {
         label.appendChild(cb);
         label.appendChild(document.createTextNode(' ' + entry.packageCode));
         li.appendChild(label);
+        if (entry.notes) {
+            const noteEl = document.createElement('small');
+            noteEl.className = 'order-note';
+            noteEl.textContent = entry.notes;
+            li.appendChild(noteEl);
+        }
         uiElements.readyToShipCheckboxList.appendChild(li);
     });
 
