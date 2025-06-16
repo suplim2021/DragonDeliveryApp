@@ -67,15 +67,7 @@ export async function loadOperatorPendingTasks() {
                 tasksArray.push({ key: childSnapshot.key, ...childSnapshot.val() });
             });
 
-            const now = Date.now();
-            tasksArray.sort((a, b) => {
-                const aOver = a.dueDate <= now;
-                const bOver = b.dueDate <= now;
-                if (aOver && !bOver) return -1;
-                if (!aOver && bOver) return 1;
-                if (a.dueDate !== b.dueDate) return a.dueDate - b.dueDate;
-                return (a.createdAt || 0) - (b.createdAt || 0);
-            });
+            tasksArray.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
 
             tasksArray.forEach(task => {
                 const orderKey = task.key;
@@ -99,6 +91,7 @@ export async function loadOperatorPendingTasks() {
                     <h4 style="margin-top:0; margin-bottom:8px;">Package Code: ${orderData.packageCode || 'N/A'}</h4>
                     <p style="font-size:0.9em; margin:3px 0;"><strong>Platform:</strong> ${orderData.platform || 'N/A'}</p>
                     <p style="font-size:0.9em; margin:3px 0;"><strong>Due Date:</strong> ${formatDateDDMMYYYY(orderData.dueDate)}</p>
+                    <p style="font-size:0.9em; margin:3px 0;" class="order-note"><strong>หมายเหตุ:</strong> ${orderData.notes || '-'}</p>
                     <button type="button" class="start-packing-btn" data-orderkey="${orderKey}" style="width:auto; padding:8px 15px; margin-top:10px; font-size:0.9em;">เริ่มแพ็กรายการนี้</button>
                     ${editBtnHtml}
                     ${deleteBtnHtml}
