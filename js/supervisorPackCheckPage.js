@@ -70,6 +70,7 @@ export async function loadOrdersForPackCheck() {
                 orderItemDiv.innerHTML = `
                     <h4 style="margin-top:0; margin-bottom:8px;">Package Code: ${orderData.packageCode || 'N/A'}</h4>
                     <p style="font-size:0.9em; margin:3px 0;"><strong>Platform:</strong> ${orderData.platform || 'N/A'}</p>
+                    <p style="font-size:0.9em; margin:3px 0;" class="order-note"><strong>หมายเหตุ:</strong> ${orderData.notes || '-'}</p>
                     <p style="font-size:0.9em; margin:3px 0;"><strong>Packed by (Operator UID):</strong> ${orderData.packingInfo?.packedBy_operatorUid?.substring(0,8) || 'N/A'}...</p>
                     <button type="button" class="supervisor-check-btn" data-orderkey="${orderKey}" style="width:auto; padding:8px 15px; margin-top:10px; font-size:0.9em;">ตรวจสอบรายการนี้</button>
                     <button type="button" class="return-to-pack-btn" data-orderkey="${orderKey}" style="width:auto; padding:8px 15px; margin-top:10px; margin-left:5px; font-size:0.9em; background-color:#f39c12;">แพ็คใหม่</button>
@@ -162,6 +163,7 @@ async function loadIndividualOrderForSupervisorCheck(orderKey) {
                 });
                 uiElements.checkOrderPackingPhotoContainer.appendChild(img);
             });
+            uiElements.checkOrderOrderNotesDisplay.textContent = orderData.notes || '-';
             uiElements.checkOrderOperatorNotesDisplay.textContent = orderData.packingInfo?.operatorNotes || 'ไม่มีหมายเหตุจาก Operator';
             
             uiElements.supervisorPackCheckNotes.value = ''; // Clear supervisor's previous notes for this new check

@@ -8,12 +8,13 @@ import { getCurrentUser, getCurrentUserRole } from './auth.js';
 
 let currentOrderKeyForPacking = null;
 let currentOrderPackageCode = null;
+let currentOrderNotes = '';
 let packingPhotoFiles = [];
 let existingPackingPhotoUrls = [];
 
 // DOM Elements for this page - to be initialized
 let opPacking_pageElement, opPacking_currentOrderIdSpan, opPacking_platformSpan, opPacking_dueDateSpan,
-    opPacking_itemListUL, opPacking_photoInput, opPacking_photoPreviewContainer,
+    opPacking_itemListUL, opPacking_photoInput, opPacking_photoPreviewContainer, opPacking_orderNotesSpan,
     opPacking_notesTextarea, opPacking_confirmButton, opPacking_supervisorCheckResultDiv,
     opPacking_packCheckStatusSpan, opPacking_packCheckSupervisorSpan, opPacking_packCheckNotesSpan,
     opPacking_appStatus;
@@ -27,6 +28,7 @@ export function initializeOperatorPackingPageListeners() {
     opPacking_itemListUL = document.getElementById('packOrderItemList');
     opPacking_photoInput = document.getElementById('packingPhoto');
     opPacking_photoPreviewContainer = document.getElementById('packingPhotoPreviewContainer');
+    opPacking_orderNotesSpan = document.getElementById('packOrderNotesDisplay');
     opPacking_notesTextarea = document.getElementById('operatorPackNotes');
     opPacking_confirmButton = document.getElementById('confirmPackingButton');
     opPacking_supervisorCheckResultDiv = document.getElementById('supervisorPackCheckResult');
@@ -85,6 +87,8 @@ export async function loadOrderForPacking(orderKey) {
             if(opPacking_currentOrderIdSpan) opPacking_currentOrderIdSpan.textContent = currentOrderPackageCode;
             if(opPacking_platformSpan) opPacking_platformSpan.textContent = orderData.platform || 'N/A';
             if(opPacking_dueDateSpan) opPacking_dueDateSpan.textContent = formatDateDDMMYYYY(orderData.dueDate);
+            currentOrderNotes = orderData.notes || '';
+            if(opPacking_orderNotesSpan) opPacking_orderNotesSpan.textContent = currentOrderNotes || '-';
             
             if(opPacking_itemListUL) opPacking_itemListUL.innerHTML = '';
             if (orderData.items) {
@@ -250,15 +254,23 @@ async function confirmPacking() {
             photoUrls.push(await getDownloadURL(imageRef));
         }
 
+        const operatorNotesText = opPacking_notesTextarea ? opPacking_notesTextarea.value.trim() : '';
         const packingInfoData = {
             packedBy_operatorUid: currentUser.uid,
             packedAt: serverTimestamp(),
             packingPhotoUrls: photoUrls,
-            operatorNotes: opPacking_notesTextarea ? opPacking_notesTextarea.value.trim() : null
+            operatorNotes: operatorNotesText || null
         };
+        const combinedNotes = operatorNotesText ?
+            (currentOrderNotes ? `${currentOrderNotes}\n${operatorNotesText}` : operatorNotesText)
+            : currentOrderNotes;
         await update(ref(database, 'orders/' + currentOrderKeyForPacking), {
-            packingInfo: packingInfoData, status: "Pending Supervisor Pack Check", lastUpdatedAt: serverTimestamp()
+            packingInfo: packingInfoData,
+            status: "Pending Supervisor Pack Check",
+            lastUpdatedAt: serverTimestamp(),
+            notes: combinedNotes || null
         });
+        currentOrderNotes = combinedNotes;
         showAppStatus("บันทึกการแพ็กและอัปโหลดรูปสำเร็จ!", "success", opPacking_appStatus);
         packingPhotoFiles.forEach(f => {
             if (f.previewUrl) {

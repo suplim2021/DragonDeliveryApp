@@ -73,6 +73,7 @@ export function initializeCoreDOMElements() { // Renamed for clarity
     uiElements.checkOrderPlatformDisplay = document.getElementById('checkOrderPlatformDisplay');
     uiElements.checkOrderItemListDisplay = document.getElementById('checkOrderItemListDisplay');
     uiElements.checkOrderPackingPhotoContainer = document.getElementById('checkOrderPackingPhotoContainer');
+    uiElements.checkOrderOrderNotesDisplay = document.getElementById('checkOrderOrderNotesDisplay');
     uiElements.checkOrderOperatorNotesDisplay = document.getElementById('checkOrderOperatorNotesDisplay');
     uiElements.supervisorPackCheckNotes = document.getElementById('supervisorPackCheckNotes');
 
