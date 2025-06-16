@@ -135,6 +135,7 @@ export async function loadParcelList(timeFilter = 'today', startDate = null, end
             tr.insertCell().textContent = o.packageCode || 'N/A';
             tr.insertCell().textContent = o.platformOrderId || '-';
             tr.insertCell().textContent = o.platform || 'N/A';
+            tr.insertCell().textContent = o.notes || '-';
             tr.insertCell().textContent = translateStatusToThai(o.status, !!o.shipmentInfo?.adminVerifiedBy);
             tr.insertCell().textContent = formatDateTimeDDMMYYYYHHMM(o.createdAt);
             tr.insertCell().textContent = formatDateDDMMYYYY(o.dueDate);

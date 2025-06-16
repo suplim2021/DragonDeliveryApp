@@ -17,7 +17,8 @@ let opPacking_pageElement, opPacking_currentOrderIdSpan, opPacking_platformSpan,
     opPacking_itemListUL, opPacking_photoInput, opPacking_photoPreviewContainer, opPacking_orderNotesSpan,
     opPacking_notesTextarea, opPacking_confirmButton, opPacking_supervisorCheckResultDiv,
     opPacking_packCheckStatusSpan, opPacking_packCheckSupervisorSpan, opPacking_packCheckNotesSpan,
-    opPacking_appStatus;
+    opPacking_appStatus, opPacking_editNotesBtn, opPacking_editNotesContainer,
+    opPacking_editNotesInput, opPacking_saveNotesBtn;
 
 export function initializeOperatorPackingPageListeners() {
     // Get DOM elements specific to this page
@@ -36,6 +37,10 @@ export function initializeOperatorPackingPageListeners() {
     opPacking_packCheckSupervisorSpan = document.getElementById('packCheckSupervisor');
     opPacking_packCheckNotesSpan = document.getElementById('packCheckNotes');
     opPacking_appStatus = document.getElementById('appStatus');
+    opPacking_editNotesBtn = document.getElementById('editBaseNotesButton');
+    opPacking_editNotesContainer = document.getElementById('editBaseNotesContainer');
+    opPacking_editNotesInput = document.getElementById('editBaseNotesInput');
+    opPacking_saveNotesBtn = document.getElementById('saveBaseNotesButton');
 
     if (!opPacking_photoInput || !opPacking_confirmButton) {
         console.warn("Operator Packing Page: packingPhotoInput or confirmPackingButton not found.");
@@ -44,6 +49,14 @@ export function initializeOperatorPackingPageListeners() {
 
     opPacking_photoInput.addEventListener('change', handlePackingPhotoSelect);
     opPacking_confirmButton.addEventListener('click', confirmPacking);
+    if (opPacking_editNotesBtn && opPacking_saveNotesBtn && opPacking_editNotesInput && opPacking_editNotesContainer) {
+        opPacking_editNotesBtn.addEventListener('click', () => {
+            opPacking_editNotesInput.value = currentOrderBaseNotes;
+            opPacking_editNotesContainer.classList.remove('hidden');
+            opPacking_editNotesBtn.classList.add('hidden');
+        });
+        opPacking_saveNotesBtn.addEventListener('click', saveBaseNotes);
+    }
 
     // Make navigateToOperatorScanToPack globally accessible for the nav button (if called from HTML onclick)
     // Better to handle navigation through JS event listeners on nav buttons themselves.
@@ -89,6 +102,15 @@ export async function loadOrderForPacking(orderKey) {
             if(opPacking_dueDateSpan) opPacking_dueDateSpan.textContent = formatDateDDMMYYYY(orderData.dueDate);
             currentOrderBaseNotes = orderData.notes || '';
             if(opPacking_orderNotesSpan) opPacking_orderNotesSpan.textContent = currentOrderBaseNotes || '-';
+            const role = getCurrentUserRole();
+            if(opPacking_editNotesBtn && opPacking_editNotesContainer){
+                if (role === 'administrator') {
+                    opPacking_editNotesBtn.classList.remove('hidden');
+                } else {
+                    opPacking_editNotesBtn.classList.add('hidden');
+                    opPacking_editNotesContainer.classList.add('hidden');
+                }
+            }
             
             if(opPacking_itemListUL) opPacking_itemListUL.innerHTML = '';
             if (orderData.items) {
@@ -288,3 +310,26 @@ async function confirmPacking() {
         if(opPacking_confirmButton) opPacking_confirmButton.disabled = false;
     }
 }
+
+async function saveBaseNotes() {
+    if (!currentOrderKeyForPacking || !opPacking_editNotesInput) return;
+    const newNotes = opPacking_editNotesInput.value.trim();
+    try {
+        await update(ref(database, 'orders/' + currentOrderKeyForPacking), {
+            notes: newNotes || null,
+            lastUpdatedAt: serverTimestamp()
+        });
+        currentOrderBaseNotes = newNotes;
+        if (opPacking_orderNotesSpan) opPacking_orderNotesSpan.textContent = newNotes || '-';
+        showToast('บันทึกหมายเหตุแล้ว', 'success');
+    } catch (err) {
+        console.error('saveBaseNotes error', err);
+        showToast('เกิดข้อผิดพลาดในการบันทึกหมายเหตุ', 'error');
+    } finally {
+        if(opPacking_editNotesContainer && opPacking_editNotesBtn){
+            opPacking_editNotesContainer.classList.add('hidden');
+            opPacking_editNotesBtn.classList.remove('hidden');
+        }
+    }
+}
+
