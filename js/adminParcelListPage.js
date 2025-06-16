@@ -140,18 +140,6 @@ export async function loadParcelList(timeFilter = 'today', startDate = null, end
             tr.insertCell().textContent = formatDateTimeDDMMYYYYHHMM(o.createdAt);
             tr.insertCell().textContent = formatDateDDMMYYYY(o.dueDate);
             tr.insertCell().textContent = o.shippedAt_actual ? formatDateTimeDDMMYYYYHHMM(o.shippedAt_actual) : '-';
-            const photoCell = tr.insertCell();
-            const urls = o.packingInfo?.packingPhotoUrls ? [...o.packingInfo.packingPhotoUrls] : [];
-            if (urls.length) {
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.textContent = 'ดูรูป';
-                btn.className = 'secondary';
-                btn.addEventListener('click', e => { e.stopPropagation(); if (typeof window.showImageAlbum === 'function') window.showImageAlbum(urls); });
-                photoCell.appendChild(btn);
-            } else {
-                photoCell.textContent = '-';
-            }
 
             tr.classList.add('clickable-row');
             tr.addEventListener('click', () => {

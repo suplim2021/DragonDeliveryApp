@@ -17,6 +17,9 @@ export function initializeShippedOrdersPageListeners() {
     const confirmBtn = document.getElementById('confirmShipmentButton');
     if (confirmBtn) confirmBtn.addEventListener('click', confirmShipmentAdmin);
 
+    const returnBtn = document.getElementById('returnShipmentButton');
+    if (returnBtn) returnBtn.addEventListener('click', returnShipmentToReady);
+
     const confirmSelectedBtn = document.getElementById('confirmSelectedShipmentsButton');
     if (confirmSelectedBtn) confirmSelectedBtn.addEventListener('click', confirmSelectedShipments);
 }
@@ -248,5 +251,23 @@ async function confirmSelectedShipments() {
     } catch (err) {
         console.error('confirmSelectedShipments error', err);
         showAppStatus('เกิดข้อผิดพลาดในการยืนยัน', 'error', appStatus);
+    }
+}
+
+async function returnShipmentToReady() {
+    const appStatus = document.getElementById('appStatus');
+    if (!currentDetailOrderKey || !appStatus) return;
+    showAppStatus('กำลังย้อนสถานะ...', 'info', appStatus);
+    try {
+        const updates = {};
+        updates[`/orders/${currentDetailOrderKey}/status`] = 'Ready for Shipment';
+        updates[`/orders/${currentDetailOrderKey}/shipmentInfo`] = null;
+        await update(ref(database), updates);
+        showAppStatus('ย้ายกลับไปเตรียมส่งแล้ว', 'success', appStatus);
+        await loadShippedOrders();
+        showPage('shippedOrdersPage');
+    } catch (err) {
+        console.error('returnShipmentToReady error', err);
+        showAppStatus('เกิดข้อผิดพลาดในการย้อนสถานะ', 'error', appStatus);
     }
 }
