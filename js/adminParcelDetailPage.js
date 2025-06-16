@@ -39,7 +39,7 @@ export async function loadParcelDetail(orderKey) {
                 <p><strong>สถานะ:</strong> ${translateStatusToThai(data.status, !!data.shipmentInfo?.adminVerifiedBy)}</p>
                 <p><strong>Created:</strong> ${formatDateTimeDDMMYYYYHHMM(data.createdAt)}</p>
                 <p><strong>Due Date:</strong> ${formatDateDDMMYYYY(data.dueDate)}</p>
-                <p><strong>หมายเหตุ:</strong> ${data.notes || '-'}</p>
+                <p class="order-note"><strong>หมายเหตุ:</strong> ${data.notes || '-'}</p>
             `;
             if (data.items) {
                 html += '<h3>รายการสินค้า:</h3><ul>';

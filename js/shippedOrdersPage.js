@@ -89,7 +89,7 @@ export async function loadShippedOrders() {
                 const checked = o.data.shipmentInfo?.adminVerifiedBy ? 'disabled checked' : '';
                 const cb = `<input type="checkbox" class="admin-verify-checkbox" data-orderkey="${o.key}" ${checked}>`;
                 const detailBtn = `<button type="button" class="shipped-detail-btn" data-orderkey="${o.key}" style="width:auto;padding:4px 8px;font-size:0.8em;margin-left:5px;">ดูรายละเอียด</button>`;
-                html += `<li style="border-bottom:1px solid #eee;padding:5px 0;">${cb} ${o.data.packageCode || o.key} (${o.data.platform || 'N/A'}) ${detailBtn}<br><small>${o.data.notes || ''}</small></li>`;
+                html += `<li style="border-bottom:1px solid #eee;padding:5px 0;">${cb} ${o.data.packageCode || o.key} (${o.data.platform || 'N/A'}) ${detailBtn}<br><small class="order-note">${o.data.notes || ''}</small></li>`;
             });
             html += '</ul></div>';
             div.innerHTML = html;
@@ -166,7 +166,7 @@ async function loadShippedOrderDetail(orderKey) {
             let html = `
                 <p><strong>Platform:</strong> ${data.platform || 'N/A'}</p>
                 <p><strong>ส่งจริงเมื่อ:</strong> ${data.shipmentInfo?.shippedAt_actual ? formatDateTimeDDMMYYYYHHMM(data.shipmentInfo.shippedAt_actual) : '-'}</p>
-                <p><strong>หมายเหตุ:</strong> ${data.notes || '-'}</p>
+                <p class="order-note"><strong>หมายเหตุ:</strong> ${data.notes || '-'}</p>
             `;
             if (role === 'administrator') {
                 html += `<p><strong>Batch ID:</strong> ${data.shipmentInfo?.batchId || '-'}</p>`;

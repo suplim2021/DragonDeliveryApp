@@ -205,7 +205,7 @@
                 <h2>แพ็กสินค้า (Package Code: <span id="currentOrderIdForPacking"></span>)</h2>
                 <p><strong>Platform:</strong> <span id="packOrderPlatform"></span></p>
                 <p><strong>Due Date:</strong> <span id="packOrderDueDate"></span></p>
-                <p><strong>หมายเหตุออเดอร์:</strong> <span id="packOrderNotesDisplay"></span></p>
+                <p class="order-note"><strong>หมายเหตุออเดอร์:</strong> <span id="packOrderNotesDisplay"></span></p>
                 <h3>Checklist รายการสินค้า:</h3>
                 <ul id="packOrderItemList" class="item-checklist packing-checklist"></ul>
                 <label for="packingPhoto">ถ่ายหรือเลือกรูปสินค้าที่เตรียม:</label>
@@ -220,7 +220,7 @@
                     <h4>ผลการตรวจสอบโดย Supervisor:</h4>
                     <p>สถานะ: <span id="packCheckStatus"></span></p>
                     <p>ผู้ตรวจ: <span id="packCheckSupervisor"></span></p>
-                    <p>หมายเหตุ: <span id="packCheckNotes"></span></p>
+                    <p class="order-note">หมายเหตุ: <span id="packCheckNotes"></span></p>
                 </div>
             </div>
 
@@ -338,8 +338,8 @@
                 <div style="margin-top:20px;">
                     <h3>รูปภาพจาก Operator:</h3>
                     <div id="checkOrderPackingPhotoContainer" class="photo-preview-container"></div>
-                    <p><strong>หมายเหตุออเดอร์:</strong> <span id="checkOrderOrderNotesDisplay"></span></p>
-                    <p><strong>หมายเหตุจาก Operator:</strong> <span id="checkOrderOperatorNotesDisplay"></span></p>
+                    <p class="order-note"><strong>หมายเหตุออเดอร์:</strong> <span id="checkOrderOrderNotesDisplay"></span></p>
+                    <p class="order-note"><strong>หมายเหตุจาก Operator:</strong> <span id="checkOrderOperatorNotesDisplay"></span></p>
                 </div>
                 <div style="margin-top:20px;">
                     <h3>การดำเนินการตรวจสอบ:</h3>

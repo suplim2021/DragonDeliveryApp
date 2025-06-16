@@ -70,7 +70,7 @@ export async function loadOrdersForPackCheck() {
                 orderItemDiv.innerHTML = `
                     <h4 style="margin-top:0; margin-bottom:8px;">Package Code: ${orderData.packageCode || 'N/A'}</h4>
                     <p style="font-size:0.9em; margin:3px 0;"><strong>Platform:</strong> ${orderData.platform || 'N/A'}</p>
-                    <p style="font-size:0.9em; margin:3px 0;"><strong>หมายเหตุ:</strong> ${orderData.notes || '-'}</p>
+                    <p style="font-size:0.9em; margin:3px 0;" class="order-note"><strong>หมายเหตุ:</strong> ${orderData.notes || '-'}</p>
                     <p style="font-size:0.9em; margin:3px 0;"><strong>Packed by (Operator UID):</strong> ${orderData.packingInfo?.packedBy_operatorUid?.substring(0,8) || 'N/A'}...</p>
                     <button type="button" class="supervisor-check-btn" data-orderkey="${orderKey}" style="width:auto; padding:8px 15px; margin-top:10px; font-size:0.9em;">ตรวจสอบรายการนี้</button>
                     <button type="button" class="return-to-pack-btn" data-orderkey="${orderKey}" style="width:auto; padding:8px 15px; margin-top:10px; margin-left:5px; font-size:0.9em; background-color:#f39c12;">แพ็คใหม่</button>
