@@ -52,8 +52,9 @@ export function initializeCoreDOMElements() { // Renamed for clarity
     uiElements.readyToShipCheckboxList = document.getElementById('readyToShipCheckboxList');
     uiElements.selectAllReadyPackagesButton = document.getElementById('selectAllReadyPackagesButton');
     uiElements.currentBatchIdDisplay = document.getElementById('currentBatchIdDisplay');
-    uiElements.batchItemList = document.getElementById('batchItemList');
+    uiElements.batchItemsTableBody = document.querySelector('#batchItemsTable tbody');
     uiElements.batchItemCount = document.getElementById('batchItemCount');
+    uiElements.batchItemList = document.getElementById('batchItemList'); // legacy
     uiElements.qrScanner_Batch_div = document.getElementById('qrScanner_Batch');
     uiElements.qrScannerContainer_Batch = document.getElementById('qrScannerContainer_Batch');
     uiElements.confirmShipBatchIdDisplay = document.getElementById('confirmShipBatchIdDisplay');
@@ -63,6 +64,7 @@ export function initializeCoreDOMElements() { // Renamed for clarity
     uiElements.shipmentGroupPhotoPreview = document.getElementById('shipmentGroupPhotoPreview');
     uiElements.shipmentGpsLocationDisplay = document.getElementById('shipmentGpsLocationDisplay');
     uiElements.finalizeShipmentButton = document.getElementById('finalizeShipmentButton');
+    uiElements.confirmPackagesTableBody = document.querySelector('#confirmPackagesTable tbody');
 
     uiElements.refreshSupervisorPackCheckList = document.getElementById('refreshSupervisorPackCheckList');
     uiElements.packCheckListContainer = document.getElementById('packCheckListContainer');
