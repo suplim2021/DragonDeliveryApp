@@ -11,6 +11,7 @@ let adminItemsAppStatus,
     adminItemsQuantityInput,
     adminItemsUnitInput,
     adminItemsItemListUL,
+    adminItemsNotesInput,
     adminItemsAddItemButton,
     adminItemsConfirmButton;
 
@@ -23,6 +24,7 @@ export function initializeAdminItemsPageListeners() {
     adminItemsQuantityInput = document.getElementById('quantity');
     adminItemsUnitInput = document.getElementById('unit');
     adminItemsItemListUL = document.getElementById('itemListCurrentOrder');
+    adminItemsNotesInput = document.getElementById('adminItemsNotes');
     adminItemsAddItemButton = document.getElementById('addItemToOrderButton');
     adminItemsConfirmButton = document.getElementById('confirmAllItemsButton');
 
@@ -63,6 +65,7 @@ export async function loadOrderForAddingItems(orderKey) {
         if (snap.exists()) {
             const data = snap.val();
             if (adminItemsCurrentOrderIdSpan) adminItemsCurrentOrderIdSpan.textContent = data.packageCode || orderKey;
+            if (adminItemsNotesInput) adminItemsNotesInput.value = data.notes || '';
             if (data.items) {
                 Object.keys(data.items).forEach(id => {
                     renderItemInList(id, data.items[id]);
@@ -123,9 +126,11 @@ async function confirmAllItems() {
         return;
     }
     try {
+        const notesText = adminItemsNotesInput ? adminItemsNotesInput.value.trim() : '';
         await update(ref(database, 'orders/' + currentOrderKeyForItems), {
             status: 'Ready to Pack',
-            lastUpdatedAt: serverTimestamp()
+            lastUpdatedAt: serverTimestamp(),
+            notes: notesText || null
         });
         showAppStatus('ยืนยันรายการสินค้าแล้ว', 'success', adminItemsAppStatus);
         currentOrderKeyForItems = null;

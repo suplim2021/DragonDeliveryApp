@@ -13,7 +13,7 @@ let existingPackingPhotoUrls = [];
 
 // DOM Elements for this page - to be initialized
 let opPacking_pageElement, opPacking_currentOrderIdSpan, opPacking_platformSpan, opPacking_dueDateSpan,
-    opPacking_itemListUL, opPacking_photoInput, opPacking_photoPreviewContainer,
+    opPacking_itemListUL, opPacking_photoInput, opPacking_photoPreviewContainer, opPacking_orderNotesSpan,
     opPacking_notesTextarea, opPacking_confirmButton, opPacking_supervisorCheckResultDiv,
     opPacking_packCheckStatusSpan, opPacking_packCheckSupervisorSpan, opPacking_packCheckNotesSpan,
     opPacking_appStatus;
@@ -27,6 +27,7 @@ export function initializeOperatorPackingPageListeners() {
     opPacking_itemListUL = document.getElementById('packOrderItemList');
     opPacking_photoInput = document.getElementById('packingPhoto');
     opPacking_photoPreviewContainer = document.getElementById('packingPhotoPreviewContainer');
+    opPacking_orderNotesSpan = document.getElementById('packOrderNotesDisplay');
     opPacking_notesTextarea = document.getElementById('operatorPackNotes');
     opPacking_confirmButton = document.getElementById('confirmPackingButton');
     opPacking_supervisorCheckResultDiv = document.getElementById('supervisorPackCheckResult');
@@ -85,6 +86,7 @@ export async function loadOrderForPacking(orderKey) {
             if(opPacking_currentOrderIdSpan) opPacking_currentOrderIdSpan.textContent = currentOrderPackageCode;
             if(opPacking_platformSpan) opPacking_platformSpan.textContent = orderData.platform || 'N/A';
             if(opPacking_dueDateSpan) opPacking_dueDateSpan.textContent = formatDateDDMMYYYY(orderData.dueDate);
+            if(opPacking_orderNotesSpan) opPacking_orderNotesSpan.textContent = orderData.notes || '-';
             
             if(opPacking_itemListUL) opPacking_itemListUL.innerHTML = '';
             if (orderData.items) {
