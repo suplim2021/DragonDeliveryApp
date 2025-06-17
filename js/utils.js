@@ -269,15 +269,21 @@ export function initializeImageLightbox() {
         next.id = 'lightboxNext';
         next.className = 'lightbox-nav';
         next.textContent = '>';
+        const zoom = document.createElement('button');
+        zoom.id = 'lightboxZoom';
+        zoom.className = 'lightbox-nav';
+        zoom.innerHTML = '<span class="material-icons">zoom_in</span>';
         overlay.appendChild(slider);
         overlay.appendChild(prev);
         overlay.appendChild(next);
+        overlay.appendChild(zoom);
         document.body.appendChild(overlay);
     }
 
     const sliderElem = overlay.querySelector('#lightboxSlider');
     const prevBtn = overlay.querySelector('#lightboxPrev');
     const nextBtn = overlay.querySelector('#lightboxNext');
+    const zoomBtn = overlay.querySelector('#lightboxZoom');
 
     const updateSlider = (animate = true) => {
         if (!sliderElem) return;
@@ -313,6 +319,13 @@ export function initializeImageLightbox() {
         showNext();
     });
 
+    if (zoomBtn) {
+        zoomBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            toggleZoom();
+        });
+    }
+
     let startX = 0;
     let dragging = false;
 
@@ -326,6 +339,7 @@ export function initializeImageLightbox() {
                 pz.pause();
             }
         });
+        if (zoomBtn) zoomBtn.innerHTML = '<span class="material-icons">zoom_in</span>';
     };
 
     const setupPanzoom = () => {
@@ -344,16 +358,39 @@ export function initializeImageLightbox() {
                     pz.reset();
                     pz.pause();
                     isZoomed = false;
+                    if (zoomBtn) zoomBtn.innerHTML = '<span class="material-icons">zoom_in</span>';
                 } else {
                     resetZoom();
                     img.classList.add('zoomed');
                     pz.resume();
                     isZoomed = true;
+                    if (zoomBtn) zoomBtn.innerHTML = '<span class="material-icons">zoom_out</span>';
                 }
             };
             img.addEventListener('click', toggle);
             img.addEventListener('dblclick', toggle);
         });
+    };
+
+    const toggleZoom = () => {
+        const slide = sliderElem?.children[albumIndex];
+        if (!slide) return;
+        const img = slide.querySelector('img');
+        const pz = img?._panzoom;
+        if (!img || !pz) return;
+        if (img.classList.contains('zoomed')) {
+            img.classList.remove('zoomed');
+            pz.reset();
+            pz.pause();
+            isZoomed = false;
+            if (zoomBtn) zoomBtn.innerHTML = '<span class="material-icons">zoom_in</span>';
+        } else {
+            resetZoom();
+            img.classList.add('zoomed');
+            pz.resume();
+            isZoomed = true;
+            if (zoomBtn) zoomBtn.innerHTML = '<span class="material-icons">zoom_out</span>';
+        }
     };
 
     const startDrag = x => {
@@ -422,6 +459,7 @@ export function initializeImageLightbox() {
         panzoomInstances.forEach(p => p.destroy());
         panzoomInstances = [];
         albumUrls = [];
+        if (zoomBtn) zoomBtn.innerHTML = '<span class="material-icons">zoom_in</span>';
     };
 
     document.addEventListener('keydown', e => {

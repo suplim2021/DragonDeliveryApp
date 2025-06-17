@@ -325,6 +325,12 @@ tbody tr:hover { background-color: #f1f8ff; }
 }
 #lightboxPrev { left:20px; }
 #lightboxNext { right:20px; }
+#lightboxZoom {
+    bottom:20px;
+    right:20px;
+    top:auto;
+    transform:none;
+}
 
 /* Pick list summary table */
 .pick-summary-table { width:100%; border-collapse: collapse; margin-top:5px; }
