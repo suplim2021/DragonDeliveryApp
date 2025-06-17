@@ -10,6 +10,7 @@ Dragon Delivery App is a web-based logistics management tool built with Firebase
 - Dashboard with statistics rendered via Chart.js
 - Tracking and packing pages for daily operations
 - Uploaded photos are automatically resized so the longest side is 500&nbsp;px to speed up uploads
+- Storage lifecycle rules delete photos from Firebase after 60 days to save space
 - When packing items on a mobile browser, the photo picker lets users choose an existing image or open the camera. Add `capture="environment"` to the file input in `delivery.html` to launch the camera immediately if desired.
 
 ## Getting Started
@@ -46,6 +47,15 @@ Dragon Delivery App is a web-based logistics management tool built with Firebase
    ```
 
 After deployment your site will be available on your Firebase Hosting URL.
+
+## Automatic Storage Cleanup
+
+To keep storage usage minimal, the bucket can delete images older than 60 days.
+Apply the lifecycle rule defined in `storage-lifecycle.json` using `gsutil`:
+
+```bash
+gsutil lifecycle set storage-lifecycle.json gs://<your-storage-bucket>
+```
 
 ## Development Notes
 
